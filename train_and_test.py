@@ -1,8 +1,12 @@
 from os import listdir
 from os.path import join
 
-from numpy import load
+from numpy import load, array
 from numpy.random import random, shuffle
+from tensorflow.keras import Input, Model
+from tensorflow.keras.callbacks import ModelCheckpoint
+from tensorflow.keras.losses import MeanSquaredError
+from tensorflow.keras.optimizers import RMSprop
 
 
 class ProblemLoader:
@@ -12,19 +16,25 @@ class ProblemLoader:
         self.skip_percentage = skip_percentage
         self.test_data_percentage = test_data_percentage
         self.validation_data_percentage = validation_data_percentage
+        self.test_sequences = None
+        self.validation_sequences = None
+        self.training_sequences = None
+        self.input_length = None
 
-    def get_datasets(self):
+    def build_datasets(self):
         # return test, training and validation set
         data = self.load_datasets()
         lossy_data = self.skip_data(data)
         sequences = self.get_sequences(lossy_data)
-        return self.split_data(sequences)
+        self.test_sequences, self.validation_sequences, self.training_sequences = self.split_data(sequences)
 
     def load_datasets(self):
         # load datasets from files
         datasets = []
         for dataset_filename in [x for x in listdir(self.problem_path) if x.endswith('.npy')]:
             dataset = load(join(self.problem_path, dataset_filename))
+            if self.input_length is None:
+                self.input_length = dataset.shape[1]
             datasets.append([dataset[:-1, :].tolist(), dataset[1:, :].tolist()])
         return datasets
 
@@ -63,7 +73,33 @@ class ProblemLoader:
         test_sequences = sequences[:test_data_length]
         validation_sequences = sequences[test_data_length:test_data_length + validation_data_length]
         training_sequences = sequences[test_data_length + validation_data_length:]
-        return test_sequences, validation_sequences, training_sequences
+        processed_sequences = []
+        for sequence in [test_sequences, validation_sequences, training_sequences]:
+            processed_sequences.append((array([x[0] for x in sequence]),
+                                        array([x[1] for x in sequence]),
+                                        array([x[2] for x in sequence])))
+        return processed_sequences
+
+    def train_and_test(self):
+        signal_input = Input(shape=(self.sequence_length, self.input_length))
+        time_input = Input(shape=(self.sequence_length, 1))
+        y = signal_input # build right output function
+        model = Model(inputs=[signal_input, time_input], outputs=[y])
+        model.compile(optimizer=RMSprop(0.005), loss=MeanSquaredError())
+        model.summary()
+        model.fit(
+            x=(self.training_sequences[0], self.training_sequences[1]),
+            y=self.training_sequences[2],
+            batch_size=128,
+            epochs=200,
+            validation_data=((self.validation_sequences[0], self.validation_sequences[1]), self.validation_sequences[2]),
+            callbacks=[ModelCheckpoint('weights/checkpoint', save_best_only=True, save_weights_only=True)],
+        )
+        model.load_weights('weights/checkpoint')
+        best_test_loss = model.evaluate(x=(self.test_sequences[0], self.test_sequences[1]), y=self.test_sequences[2])
+        print(f'best test loss: {best_test_loss}')
 
 
-test_seqs, validation_seqs, training_seqs = ProblemLoader().get_datasets()
+problem_loader = ProblemLoader()
+problem_loader.build_datasets()
+problem_loader.train_and_test()
