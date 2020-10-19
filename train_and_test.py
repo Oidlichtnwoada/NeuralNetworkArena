@@ -45,10 +45,14 @@ class ProblemLoader:
         for input_dataset, output_dataset in data:
             lossy_input_dataset, lossy_time_dataset, lossy_output_dataset = [], [], []
             interval = 0
+            input_data = None
             for index in range(len(input_dataset)):
+                if input_data is None:
+                    input_data = input_dataset[index]
                 interval += 1
                 if random() > self.skip_percentage:
-                    lossy_input_dataset.append(input_dataset[index])
+                    lossy_input_dataset.append(input_data)
+                    input_data = None
                     lossy_time_dataset.append([interval])
                     lossy_output_dataset.append(output_dataset[index])
                     interval = 0
@@ -84,7 +88,6 @@ class ProblemLoader:
     def train_and_test(self):
         model = ContinuousTransformer([(self.sequence_length, self.input_length), (self.sequence_length, 1)], [(self.sequence_length, self.input_length)])
         model.compile(optimizer=RMSprop(0.005), loss=MeanSquaredError())
-        model.summary()
         model.fit(
             x=(self.training_sequences[0], self.training_sequences[1]),
             y=self.training_sequences[2],
