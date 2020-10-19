@@ -69,7 +69,6 @@ val_dataset = val_examples.map(tf_encode)
 val_dataset = val_dataset.filter(filter_max_length).padded_batch(BATCH_SIZE)
 
 pt_batch, en_batch = next(iter(val_dataset))
-pt_batch, en_batch
 
 
 def get_angles(pos, i, d_model):
@@ -119,7 +118,22 @@ def create_look_ahead_mask(size):
 
 x = tf.random.uniform((1, 3))
 temp = create_look_ahead_mask(x.shape[1])
-temp
+
+
+def scaled_dot_product_attention(q, k, v, mask):
+    matmul_qk = tf.matmul(q, k, transpose_b=True)
+
+    dk = tf.cast(tf.shape(k)[-1], tf.float32)
+    scaled_attention_logits = matmul_qk / tf.math.sqrt(dk)
+
+    if mask is not None:
+        scaled_attention_logits += (mask * -1e9)
+
+    attention_weights = tf.nn.softmax(scaled_attention_logits, axis=-1)
+
+    output = tf.matmul(attention_weights, v)
+
+    return output, attention_weights
 
 
 def print_out(q, k, v):
@@ -202,8 +216,7 @@ class MultiHeadAttention(tf.keras.layers.Layer):
 
 temp_mha = MultiHeadAttention(d_model=512, num_heads=8)
 y = tf.random.uniform((1, 60, 512))
-out, attn = temp_mha(y, k=y, q=y, mask=None)
-out.shape, attn.shape
+out, _ = temp_mha(y, k=y, q=y, mask=None)
 
 
 def point_wise_feed_forward_network(d_model, dff):
@@ -214,7 +227,6 @@ def point_wise_feed_forward_network(d_model, dff):
 
 
 sample_ffn = point_wise_feed_forward_network(512, 2048)
-sample_ffn(tf.random.uniform((64, 50, 512))).shape
 
 
 class EncoderLayer(tf.keras.layers.Layer):
@@ -224,8 +236,8 @@ class EncoderLayer(tf.keras.layers.Layer):
         self.mha = MultiHeadAttention(d_model, num_heads)
         self.ffn = point_wise_feed_forward_network(d_model, dff)
 
-        self.layernorm1 = tf.keras.layers.LayerNormalization(epsilon=1e-6)
-        self.layernorm2 = tf.keras.layers.LayerNormalization(epsilon=1e-6)
+        self.first_layer_norm = tf.keras.layers.LayerNormalization(epsilon=1e-6)
+        self.second_layer_norm = tf.keras.layers.LayerNormalization(epsilon=1e-6)
 
         self.dropout1 = tf.keras.layers.Dropout(rate)
         self.dropout2 = tf.keras.layers.Dropout(rate)
@@ -233,11 +245,11 @@ class EncoderLayer(tf.keras.layers.Layer):
     def call(self, x, training, mask):
         attn_output, _ = self.mha(x, x, x, mask)
         attn_output = self.dropout1(attn_output, training=training)
-        out1 = self.layernorm1(x + attn_output)
+        out1 = self.first_layer_norm(x + attn_output)
 
         ffn_output = self.ffn(out1)
         ffn_output = self.dropout2(ffn_output, training=training)
-        out2 = self.layernorm2(out1 + ffn_output)
+        out2 = self.second_layer_norm(out1 + ffn_output)
 
         return out2
 
@@ -246,8 +258,6 @@ sample_encoder_layer = EncoderLayer(512, 8, 2048)
 
 sample_encoder_layer_output = sample_encoder_layer(
     tf.random.uniform((64, 43, 512)), False, None)
-
-sample_encoder_layer_output.shape
 
 
 class DecoderLayer(tf.keras.layers.Layer):
@@ -259,9 +269,9 @@ class DecoderLayer(tf.keras.layers.Layer):
 
         self.ffn = point_wise_feed_forward_network(d_model, dff)
 
-        self.layernorm1 = tf.keras.layers.LayerNormalization(epsilon=1e-6)
-        self.layernorm2 = tf.keras.layers.LayerNormalization(epsilon=1e-6)
-        self.layernorm3 = tf.keras.layers.LayerNormalization(epsilon=1e-6)
+        self.first_layer_norm = tf.keras.layers.LayerNormalization(epsilon=1e-6)
+        self.second_layer_norm = tf.keras.layers.LayerNormalization(epsilon=1e-6)
+        self.third_layer_norm = tf.keras.layers.LayerNormalization(epsilon=1e-6)
 
         self.dropout1 = tf.keras.layers.Dropout(rate)
         self.dropout2 = tf.keras.layers.Dropout(rate)
@@ -271,16 +281,16 @@ class DecoderLayer(tf.keras.layers.Layer):
              look_ahead_mask, padding_mask):
         attn1, attn_weights_block1 = self.mha1(x, x, x, look_ahead_mask)
         attn1 = self.dropout1(attn1, training=training)
-        out1 = self.layernorm1(attn1 + x)
+        out1 = self.first_layer_norm(attn1 + x)
 
         attn2, attn_weights_block2 = self.mha2(
             enc_output, enc_output, out1, padding_mask)
         attn2 = self.dropout2(attn2, training=training)
-        out2 = self.layernorm2(attn2 + out1)
+        out2 = self.second_layer_norm(attn2 + out1)
 
         ffn_output = self.ffn(out2)
         ffn_output = self.dropout3(ffn_output, training=training)
-        out3 = self.layernorm3(ffn_output + out2)
+        out3 = self.third_layer_norm(ffn_output + out2)
 
         return out3, attn_weights_block1, attn_weights_block2
 
@@ -290,8 +300,6 @@ sample_decoder_layer = DecoderLayer(512, 8, 2048)
 sample_decoder_layer_output, _, _ = sample_decoder_layer(
     tf.random.uniform((64, 50, 512)), sample_encoder_layer_output,
     False, None, None)
-
-sample_decoder_layer_output.shape
 
 
 class Encoder(tf.keras.layers.Layer):
@@ -383,8 +391,6 @@ output, attn = sample_decoder(temp_input,
                               look_ahead_mask=None,
                               padding_mask=None)
 
-output.shape, attn['decoder_layer2_block2'].shape
-
 
 class ContinuousTransformer(tf.keras.Model):
     def __init__(self, num_layers, d_model, num_heads, dff, input_vocab_size,
@@ -410,6 +416,9 @@ class ContinuousTransformer(tf.keras.Model):
 
         return final_output, attention_weights
 
+    def get_config(self):
+        return None
+
 
 sample_continuous_transformer = ContinuousTransformer(
     num_layers=2, d_model=512, num_heads=8, dff=2048,
@@ -423,8 +432,6 @@ fn_out, _ = sample_continuous_transformer(temp_input, temp_target, training=Fals
                                           enc_padding_mask=None,
                                           look_ahead_mask=None,
                                           dec_padding_mask=None)
-
-fn_out.shape
 
 num_layers = 4
 d_model = 128
@@ -450,6 +457,9 @@ class CustomSchedule(tf.keras.optimizers.schedules.LearningRateSchedule):
         arg2 = step * (self.warmup_steps ** -1.5)
 
         return tf.math.rsqrt(self.d_model) * tf.math.minimum(arg1, arg2)
+
+    def get_config(self):
+        return None
 
 
 learning_rate = CustomSchedule(d_model)
@@ -511,7 +521,7 @@ if ckpt_manager.latest_checkpoint:
     ckpt.restore(ckpt_manager.latest_checkpoint)
     print('Latest checkpoint restored!!')
 
-EPOCHS = 20
+EPOCHS = 1
 
 train_step_signature = [
     tf.TensorSpec(shape=(None, None), dtype=tf.int64),
@@ -575,6 +585,7 @@ def evaluate(inp_sentence):
 
     decoder_input = [tokenizer_en.vocab_size]
     output = tf.expand_dims(decoder_input, 0)
+    attention_weights = None
 
     for i in range(MAX_LENGTH):
         enc_padding_mask, combined_mask, dec_padding_mask = create_masks(
@@ -643,16 +654,3 @@ def translate(sentence, plot=''):
 
     if plot:
         plot_attention_weights(attention_weights, sentence, result, plot)
-
-
-translate("este é um problema que temos que resolver.")
-print("Real translation: this is a problem we have to solve .")
-
-translate("os meus vizinhos ouviram sobre esta ideia.")
-print("Real translation: and my neighboring homes heard about this idea .")
-
-translate("vou então muito rapidamente partilhar convosco algumas histórias de algumas coisas mágicas que aconteceram.")
-print("Real translation: so i 'll just share with you some stories very quickly of some magical things that have happened .")
-
-translate("este é o primeiro livro que eu fiz.", plot='decoder_layer4_block2')
-print("Real translation: this is the first book i've ever done.")
