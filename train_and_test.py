@@ -3,10 +3,11 @@ from os.path import join
 
 from numpy import load, array
 from numpy.random import random, shuffle
-from tensorflow.keras import Input, Model
 from tensorflow.keras.callbacks import ModelCheckpoint
 from tensorflow.keras.losses import MeanSquaredError
 from tensorflow.keras.optimizers import RMSprop
+
+from models.continuous_transformer import ContinuousTransformer
 
 
 class ProblemLoader:
@@ -81,10 +82,7 @@ class ProblemLoader:
         return processed_sequences
 
     def train_and_test(self):
-        signal_input = Input(shape=(self.sequence_length, self.input_length))
-        time_input = Input(shape=(self.sequence_length, 1))
-        y = signal_input # build right output function
-        model = Model(inputs=[signal_input, time_input], outputs=[y])
+        model = ContinuousTransformer([(self.sequence_length, self.input_length), (self.sequence_length, 1)], [(self.sequence_length, self.input_length)])
         model.compile(optimizer=RMSprop(0.005), loss=MeanSquaredError())
         model.summary()
         model.fit(
