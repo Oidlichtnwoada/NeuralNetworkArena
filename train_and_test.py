@@ -68,6 +68,7 @@ class ProblemLoader:
         return sequences
 
     def split_data(self, sequences):
+        # partition data for training, validation and test
         sequences_length = len(sequences)
         test_data_length = int(sequences_length * self.test_data_percentage)
         validation_data_length = int(sequences_length * self.validation_data_percentage)
@@ -82,6 +83,7 @@ class ProblemLoader:
         return processed_sequences
 
     def train_and_test(self):
+        # train the model parameters using gradient descent and test it afterwards
         model = ContinuousTransformer([(self.sequence_length, self.input_length), (self.sequence_length, 1)], [(self.sequence_length, self.input_length)])
         model.compile(optimizer=RMSprop(0.005), loss=MeanSquaredError())
         model.fit(
