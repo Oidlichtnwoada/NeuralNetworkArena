@@ -215,7 +215,7 @@ class Decoder(tf.keras.layers.Layer):
 
 
 class ContinuousTransformer(tf.keras.Model):
-    def __init__(self, input_shape, output_shape, num_layers=6, d_model=512, num_heads=8, dff=2048, input_vocab_size=10000,
+    def __init__(self, input_shape, output_shape, num_layers=4, d_model=128, num_heads=4, dff=512, input_vocab_size=10000,
                  target_vocab_size=10000, pe_input=10000, pe_target=10000, rate=0.1):
         super(ContinuousTransformer, self).__init__()
         self.encoder = Encoder(num_layers, d_model, num_heads, dff, input_vocab_size, pe_input, rate)
