@@ -48,7 +48,7 @@ class ProblemLoader:
             for index in range(len(input_dataset)):
                 interval += 1
                 if random() > self.skip_percentage:
-                    lossy_input_dataset.append(input_dataset[index - interval + 1])
+                    lossy_input_dataset.append(input_dataset[index])
                     lossy_time_dataset.append([interval])
                     lossy_output_dataset.append(output_dataset[index])
                     interval = 0
