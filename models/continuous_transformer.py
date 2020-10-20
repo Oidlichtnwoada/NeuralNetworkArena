@@ -222,7 +222,28 @@ class ContinuousTransformer(tf.keras.Model):
         self.decoder = Decoder(num_layers, d_model, num_heads, dff, target_vocab_size, pe_target, rate)
         self.final_layer = tf.keras.layers.Dense(target_vocab_size)
 
-    def call(self, inp, tar, training):
+    def call(self, inp, training):
+        tokenizer_en = get_tokenizer_en()
+        tokenizer_pt = get_tokenizer_pt()
+        start_token = [tokenizer_pt.vocab_size]
+        end_token = [tokenizer_pt.vocab_size + 1]
+        inp_sentence = start_token + tokenizer_pt.encode(inp) + end_token
+        encoder_input = tf.expand_dims(inp_sentence, 0)
+        decoder_input = [tokenizer_en.vocab_size]
+        output = tf.expand_dims(decoder_input, 0)
+        attention_weights = None
+        for i in range(40):
+            predictions, attention_weights = self.call_step(encoder_input, output, training)
+            predictions = predictions[:, -1:, :]
+            predicted_id = tf.cast(tf.argmax(predictions, axis=-1), tf.int32)
+            if predicted_id == tokenizer_en.vocab_size + 1:
+                break
+            output = tf.concat([output, predicted_id], axis=-1)
+        result = tf.squeeze(output, axis=0)
+        ret = tokenizer_en.decode([i for i in result if i < tokenizer_en.vocab_size])
+        return ret, attention_weights
+
+    def call_step(self, inp, tar, training):
         enc_padding_mask, combined_mask, dec_padding_mask = create_masks(inp, tar)
         enc_output = self.encoder(inp, training, enc_padding_mask)
         dec_output, attention_weights = self.decoder(tar, enc_output, training, combined_mask, dec_padding_mask)
@@ -280,7 +301,7 @@ def train_step(inp, tar, optimizer, continuous_transformer, train_loss, train_ac
     tar_inp = tar[:, :-1]
     tar_real = tar[:, 1:]
     with tf.GradientTape() as tape:
-        predictions, _ = continuous_transformer(inp, tar_inp, True)
+        predictions, _ = continuous_transformer.call_step(inp, tar_inp, True)
         loss = loss_function(tar_real, predictions)
     gradients = tape.gradient(loss, continuous_transformer.trainable_variables)
     optimizer.apply_gradients(zip(gradients, continuous_transformer.trainable_variables))
@@ -313,29 +334,7 @@ def train(continuous_transformer, epochs):
         print('Time taken for 1 epoch: {} secs\n'.format(time.time() - start))
 
 
-def evaluate(inp_sentence, continuous_transformer):
-    tokenizer_en = get_tokenizer_en()
-    tokenizer_pt = get_tokenizer_pt()
-    start_token = [tokenizer_pt.vocab_size]
-    end_token = [tokenizer_pt.vocab_size + 1]
-    inp_sentence = start_token + tokenizer_pt.encode(inp_sentence) + end_token
-    encoder_input = tf.expand_dims(inp_sentence, 0)
-    decoder_input = [tokenizer_en.vocab_size]
-    output = tf.expand_dims(decoder_input, 0)
-    attention_weights = None
-    for i in range(40):
-        predictions, attention_weights = continuous_transformer(encoder_input, output, False)
-        predictions = predictions[:, -1:, :]
-        predicted_id = tf.cast(tf.argmax(predictions, axis=-1), tf.int32)
-        if predicted_id == tokenizer_en.vocab_size + 1:
-            return tf.squeeze(output, axis=0), attention_weights
-        output = tf.concat([output, predicted_id], axis=-1)
-    return tf.squeeze(output, axis=0), attention_weights
-
-
 def translate(sentence, continuous_transformer):
-    tokenizer_en = get_tokenizer_en()
-    result, attention_weights = evaluate(sentence, continuous_transformer)
-    predicted_sentence = tokenizer_en.decode([i for i in result if i < tokenizer_en.vocab_size])
-    print('Input: {}'.format(sentence))
-    print('Predicted translation: {}'.format(predicted_sentence))
+    result, _ = continuous_transformer(sentence, False)
+    print(f'translation input: {sentence}')
+    print(f'translation output: {result}')
