@@ -7,7 +7,7 @@ from tensorflow.keras.callbacks import ModelCheckpoint
 from tensorflow.keras.losses import MeanSquaredError
 from tensorflow.keras.optimizers import RMSprop
 
-from models.continuous_transformer import ContinuousTransformer
+from models.continuous_reformer import ContinuousReformer
 
 
 class ProblemLoader:
@@ -84,7 +84,7 @@ class ProblemLoader:
 
     def train_and_test(self):
         # train the model parameters using gradient descent and test it afterwards
-        model = ContinuousTransformer([(self.sequence_length, self.input_length), (self.sequence_length, 1)], [(self.sequence_length, self.input_length)])
+        model = ContinuousReformer([(self.sequence_length, self.input_length), (self.sequence_length, 1)], [(self.sequence_length, self.input_length)])
         model.compile(optimizer=RMSprop(0.005), loss=MeanSquaredError())
         model.fit(
             x=(self.training_sequences[0], self.training_sequences[1]),
