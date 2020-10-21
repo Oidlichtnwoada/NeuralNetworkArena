@@ -79,7 +79,7 @@ class ProblemLoader:
         for sequence in [test_sequences, validation_sequences, training_sequences]:
             processed_sequences.append((array([x[0] for x in sequence]),
                                         array([x[1] for x in sequence]),
-                                        array([x[2] for x in sequence])))
+                                        array([x[2][-1] for x in sequence])))
         return processed_sequences
 
     def train_and_test(self):
