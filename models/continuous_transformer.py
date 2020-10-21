@@ -7,8 +7,8 @@ def get_angles(pos, i, d_model):
     return pos * angle_rates
 
 
-def positional_encoding(position, d_model):
-    angle_rads = get_angles(np.arange(position)[:, np.newaxis], np.arange(d_model)[np.newaxis, :], d_model)
+def positional_encoding(positions, d_model):
+    angle_rads = get_angles(positions[:, np.newaxis], np.arange(d_model)[np.newaxis, :], d_model)
     angle_rads[:, 0::2] = np.sin(angle_rads[:, 0::2])
     angle_rads[:, 1::2] = np.cos(angle_rads[:, 1::2])
     pos_encoding = angle_rads[np.newaxis, ...]
@@ -139,9 +139,10 @@ class Encoder(tf.keras.layers.Layer):
         self.dropout = tf.keras.layers.Dropout(rate)
         self.pos_encoding = None
 
-    def call(self, x, training, mask):
+    def call(self, x, time_intervals, training, mask):
         seq_len = tf.shape(x)[1]
-        self.pos_encoding = positional_encoding(seq_len, self.d_model)
+        positions = np.array(tf.squeeze(tf.cumsum(time_intervals)))
+        self.pos_encoding = positional_encoding(positions, self.d_model)
         x = self.embedding(x)
         x *= tf.math.sqrt(tf.cast(self.d_model, tf.float32))
         x += self.pos_encoding[:, :seq_len, :]
@@ -157,7 +158,8 @@ class Decoder(tf.keras.layers.Layer):
         self.d_model = d_model
         self.num_layers = num_layers
         self.embedding = tf.keras.layers.Dense(d_model)
-        self.pos_encoding = positional_encoding(maximum_position_encoding, d_model)
+        positions = np.arange(maximum_position_encoding)
+        self.pos_encoding = positional_encoding(positions, d_model)
         self.dec_layers = [DecoderLayer(d_model, num_heads, dff, rate) for _ in range(num_layers)]
         self.dropout = tf.keras.layers.Dropout(rate)
 
@@ -190,15 +192,15 @@ class ContinuousTransformer(tf.keras.Model):
         decoder_input = tf.zeros((1, self.output_token_size))
         output = tf.expand_dims(decoder_input, 0)
         for i in range(self.output_token_amount):
-            prediction, _ = self.call_step(encoder_input, output, training)
+            prediction, _ = self.call_step(encoder_input, output, time_intervals, training)
             prediction = prediction[:, -1:, :]
             output = tf.concat([output, prediction], axis=1)
         result = tf.squeeze(output)[1:]
         return result
 
-    def call_step(self, inp, tar, training):
+    def call_step(self, inp, tar, time_intervals, training):
         enc_padding_mask, combined_mask, dec_padding_mask = create_masks(inp, tar)
-        enc_output = self.encoder(inp, training, enc_padding_mask)
+        enc_output = self.encoder(inp, time_intervals, training, enc_padding_mask)
         dec_output, attention_weights = self.decoder(tar, enc_output, training, combined_mask, dec_padding_mask)
         final_output = self.final_layer(dec_output)
         return final_output, attention_weights
