@@ -176,26 +176,26 @@ class Decoder(tf.keras.layers.Layer):
 
 
 class ContinuousTransformer(tf.keras.Model):
-    def __init__(self, output_length, num_layers=4, d_model=128, num_heads=4, dff=512, input_vocab_size=10000,
+    def __init__(self, output_token_amount, output_token_size=1, num_layers=4, d_model=128, num_heads=4, dff=512, input_vocab_size=10000,
                  target_vocab_size=10000, pe_input=10000, pe_target=10000, rate=0.1):
         super(ContinuousTransformer, self).__init__()
         self.encoder = Encoder(num_layers, d_model, num_heads, dff, input_vocab_size, pe_input, rate)
         self.decoder = Decoder(num_layers, d_model, num_heads, dff, target_vocab_size, pe_target, rate)
-        self.final_layer = tf.keras.layers.Dense(1)
-        self.output_length = output_length
+        self.final_layer = tf.keras.layers.Dense(output_token_size)
+        self.output_token_amount = output_token_amount
+        self.output_token_size = output_token_size
 
     def call(self, inputs, training=False):
         input_vectors, time_intervals = inputs
         encoder_input = tf.expand_dims(input_vectors, 0)
-        decoder_input = tf.zeros((1, 1))
+        decoder_input = tf.zeros((1, self.output_token_size))
         output = tf.expand_dims(decoder_input, 0)
-        attention_weights = None
-        for i in range(self.output_length):
-            predictions, attention_weights = self.call_step(encoder_input, output, training)
+        for i in range(self.output_token_amount):
+            predictions, _ = self.call_step(encoder_input, output, training)
             predictions = predictions[:, -1:, :]
             output = tf.concat([output, predictions], axis=1)
         result = tf.squeeze(output)[1:]
-        return result, attention_weights
+        return result
 
     def call_step(self, inp, tar, training):
         enc_padding_mask, combined_mask, dec_padding_mask = create_masks(inp, tar)

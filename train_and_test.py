@@ -86,8 +86,7 @@ class ProblemLoader:
         # train the model parameters using gradient descent and test it afterwards
         model = ContinuousTransformer(self.input_length)
         model.compile(optimizer=RMSprop(0.005), loss=MeanSquaredError())
-        print(model((self.training_sequences[0][0], self.training_sequences[1][0]))[0])
-        model.summary()
+        print(model((self.training_sequences[0][0], self.training_sequences[1][0])))
         model.fit(
             x=(self.training_sequences[0], self.training_sequences[1]),
             y=self.training_sequences[2],
