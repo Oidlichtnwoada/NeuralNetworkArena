@@ -1,27 +1,5 @@
 import numpy as np
 import tensorflow as tf
-import tensorflow_datasets as tfds
-
-
-def get_train_examples():
-    examples, _ = tfds.load('ted_hrlr_translate/pt_to_en', with_info=True, as_supervised=True)
-    return examples['train']
-
-
-def get_tokenizer_en():
-    return tfds.deprecated.text.SubwordTextEncoder.build_from_corpus((en.numpy() for pt, en in get_train_examples()), target_vocab_size=2 ** 13)
-
-
-def get_tokenizer_pt():
-    return tfds.deprecated.text.SubwordTextEncoder.build_from_corpus((pt.numpy() for pt, en in get_train_examples()), target_vocab_size=2 ** 13)
-
-
-def encode(lang1, lang2):
-    tokenizer_en = get_tokenizer_en()
-    tokenizer_pt = get_tokenizer_pt()
-    lang1 = [tokenizer_pt.vocab_size] + tokenizer_pt.encode(lang1.numpy()) + [tokenizer_pt.vocab_size + 1]
-    lang2 = [tokenizer_en.vocab_size] + tokenizer_en.encode(lang2.numpy()) + [tokenizer_en.vocab_size + 1]
-    return lang1, lang2
 
 
 def get_angles(pos, i, d_model):
