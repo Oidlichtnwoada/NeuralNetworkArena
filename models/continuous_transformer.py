@@ -190,9 +190,9 @@ class ContinuousTransformer(tf.keras.Model):
         decoder_input = tf.zeros((1, self.output_token_size))
         output = tf.expand_dims(decoder_input, 0)
         for i in range(self.output_token_amount):
-            predictions, _ = self.call_step(encoder_input, output, training)
-            predictions = predictions[:, -1:, :]
-            output = tf.concat([output, predictions], axis=1)
+            prediction, _ = self.call_step(encoder_input, output, training)
+            prediction = prediction[:, -1:, :]
+            output = tf.concat([output, prediction], axis=1)
         result = tf.squeeze(output)[1:]
         return result
 
