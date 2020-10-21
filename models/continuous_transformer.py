@@ -39,6 +39,7 @@ def positional_encoding(position, d_model):
 
 def create_padding_mask(seq):
     seq = tf.cast(tf.math.equal(seq, 0), tf.float32)
+    seq = tf.reduce_max(seq, axis=2)
     return seq[:, tf.newaxis, tf.newaxis, :]
 
 
@@ -155,7 +156,7 @@ class Encoder(tf.keras.layers.Layer):
         super(Encoder, self).__init__()
         self.d_model = d_model
         self.num_layers = num_layers
-        self.embedding = tf.keras.layers.Embedding(input_vocab_size, d_model)
+        self.embedding = tf.keras.layers.Dense(d_model)
         self.pos_encoding = positional_encoding(maximum_position_encoding, self.d_model)
         self.enc_layers = [EncoderLayer(d_model, num_heads, dff, rate) for _ in range(num_layers)]
         self.dropout = tf.keras.layers.Dropout(rate)
@@ -177,7 +178,7 @@ class Decoder(tf.keras.layers.Layer):
         super(Decoder, self).__init__()
         self.d_model = d_model
         self.num_layers = num_layers
-        self.embedding = tf.keras.layers.Embedding(target_vocab_size, d_model)
+        self.embedding = tf.keras.layers.Dense(d_model)
         self.pos_encoding = positional_encoding(maximum_position_encoding, d_model)
         self.dec_layers = [DecoderLayer(d_model, num_heads, dff, rate) for _ in range(num_layers)]
         self.dropout = tf.keras.layers.Dropout(rate)
@@ -197,33 +198,26 @@ class Decoder(tf.keras.layers.Layer):
 
 
 class ContinuousTransformer(tf.keras.Model):
-    def __init__(self, input_shape, output_shape, num_layers=4, d_model=128, num_heads=4, dff=512, input_vocab_size=10000,
+    def __init__(self, output_length, num_layers=4, d_model=128, num_heads=4, dff=512, input_vocab_size=10000,
                  target_vocab_size=10000, pe_input=10000, pe_target=10000, rate=0.1):
         super(ContinuousTransformer, self).__init__()
         self.encoder = Encoder(num_layers, d_model, num_heads, dff, input_vocab_size, pe_input, rate)
         self.decoder = Decoder(num_layers, d_model, num_heads, dff, target_vocab_size, pe_target, rate)
-        self.final_layer = tf.keras.layers.Dense(target_vocab_size)
-        self.tokenizer_en = get_tokenizer_en()
-        self.tokenizer_pt = get_tokenizer_pt()
+        self.final_layer = tf.keras.layers.Dense(1)
+        self.output_length = output_length
 
-    def call(self, inp, training=False):
-        start_token = [self.tokenizer_pt.vocab_size]
-        end_token = [self.tokenizer_pt.vocab_size + 1]
-        inp_sentence = start_token + self.tokenizer_pt.encode(inp) + end_token
-        encoder_input = tf.expand_dims(inp_sentence, 0)
-        decoder_input = [self.tokenizer_en.vocab_size]
+    def call(self, inputs, training=False):
+        input_vectors, time_intervals = inputs
+        encoder_input = tf.expand_dims(input_vectors, 0)
+        decoder_input = tf.zeros((1, 1))
         output = tf.expand_dims(decoder_input, 0)
         attention_weights = None
-        for i in range(40):
+        for i in range(self.output_length):
             predictions, attention_weights = self.call_step(encoder_input, output, training)
             predictions = predictions[:, -1:, :]
-            predicted_id = tf.cast(tf.argmax(predictions, axis=-1), tf.int32)
-            if predicted_id == self.tokenizer_en.vocab_size + 1:
-                break
-            output = tf.concat([output, predicted_id], axis=-1)
-        result = tf.squeeze(output, axis=0)
-        ret = self.tokenizer_en.decode([i for i in result if i < self.tokenizer_en.vocab_size])
-        return ret, attention_weights
+            output = tf.concat([output, predictions], axis=1)
+        result = tf.squeeze(output)[1:]
+        return result, attention_weights
 
     def call_step(self, inp, tar, training):
         enc_padding_mask, combined_mask, dec_padding_mask = create_masks(inp, tar)
