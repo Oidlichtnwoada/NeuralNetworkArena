@@ -8,7 +8,7 @@ def get_angles(pos, i, d_model):
 
 
 def positional_encoding(positions, d_model):
-    angle_rads = get_angles(positions[:, np.newaxis], np.arange(d_model)[np.newaxis, :], d_model)
+    angle_rads = get_angles(positions.numpy()[:, np.newaxis], np.arange(d_model)[np.newaxis, :], d_model)
     angle_rads[:, 0::2] = np.sin(angle_rads[:, 0::2])
     angle_rads[:, 1::2] = np.cos(angle_rads[:, 1::2])
     pos_encoding = angle_rads[np.newaxis, ...]
@@ -141,7 +141,7 @@ class Encoder(tf.keras.layers.Layer):
 
     def call(self, x, time_intervals, training, mask):
         seq_len = tf.shape(x)[1]
-        positions = np.array(tf.squeeze(tf.cumsum(time_intervals)))
+        positions = tf.squeeze(tf.cumsum(time_intervals))
         self.pos_encoding = positional_encoding(positions, self.d_model)
         x = self.embedding(x)
         x *= tf.math.sqrt(tf.cast(self.d_model, tf.float32))
@@ -158,7 +158,7 @@ class Decoder(tf.keras.layers.Layer):
         self.d_model = d_model
         self.num_layers = num_layers
         self.embedding = tf.keras.layers.Dense(d_model)
-        positions = np.arange(maximum_position_encoding)
+        positions = tf.convert_to_tensor(range(maximum_position_encoding))
         self.pos_encoding = positional_encoding(positions, d_model)
         self.dec_layers = [DecoderLayer(d_model, num_heads, dff, rate) for _ in range(num_layers)]
         self.dropout = tf.keras.layers.Dropout(rate)
