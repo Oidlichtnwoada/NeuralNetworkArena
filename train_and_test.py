@@ -21,6 +21,7 @@ class ProblemLoader:
         self.validation_sequences = None
         self.training_sequences = None
         self.input_length = None
+        self.weights_directory = 'weights/checkpoint'
 
     def build_datasets(self):
         # return test, training and validation set
@@ -86,19 +87,20 @@ class ProblemLoader:
         # train the model parameters using gradient descent and test it afterwards
         model = ContinuousTransformer(self.input_length)
         model.compile(optimizer=RMSprop(0.005), loss=MeanSquaredError(), run_eagerly=True)
-        print(model.predict((self.training_sequences[0][0], self.training_sequences[1][0]), batch_size=self.sequence_length))
+        model.load_weights(self.weights_directory)
+        print(f'sample prediction: {model.predict((self.training_sequences[0][0], self.training_sequences[1][0]), batch_size=self.sequence_length)}')
         model.summary()
         model.fit(
             x=(self.training_sequences[0], self.training_sequences[1]),
             y=self.training_sequences[2],
-            batch_size=128,
-            epochs=200,
+            batch_size=1,
+            epochs=1,
             validation_data=((self.validation_sequences[0], self.validation_sequences[1]), self.validation_sequences[2]),
-            callbacks=[ModelCheckpoint('weights/checkpoint', save_best_only=True, save_weights_only=True)],
+            callbacks=[ModelCheckpoint(self.weights_directory, save_best_only=True, save_weights_only=True)],
         )
-        model.load_weights('weights/checkpoint')
-        best_test_loss = model.evaluate(x=(self.test_sequences[0], self.test_sequences[1]), y=self.test_sequences[2])
-        print(f'best test loss: {best_test_loss}')
+        model.load_weights(self.weights_directory)
+        test_loss = model.evaluate(x=(self.test_sequences[0], self.test_sequences[1]), y=self.test_sequences[2], batch_size=1)
+        print(f'test loss: {test_loss}')
 
 
 problem_loader = ProblemLoader()

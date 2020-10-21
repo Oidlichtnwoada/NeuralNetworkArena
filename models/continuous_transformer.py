@@ -188,7 +188,7 @@ class ContinuousTransformer(tf.keras.Model):
 
     def call(self, inputs, training=False):
         input_vectors, time_intervals = inputs
-        encoder_input = tf.expand_dims(input_vectors, 0)
+        encoder_input = tf.expand_dims(tf.squeeze(input_vectors), 0)
         decoder_input = tf.zeros((1, self.output_token_size))
         output = tf.expand_dims(decoder_input, 0)
         encoder_output = None
