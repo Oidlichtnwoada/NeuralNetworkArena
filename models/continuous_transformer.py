@@ -191,19 +191,17 @@ class ContinuousTransformer(tf.keras.Model):
         encoder_input = tf.expand_dims(input_vectors, 0)
         decoder_input = tf.zeros((1, self.output_token_size))
         output = tf.expand_dims(decoder_input, 0)
+        encoder_output = None
         for i in range(self.output_token_amount):
-            prediction, _ = self.call_step(encoder_input, output, time_intervals, training)
+            enc_padding_mask, combined_mask, dec_padding_mask = create_masks(encoder_input, output)
+            if encoder_output is None:
+                enc_output = self.encoder(encoder_input, time_intervals, training, enc_padding_mask)
+            dec_output, attention_weights = self.decoder(output, enc_output, training, combined_mask, dec_padding_mask)
+            prediction = self.final_layer(dec_output)
             prediction = prediction[:, -1:, :]
             output = tf.concat([output, prediction], axis=1)
         result = tf.squeeze(output)[1:]
         return result
-
-    def call_step(self, inp, tar, time_intervals, training):
-        enc_padding_mask, combined_mask, dec_padding_mask = create_masks(inp, tar)
-        enc_output = self.encoder(inp, time_intervals, training, enc_padding_mask)
-        dec_output, attention_weights = self.decoder(tar, enc_output, training, combined_mask, dec_padding_mask)
-        final_output = self.final_layer(dec_output)
-        return final_output, attention_weights
 
     def get_config(self):
         return None
