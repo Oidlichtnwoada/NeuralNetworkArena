@@ -130,17 +130,18 @@ class DecoderLayer(tf.keras.layers.Layer):
 
 
 class Encoder(tf.keras.layers.Layer):
-    def __init__(self, num_layers, d_model, num_heads, dff, input_vocab_size, maximum_position_encoding, rate=0.1):
+    def __init__(self, num_layers, d_model, num_heads, dff, rate=0.1):
         super(Encoder, self).__init__()
         self.d_model = d_model
         self.num_layers = num_layers
         self.embedding = tf.keras.layers.Dense(d_model)
-        self.pos_encoding = positional_encoding(maximum_position_encoding, self.d_model)
         self.enc_layers = [EncoderLayer(d_model, num_heads, dff, rate) for _ in range(num_layers)]
         self.dropout = tf.keras.layers.Dropout(rate)
+        self.pos_encoding = None
 
     def call(self, x, training, mask):
         seq_len = tf.shape(x)[1]
+        self.pos_encoding = positional_encoding(seq_len, self.d_model)
         x = self.embedding(x)
         x *= tf.math.sqrt(tf.cast(self.d_model, tf.float32))
         x += self.pos_encoding[:, :seq_len, :]
@@ -151,8 +152,7 @@ class Encoder(tf.keras.layers.Layer):
 
 
 class Decoder(tf.keras.layers.Layer):
-    def __init__(self, num_layers, d_model, num_heads, dff, target_vocab_size,
-                 maximum_position_encoding, rate=0.1):
+    def __init__(self, num_layers, d_model, num_heads, dff, maximum_position_encoding, rate=0.1):
         super(Decoder, self).__init__()
         self.d_model = d_model
         self.num_layers = num_layers
@@ -176,11 +176,10 @@ class Decoder(tf.keras.layers.Layer):
 
 
 class ContinuousTransformer(tf.keras.Model):
-    def __init__(self, output_token_amount, output_token_size=1, num_layers=4, d_model=128, num_heads=4, dff=512, input_vocab_size=10000,
-                 target_vocab_size=10000, pe_input=10000, pe_target=10000, rate=0.1):
+    def __init__(self, output_token_amount, output_token_size=1, num_layers=4, d_model=128, num_heads=4, dff=512, rate=0.1):
         super(ContinuousTransformer, self).__init__()
-        self.encoder = Encoder(num_layers, d_model, num_heads, dff, input_vocab_size, pe_input, rate)
-        self.decoder = Decoder(num_layers, d_model, num_heads, dff, target_vocab_size, pe_target, rate)
+        self.encoder = Encoder(num_layers, d_model, num_heads, dff, rate)
+        self.decoder = Decoder(num_layers, d_model, num_heads, dff, output_token_amount + 1, rate)
         self.final_layer = tf.keras.layers.Dense(output_token_size)
         self.output_token_amount = output_token_amount
         self.output_token_size = output_token_size
