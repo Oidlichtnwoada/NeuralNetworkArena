@@ -88,7 +88,7 @@ class ProblemLoader:
         model = ContinuousTransformer(self.input_length)
         model.compile(optimizer=RMSprop(0.005), loss=MeanSquaredError(), run_eagerly=True)
         model.load_weights(self.weights_directory)
-        print(f'sample prediction: {model.predict((self.training_sequences[0][0], self.training_sequences[1][0]), batch_size=self.sequence_length)}')
+        print(f'sample prediction: {model.predict((self.training_sequences[0][:2], self.training_sequences[1][:2]), batch_size=1)}')
         model.summary()
         model.fit(
             x=(self.training_sequences[0], self.training_sequences[1]),
