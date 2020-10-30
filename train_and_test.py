@@ -107,8 +107,7 @@ class ProblemLoader:
         # update the instance properties
         self.test_sequences, self.validation_sequences, self.training_sequences = test_sequences, validation_sequences, training_sequences
 
-    def train_and_test(self, training):
-        # train the model parameters using gradient descent and test it afterwards
+    def get_model(self):
         inputs = [Input(shape=(self.sequence_length, self.input_length)), Input(shape=(self.sequence_length, 1))]
         if self.model == 'transformer':
             self.transform_sequences()
@@ -118,21 +117,29 @@ class ProblemLoader:
         model = Model(inputs=inputs, outputs=outputs)
         model.compile(optimizer=RMSprop(0.005), loss=MeanSquaredError())
         model.summary()
-        if training:
-            model.fit(
-                x=(self.training_sequences[0], self.training_sequences[1]),
-                y=self.training_sequences[2],
-                batch_size=128,
-                epochs=200,
-                validation_data=((self.validation_sequences[0], self.validation_sequences[1]), self.validation_sequences[2]),
-                callbacks=[ModelCheckpoint(self.weights_directory, save_best_only=True, save_weights_only=True)],
-            )
-        else:
-            model.load_weights(self.weights_directory).expect_partial()
-            test_loss = model.evaluate(x=(self.test_sequences[0], self.test_sequences[1]), y=self.test_sequences[2])
-            print(f'test loss: {test_loss}')
+        return model
+
+    def train(self):
+        # train the model parameters using gradient descent
+        model = self.get_model()
+        model.fit(
+            x=(self.training_sequences[0], self.training_sequences[1]),
+            y=self.training_sequences[2],
+            batch_size=128,
+            epochs=200,
+            validation_data=((self.validation_sequences[0], self.validation_sequences[1]), self.validation_sequences[2]),
+            callbacks=[ModelCheckpoint(self.weights_directory, save_best_only=True, save_weights_only=True)]
+        )
+
+    def test(self):
+        # evaluate the loss on the test dataset
+        model = self.get_model()
+        model.load_weights(self.weights_directory).expect_partial()
+        test_loss = model.evaluate(x=(self.test_sequences[0], self.test_sequences[1]), y=self.test_sequences[2])
+        print(f'test loss: {test_loss}')
 
 
 problem_loader = ProblemLoader(model='transformer', problem_name='walker')
 problem_loader.build_datasets()
-problem_loader.train_and_test(training=True)
+problem_loader.train()
+problem_loader.test()
