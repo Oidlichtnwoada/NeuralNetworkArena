@@ -1,13 +1,14 @@
 from os import listdir
 from os.path import join
 
-from numpy import load, array
+from numpy import load, array, zeros
 from numpy.random import random, shuffle
+from tensorflow.keras import Model, Input
 from tensorflow.keras.callbacks import ModelCheckpoint
 from tensorflow.keras.losses import MeanSquaredError
 from tensorflow.keras.optimizers import RMSprop
 
-from models.continuous_transformer import ContinuousTransformer
+from models.transformer import get_transformer_output
 
 
 class ProblemLoader:
@@ -78,31 +79,57 @@ class ProblemLoader:
         training_sequences = sequences[test_data_length + validation_data_length:]
         processed_sequences = []
         for sequence in [test_sequences, validation_sequences, training_sequences]:
-            processed_sequences.append((array([x[0] for x in sequence]),
+            processed_sequences.append([array([x[0] for x in sequence]),
                                         array([x[1] for x in sequence]),
-                                        array([x[2][-1] for x in sequence])))
+                                        array([x[2] for x in sequence])])
         return processed_sequences
 
-    def train_and_test(self):
+    def transform_sequences(self, shrink_divisor=8):
+        # transform rnn training sequences to transformer training sequences
+        test_sequences, validation_sequences, training_sequences = [[], [], []], [[], [], []], [[], [], []]
+        for input_sequences, output_sequences in [(self.test_sequences, test_sequences), (self.validation_sequences, validation_sequences), (self.training_sequences, training_sequences)]:
+            # create a transformer training sample for each memory length and sequence (shrink to fit in RAM)
+            for sequence_index in range(len(input_sequences[0]) // shrink_divisor):
+                for memory_length in range(1, self.sequence_length + 1):
+                    # zero pad information from future events
+                    input_sequence = input_sequences[0][sequence_index].copy()
+                    input_sequence[memory_length:] = zeros(input_sequence[memory_length:].shape)
+                    output_sequences[0].append(input_sequence)
+                    # zero pad time intervals from future events
+                    time_intervals = input_sequences[1][sequence_index].copy()
+                    time_intervals[memory_length:] = zeros(time_intervals[memory_length:].shape)
+                    output_sequences[1].append(time_intervals)
+                    # only use the next state of the last non-zero state in the input data as expected output data
+                    output_sequences[2].append(input_sequences[2][sequence_index][memory_length - 1].copy())
+            # convert sequences to numpy arrays
+            output_sequences[0], output_sequences[1], output_sequences[2] = array(output_sequences[0]), array(output_sequences[1]), array(output_sequences[2])
+        # update the instance properties
+        self.test_sequences, self.validation_sequences, self.training_sequences = test_sequences, validation_sequences, training_sequences
+
+    def train_and_test(self, model):
         # train the model parameters using gradient descent and test it afterwards
-        model = ContinuousTransformer(self.input_length)
-        model.compile(optimizer=RMSprop(0.005), loss=MeanSquaredError(), run_eagerly=True)
-        model.load_weights(self.weights_directory)
-        print(f'sample prediction: {model.predict((self.training_sequences[0][:2], self.training_sequences[1][:2]), batch_size=1)}')
+        inputs = [Input(shape=(self.sequence_length, self.input_length)), Input(shape=(self.sequence_length, 1))]
+        if model == 'transformer':
+            self.transform_sequences()
+            outputs = [get_transformer_output(inputs)]
+        else:
+            raise NotImplementedError()
+        model = Model(inputs=inputs, outputs=outputs)
+        model.compile(optimizer=RMSprop(), loss=MeanSquaredError())
         model.summary()
         model.fit(
             x=(self.training_sequences[0], self.training_sequences[1]),
             y=self.training_sequences[2],
-            batch_size=1,
-            epochs=1,
+            batch_size=128,
+            epochs=200,
             validation_data=((self.validation_sequences[0], self.validation_sequences[1]), self.validation_sequences[2]),
             callbacks=[ModelCheckpoint(self.weights_directory, save_best_only=True, save_weights_only=True)],
         )
         model.load_weights(self.weights_directory)
-        test_loss = model.evaluate(x=(self.test_sequences[0], self.test_sequences[1]), y=self.test_sequences[2], batch_size=1)
+        test_loss = model.evaluate(x=(self.test_sequences[0], self.test_sequences[1]), y=self.test_sequences[2])
         print(f'test loss: {test_loss}')
 
 
 problem_loader = ProblemLoader()
 problem_loader.build_datasets()
-problem_loader.train_and_test()
+problem_loader.train_and_test('transformer')
