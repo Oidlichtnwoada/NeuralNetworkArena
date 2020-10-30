@@ -8,11 +8,11 @@ from tensorflow.keras.callbacks import ModelCheckpoint
 from tensorflow.keras.losses import MeanSquaredError
 from tensorflow.keras.optimizers import RMSprop
 
-from models.transformer import get_transformer_output
+from models.transformer import transformer
 
 
 class ProblemLoader:
-    def __init__(self, problem_name='walker', sequence_length=64, skip_percentage=0.1, test_data_percentage=0.15, validation_data_percentage=0.1):
+    def __init__(self, model, problem_name, sequence_length=64, skip_percentage=0.1, test_data_percentage=0.15, validation_data_percentage=0.1):
         self.problem_path = join('problems', problem_name)
         self.sequence_length = sequence_length
         self.skip_percentage = skip_percentage
@@ -22,7 +22,8 @@ class ProblemLoader:
         self.validation_sequences = None
         self.training_sequences = None
         self.input_length = None
-        self.weights_directory = 'weights/checkpoint'
+        self.model = model
+        self.weights_directory = f'weights/{problem_name}/{self.model}/checkpoint'
 
     def build_datasets(self):
         # return test, training and validation set
@@ -106,30 +107,32 @@ class ProblemLoader:
         # update the instance properties
         self.test_sequences, self.validation_sequences, self.training_sequences = test_sequences, validation_sequences, training_sequences
 
-    def train_and_test(self, model):
+    def train_and_test(self, training):
         # train the model parameters using gradient descent and test it afterwards
         inputs = [Input(shape=(self.sequence_length, self.input_length)), Input(shape=(self.sequence_length, 1))]
-        if model == 'transformer':
+        if self.model == 'transformer':
             self.transform_sequences()
-            outputs = [get_transformer_output(inputs)]
+            outputs = [transformer(inputs, self.input_length)]
         else:
             raise NotImplementedError()
         model = Model(inputs=inputs, outputs=outputs)
         model.compile(optimizer=RMSprop(0.005), loss=MeanSquaredError())
         model.summary()
-        model.fit(
-            x=(self.training_sequences[0], self.training_sequences[1]),
-            y=self.training_sequences[2],
-            batch_size=128,
-            epochs=200,
-            validation_data=((self.validation_sequences[0], self.validation_sequences[1]), self.validation_sequences[2]),
-            callbacks=[ModelCheckpoint(self.weights_directory, save_best_only=True, save_weights_only=True)],
-        )
-        model.load_weights(self.weights_directory)
-        test_loss = model.evaluate(x=(self.test_sequences[0], self.test_sequences[1]), y=self.test_sequences[2])
-        print(f'test loss: {test_loss}')
+        if training:
+            model.fit(
+                x=(self.training_sequences[0], self.training_sequences[1]),
+                y=self.training_sequences[2],
+                batch_size=128,
+                epochs=200,
+                validation_data=((self.validation_sequences[0], self.validation_sequences[1]), self.validation_sequences[2]),
+                callbacks=[ModelCheckpoint(self.weights_directory, save_best_only=True, save_weights_only=True)],
+            )
+        else:
+            model.load_weights(self.weights_directory).expect_partial()
+            test_loss = model.evaluate(x=(self.test_sequences[0], self.test_sequences[1]), y=self.test_sequences[2])
+            print(f'test loss: {test_loss}')
 
 
-problem_loader = ProblemLoader()
+problem_loader = ProblemLoader(model='transformer', problem_name='walker')
 problem_loader.build_datasets()
-problem_loader.train_and_test('transformer')
+problem_loader.train_and_test(training=True)
