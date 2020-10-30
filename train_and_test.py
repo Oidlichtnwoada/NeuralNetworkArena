@@ -115,7 +115,7 @@ class ProblemLoader:
         else:
             raise NotImplementedError()
         model = Model(inputs=inputs, outputs=outputs)
-        model.compile(optimizer=RMSprop(), loss=MeanSquaredError())
+        model.compile(optimizer=RMSprop(0.005), loss=MeanSquaredError())
         model.summary()
         model.fit(
             x=(self.training_sequences[0], self.training_sequences[1]),
