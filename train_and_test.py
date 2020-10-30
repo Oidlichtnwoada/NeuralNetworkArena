@@ -3,12 +3,11 @@ from os.path import join
 
 from numpy import load, array, zeros
 from numpy.random import random, shuffle
-from tensorflow.keras import Model, Input
 from tensorflow.keras.callbacks import ModelCheckpoint
 from tensorflow.keras.losses import MeanSquaredError
 from tensorflow.keras.optimizers import RMSprop
 
-from models.transformer import transformer
+from models.transformer import Transformer
 
 
 class ProblemLoader:
@@ -108,14 +107,13 @@ class ProblemLoader:
         self.test_sequences, self.validation_sequences, self.training_sequences = test_sequences, validation_sequences, training_sequences
 
     def get_model(self):
-        inputs = [Input(shape=(self.sequence_length, self.input_length)), Input(shape=(self.sequence_length, 1))]
         if self.model == 'transformer':
             self.transform_sequences()
-            outputs = [transformer(inputs, self.input_length)]
+            model = Transformer(self.input_length)
+            print(f'sample predictions: {model.predict((self.test_sequences[0][:8], self.test_sequences[1][:8]))}')
         else:
             raise NotImplementedError()
-        model = Model(inputs=inputs, outputs=outputs)
-        model.compile(optimizer=RMSprop(0.005), loss=MeanSquaredError())
+        model.compile(optimizer=RMSprop(), loss=MeanSquaredError())
         model.summary()
         return model
 
@@ -125,8 +123,7 @@ class ProblemLoader:
         model.fit(
             x=(self.training_sequences[0], self.training_sequences[1]),
             y=self.training_sequences[2],
-            batch_size=128,
-            epochs=200,
+            epochs=128,
             validation_data=((self.validation_sequences[0], self.validation_sequences[1]), self.validation_sequences[2]),
             callbacks=[ModelCheckpoint(self.weights_directory, save_best_only=True, save_weights_only=True)]
         )
