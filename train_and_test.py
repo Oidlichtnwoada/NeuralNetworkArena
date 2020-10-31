@@ -111,11 +111,10 @@ class ProblemLoader:
         if self.model == 'transformer':
             self.transform_sequences()
             model = Transformer(self.input_length)
-            config.experimental_run_functions_eagerly(True)
-            print(f'sample predictions: {model.predict((self.test_sequences[0][:8], self.test_sequences[1][:8]))}')
         else:
             raise NotImplementedError()
-        model.compile(optimizer=RMSprop(0.005), loss=MeanSquaredError())
+        model.compile(optimizer=RMSprop(0.005), loss=MeanSquaredError(), run_eagerly=True)
+        print(f'sample predictions: {model.predict((self.test_sequences[0][:8], self.test_sequences[1][:8]))}')
         model.summary()
         return model
 
