@@ -3,7 +3,6 @@ from os.path import join
 
 from numpy import load, array, zeros
 from numpy.random import random, shuffle
-from tensorflow import config
 from tensorflow.keras.callbacks import ModelCheckpoint
 from tensorflow.keras.losses import MeanSquaredError
 from tensorflow.keras.optimizers import RMSprop
