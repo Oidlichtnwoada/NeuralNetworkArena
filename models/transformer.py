@@ -140,9 +140,31 @@ class DecoderLayer(tf.keras.layers.Layer):
         self.d_model = d_model
         self.num_heads = num_heads
         self.d_ff = d_ff
+        # used layers
+        self.self_mha = MultiHeadAttention(self.d_model, self.num_heads)
+        self.enc_dec_mha = MultiHeadAttention(self.d_model, self.num_heads)
+        self.ffn = feed_forward_network(self.d_model, self.d_ff)
+        self.self_mha_layer_norm = tf.keras.layers.LayerNormalization(epsilon=1e-6)
+        self.enc_dec_mha_layer_norm = tf.keras.layers.LayerNormalization(epsilon=1e-6)
+        self.ffn_layer_norm = tf.keras.layers.LayerNormalization(epsilon=1e-6)
 
     def call(self, inputs, **kwargs):
-        return inputs
+        # split inputs tuple to the two arguments
+        signals, encoder_output = inputs
+        # compute multi head self attention output values
+        self_mha_output = self.self_mha((signals, signals, signals))
+        # normalize self mha output with residual connection
+        self_mha_layer_norm_output = self.self_mha_layer_norm(signals + self_mha_output)
+        # compute encoder decoder mha output values
+        enc_dec_mha_output = self.enc_dec_mha((self_mha_layer_norm_output, encoder_output, encoder_output))
+        # normalize encoder decoder mha output with residual connection
+        enc_dec_mha_layer_norm_output = self.enc_dec_mha_layer_norm(self_mha_layer_norm_output + enc_dec_mha_output)
+        # compute feed forward network output values
+        ffn_output = self.ffn(enc_dec_mha_layer_norm_output)
+        # normalize ffn output with residual connection
+        ffn_layer_norm_output = self.ffn_layer_norm(enc_dec_mha_layer_norm_output + ffn_output)
+        # the output of the third normalization layer is the output of the decoder layer
+        return ffn_layer_norm_output
 
 
 class Decoder(tf.keras.layers.Layer):
@@ -177,7 +199,7 @@ class Decoder(tf.keras.layers.Layer):
             decoder_layer_inout = positional_embedded_tokens
             for i in range(self.num_layers):
                 # compute output of each decoder layer
-                decoder_layer_inout = self.decoder_layers[i](decoder_layer_inout)
+                decoder_layer_inout = self.decoder_layers[i]((decoder_layer_inout, inputs))
             # the output of the last decoder layer must be fed to the output dense layer to produce output tokens for each input token
             next_tokens = self.token_output_layer(decoder_layer_inout)
             # only the output token corresponding to the last input token is used
