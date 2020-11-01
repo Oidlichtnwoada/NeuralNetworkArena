@@ -109,7 +109,7 @@ class ProblemLoader:
     def get_model(self):
         if self.model == 'transformer':
             self.transform_sequences()
-            model = Transformer(self.input_length)
+            model = Transformer(self.input_length, 1)
         else:
             raise NotImplementedError()
         model.compile(optimizer=RMSprop(0.005), loss=MeanSquaredError(), run_eagerly=True)

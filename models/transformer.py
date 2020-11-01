@@ -27,7 +27,7 @@ def feed_forward_network(d_model, d_ff):
 
 def dot_product_attention(queries, keys, values, d_qkv):
     # compute the attention logits from each query to each key
-    attention_logits = tf.matmul(queries, tf.transpose(keys, perm=[0, 1, 3, 2]))
+    attention_logits = tf.matmul(queries, keys, transpose_b=True)
     # scale the attention logits
     scaled_attention_logits = attention_logits / tf.math.sqrt(tf.cast(d_qkv, dtype=tf.float32))
     # compute the attention weight to each value per query
@@ -38,7 +38,7 @@ def dot_product_attention(queries, keys, values, d_qkv):
 
 def split_heads(qkv, num_heads, d_qkv):
     # split queries, key or values into num_heads - permutation necessary to compute right dot product
-    return tf.transpose(tf.reshape(qkv, qkv.shape[:-1] + (num_heads, d_qkv)), perm=[0, 2, 1, 3])
+    return tf.transpose(tf.reshape(qkv, qkv.shape[:2] + (num_heads, d_qkv)), perm=[0, 2, 1, 3])
 
 
 class MultiHeadAttention(tf.keras.layers.Layer):
@@ -69,10 +69,10 @@ class MultiHeadAttention(tf.keras.layers.Layer):
         value_heads = split_heads(values, self.num_heads, self.d_qkv)
         # compute the dot product attention
         dpa = dot_product_attention(queries_heads, keys_heads, value_heads, self.d_qkv)
-        # transpose dpa matrix such that attention is behind input dimension
+        # transpose dpa matrix such that the heads dimension is behind input dimension
         reshaped_dpa = tf.transpose(dpa, perm=[0, 2, 1, 3])
         # merge heads to single value dimension
-        concatenated_dpa = tf.reshape(reshaped_dpa, reshaped_dpa.shape[:-2] + (self.d_model,))
+        concatenated_dpa = tf.reshape(reshaped_dpa, reshaped_dpa.shape[:2] + (self.d_model,))
         # transform concatenated dpa to vectors of size d_model
         return self.mha_output_generator_network(concatenated_dpa)
 
@@ -133,41 +133,80 @@ class Encoder(tf.keras.layers.Layer):
         return encoder_layer_inout
 
 
-class Decoder(tf.keras.layers.Layer):
-    def __init__(self, token_amount):
-        super(Decoder, self).__init__()
+class DecoderLayer(tf.keras.layers.Layer):
+    def __init__(self, d_model, num_heads, d_ff):
+        super(DecoderLayer, self).__init__()
         # parameters
-        self.token_amount = token_amount
-        # used models or layers
-        self.flatten_layer = tf.keras.layers.Flatten()
-        self.dense_layer = tf.keras.layers.Dense(self.token_amount)
+        self.d_model = d_model
+        self.num_heads = num_heads
+        self.d_ff = d_ff
 
     def call(self, inputs, **kwargs):
-        # this function computes the output of the decoder
-        flattened_inputs = self.flatten_layer(inputs)
-        return self.dense_layer(flattened_inputs)
+        return inputs
+
+
+class Decoder(tf.keras.layers.Layer):
+    def __init__(self, d_model, num_heads, d_ff, num_layers, token_amount, token_size):
+        super(Decoder, self).__init__()
+        # parameters
+        self.d_model = d_model
+        self.num_heads = num_heads
+        self.d_ff = d_ff
+        self.num_layers = num_layers
+        self.token_amount = token_amount
+        self.token_size = token_size
+        # used models or layers
+        self.embedding = tf.keras.layers.Dense(self.d_model)
+        self.token_output_layer = tf.keras.layers.Dense(self.token_size)
+        self.decoder_layers = [DecoderLayer(self.d_model, self.num_heads, self.d_ff) for _ in range(self.num_layers)]
+
+    def call(self, inputs, **kwargs):
+        # create a start token
+        tokens = tf.zeros((inputs.shape[0], 1, self.token_size))
+        # create the right amount of tokens
+        for _ in range(self.token_amount):
+            # embed the current tokens
+            embedded_tokens = self.embedding(tokens)
+            # scale with with factor
+            embedded_tokens *= tf.math.sqrt(tf.cast(self.d_model, dtype=tf.float32))
+            # add positional information to the embedded tokens
+            positional_embedded_tokens = embedded_tokens + positional_encoding(tf.range(embedded_tokens.shape[1]), self.d_model)
+            # create variable that is updated by each decoder layer
+            decoder_layer_inout = positional_embedded_tokens
+            for i in range(self.num_layers):
+                # compute output of each decoder layer
+                decoder_layer_inout = self.decoder_layers[i](decoder_layer_inout)
+            # the output of the last decoder layer must be fed to the output dense layer to produce output tokens for each input token
+            next_tokens = self.token_output_layer(decoder_layer_inout)
+            # only the output token corresponding to the last input token is used
+            next_token = next_tokens[:, -1:, :]
+            # add the new token to the token matrix
+            tokens = tf.concat([tokens, next_token], axis=1)
+        # return all produced tokens except the start token
+        return tokens[:, 1:, :]
 
 
 class Transformer(tf.keras.Model):
-    def __init__(self, token_amount, d_model=512, num_heads=8, d_ff=2048, num_layers=6):
+    def __init__(self, token_amount, token_size, d_model=512, num_heads=8, d_ff=2048, num_layers=6):
         super(Transformer, self).__init__()
         # parameters
         self.token_amount = token_amount
+        self.token_size = token_size
         self.d_model = d_model
         self.num_heads = num_heads
         self.d_ff = d_ff
         self.num_layers = num_layers
         # used models or layers
         self.encoder = Encoder(self.d_model, self.num_heads, self.d_ff, self.num_layers)
-        self.decoder = Decoder(self.token_amount)
+        self.decoder = Decoder(self.d_model, self.num_heads, self.d_ff, self.num_layers, self.token_amount, self.token_size)
 
     def call(self, inputs, training=None, mask=None):
         # build the encoder output
         encoder_output = self.encoder(inputs)
         # build the decoder output
         decoder_output = self.decoder(encoder_output)
-        # the output of the transformer is the output of the decoder
-        return decoder_output
+        # the output of the transformer is the squeezed output of the decoder
+        return tf.squeeze(decoder_output)
 
     def get_config(self):
         pass
