@@ -187,7 +187,7 @@ class Decoder(tf.keras.layers.Layer):
 
 
 class Transformer(tf.keras.Model):
-    def __init__(self, token_amount, token_size, d_model=512, num_heads=8, d_ff=2048, num_layers=6):
+    def __init__(self, token_amount, token_size, d_model=512, num_heads=8, d_ff=2048, num_layers=6, squeeze_output=True):
         super(Transformer, self).__init__()
         # parameters
         self.token_amount = token_amount
@@ -196,6 +196,7 @@ class Transformer(tf.keras.Model):
         self.num_heads = num_heads
         self.d_ff = d_ff
         self.num_layers = num_layers
+        self.squeeze_output = squeeze_output
         # used models or layers
         self.encoder = Encoder(self.d_model, self.num_heads, self.d_ff, self.num_layers)
         self.decoder = Decoder(self.d_model, self.num_heads, self.d_ff, self.num_layers, self.token_amount, self.token_size)
@@ -205,8 +206,11 @@ class Transformer(tf.keras.Model):
         encoder_output = self.encoder(inputs)
         # build the decoder output
         decoder_output = self.decoder(encoder_output)
-        # the output of the transformer is the squeezed output of the decoder
-        return tf.squeeze(decoder_output)
+        # the output of the transformer is the (squeezed) output of the decoder
+        if self.squeeze_output:
+            return tf.squeeze(decoder_output)
+        else:
+            return decoder_output
 
     def get_config(self):
         pass
