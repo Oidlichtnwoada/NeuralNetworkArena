@@ -1,18 +1,17 @@
-import numpy as np
 import tensorflow as tf
 
 
 def positional_encoding(positions, d_model):
     # compute factors for all dimensions
-    positional_encoding_factors = 1 / np.power(1E4, 2 * (np.arange(d_model) // 2) / d_model)
+    positional_encoding_factors = 1 / tf.pow(1E4, tf.cast(2 * (tf.range(d_model) // 2) / d_model, dtype=tf.float32))
     # multiply each factor with the corresponding position to get the argument for the trigonometric functions
-    positional_encoding_matrix = positions.numpy() * positional_encoding_factors
+    positional_encoding_matrix = tf.Variable(tf.cast(positions, dtype=tf.float32) * positional_encoding_factors)
     # apply a sine to the even dimensions
-    positional_encoding_matrix[:, :, 0::2] = np.sin(positional_encoding_matrix[:, :, 0::2])
+    positional_encoding_matrix[:, :, 0::2].assign(tf.sin(positional_encoding_matrix[:, :, 0::2]))
     # apply a cosine to the odd dimensions
-    positional_encoding_matrix[:, :, 1::2] = np.cos(positional_encoding_matrix[:, :, 1::2])
+    positional_encoding_matrix[:, :, 1::2].assign(tf.cos(positional_encoding_matrix[:, :, 1::2]))
     # cast the result and return a tensor
-    return tf.cast(positional_encoding_matrix, dtype=tf.float32)
+    return tf.convert_to_tensor(positional_encoding_matrix)
 
 
 def feed_forward_network(d_model, d_ff):
