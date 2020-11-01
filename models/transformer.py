@@ -162,7 +162,7 @@ class Decoder(tf.keras.layers.Layer):
 
     def call(self, inputs, **kwargs):
         # create a start token
-        tokens = tf.ones((inputs.shape[0], 1, self.token_size))
+        tokens = tf.zeros((inputs.shape[0], 1, self.token_size))
         # create the right amount of tokens
         for _ in range(self.token_amount):
             # embed the current tokens
