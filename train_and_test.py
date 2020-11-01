@@ -11,12 +11,15 @@ from models.transformer import Transformer
 
 
 class ProblemLoader:
-    def __init__(self, model, problem_name, sequence_length=64, skip_percentage=0.1, test_data_percentage=0.15, validation_data_percentage=0.1):
+    def __init__(self, model, problem_name, sequence_length=64, skip_percentage=0.1, test_data_percentage=0.15, validation_data_percentage=0.1, batch_size=128, epochs=128, learning_rate=0.001):
         self.problem_path = join('problems', problem_name)
         self.sequence_length = sequence_length
         self.skip_percentage = skip_percentage
         self.test_data_percentage = test_data_percentage
         self.validation_data_percentage = validation_data_percentage
+        self.batch_size = batch_size
+        self.epochs = epochs
+        self.learning_rate = learning_rate
         self.test_sequences = None
         self.validation_sequences = None
         self.training_sequences = None
@@ -112,18 +115,20 @@ class ProblemLoader:
             model = Transformer(self.input_length, 1)
         else:
             raise NotImplementedError()
-        model.compile(optimizer=RMSprop(0.005), loss=MeanSquaredError(), run_eagerly=True)
-        print(f'sample predictions: {model.predict((self.test_sequences[0][:8], self.test_sequences[1][:8]))}')
+        model.compile(optimizer=RMSprop(self.learning_rate), loss=MeanSquaredError(), run_eagerly=True)
+        print(f'sample predictions: {model.predict((self.test_sequences[0][:self.batch_size], self.test_sequences[1][:self.batch_size]), batch_size=self.batch_size)}')
         model.summary()
         return model
 
     def train(self):
         # train the model parameters using gradient descent
         model = self.get_model()
+        model.load_weights(self.weights_directory).expect_partial()
         model.fit(
             x=(self.training_sequences[0], self.training_sequences[1]),
             y=self.training_sequences[2],
-            epochs=128,
+            batch_size=self.batch_size,
+            epochs=self.epochs,
             validation_data=((self.validation_sequences[0], self.validation_sequences[1]), self.validation_sequences[2]),
             callbacks=[ModelCheckpoint(self.weights_directory, save_best_only=True, save_weights_only=True)]
         )
@@ -132,7 +137,7 @@ class ProblemLoader:
         # evaluate the loss on the test dataset
         model = self.get_model()
         model.load_weights(self.weights_directory).expect_partial()
-        test_loss = model.evaluate(x=(self.test_sequences[0], self.test_sequences[1]), y=self.test_sequences[2])
+        test_loss = model.evaluate(x=(self.test_sequences[0], self.test_sequences[1]), y=self.test_sequences[2], batch_size=self.batch_size)
         print(f'test loss: {test_loss}')
 
 
