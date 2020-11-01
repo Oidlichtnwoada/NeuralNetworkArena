@@ -50,7 +50,7 @@ class MultiHeadAttention(tf.keras.layers.Layer):
         # set size of queries, keys and values to d_model / num_heads
         assert self.d_model % self.num_heads == 0
         self.d_qkv = self.d_model // self.num_heads
-        # used models or layers
+        # used layers
         self.query_generator_network = tf.keras.layers.Dense(self.d_model)
         self.key_generator_network = tf.keras.layers.Dense(self.d_model)
         self.value_generator_network = tf.keras.layers.Dense(self.d_model)
@@ -84,7 +84,7 @@ class EncoderLayer(tf.keras.layers.Layer):
         self.d_model = d_model
         self.num_heads = num_heads
         self.d_ff = d_ff
-        # used models or layers
+        # used layers
         self.mha = MultiHeadAttention(self.d_model, self.num_heads)
         self.ffn = feed_forward_network(self.d_model, self.d_ff)
         self.mha_layer_norm = tf.keras.layers.LayerNormalization(epsilon=1e-6)
@@ -111,7 +111,7 @@ class Encoder(tf.keras.layers.Layer):
         self.num_heads = num_heads
         self.d_ff = d_ff
         self.num_layers = num_layers
-        # used models or layers
+        # used layers
         self.embedding = tf.keras.layers.Dense(self.d_model)
         self.encoder_layers = [EncoderLayer(self.d_model, self.num_heads, self.d_ff) for _ in range(self.num_layers)]
 
@@ -155,22 +155,24 @@ class Decoder(tf.keras.layers.Layer):
         self.num_layers = num_layers
         self.token_amount = token_amount
         self.token_size = token_size
-        # used models or layers
+        # used layers
         self.embedding = tf.keras.layers.Dense(self.d_model)
         self.token_output_layer = tf.keras.layers.Dense(self.token_size)
         self.decoder_layers = [DecoderLayer(self.d_model, self.num_heads, self.d_ff) for _ in range(self.num_layers)]
 
     def call(self, inputs, **kwargs):
         # create a start token
-        tokens = tf.zeros((inputs.shape[0], 1, self.token_size))
+        tokens = tf.ones((inputs.shape[0], 1, self.token_size))
         # create the right amount of tokens
         for _ in range(self.token_amount):
             # embed the current tokens
             embedded_tokens = self.embedding(tokens)
             # scale with with factor
             embedded_tokens *= tf.math.sqrt(tf.cast(self.d_model, dtype=tf.float32))
+            # build the position matrix
+            positions = tf.repeat(tf.range(embedded_tokens.shape[1])[tf.newaxis, :, tf.newaxis], embedded_tokens.shape[0], axis=0)
             # add positional information to the embedded tokens
-            positional_embedded_tokens = embedded_tokens + positional_encoding(tf.range(embedded_tokens.shape[1]), self.d_model)
+            positional_embedded_tokens = embedded_tokens + positional_encoding(positions, self.d_model)
             # create variable that is updated by each decoder layer
             decoder_layer_inout = positional_embedded_tokens
             for i in range(self.num_layers):
@@ -197,7 +199,7 @@ class Transformer(tf.keras.Model):
         self.d_ff = d_ff
         self.num_layers = num_layers
         self.squeeze_output = squeeze_output
-        # used models or layers
+        # used layers
         self.encoder = Encoder(self.d_model, self.num_heads, self.d_ff, self.num_layers)
         self.decoder = Decoder(self.d_model, self.num_heads, self.d_ff, self.num_layers, self.token_amount, self.token_size)
 
