@@ -35,7 +35,7 @@ def dot_product_attention(queries, keys, values, d_qkv, mask):
     # compute the attention weight to each value per query
     attention_weights = tf.nn.softmax(scaled_attention_logits)
     # compute the dpa output by weighting each value with the corresponding attention weight
-    return tf.matmul(attention_weights, values)
+    return tf.matmul(attention_weights, values), attention_weights
 
 
 def split_heads(qkv, num_heads, d_qkv):
@@ -82,13 +82,13 @@ class MultiHeadAttention(tf.keras.layers.Layer):
         keys_heads = split_heads(keys, self.num_heads, self.d_qkv)
         value_heads = split_heads(values, self.num_heads, self.d_qkv)
         # compute the dot product attention
-        dpa = dot_product_attention(queries_heads, keys_heads, value_heads, self.d_qkv, mask)
+        dpa, attention_weights = dot_product_attention(queries_heads, keys_heads, value_heads, self.d_qkv, mask)
         # transpose dpa matrix such that the heads dimension is behind input dimension
         reshaped_dpa = tf.transpose(dpa, perm=[0, 2, 1, 3])
         # merge heads to single value dimension
         concatenated_dpa = tf.reshape(reshaped_dpa, reshaped_dpa.shape[:2] + (self.d_model,))
         # transform concatenated dpa to vectors of size d_model
-        return self.mha_output_generator_network(concatenated_dpa)
+        return self.mha_output_generator_network(concatenated_dpa), attention_weights
 
 
 class EncoderLayer(tf.keras.layers.Layer):
@@ -111,7 +111,7 @@ class EncoderLayer(tf.keras.layers.Layer):
         # split inputs tuple to the arguments
         signals, encoder_zero_input_mask = inputs
         # compute multi head self attention output values
-        mha_output = self.mha((signals, signals, signals, encoder_zero_input_mask))
+        mha_output, attention_weights = self.mha((signals, signals, signals, encoder_zero_input_mask))
         # use a dropout layer to prevent overfitting
         mha_output = self.mha_dropout(mha_output)
         # normalize mha output with residual connection
@@ -189,13 +189,13 @@ class DecoderLayer(tf.keras.layers.Layer):
         # split inputs tuple to the arguments
         signals, encoder_output, decoder_zero_input_mask, look_ahead_mask = inputs
         # compute multi head self attention output values
-        self_mha_output = self.self_mha((signals, signals, signals, look_ahead_mask))
+        self_mha_output, attention_weights = self.self_mha((signals, signals, signals, look_ahead_mask))
         # use a dropout layer to prevent overfitting
         self_mha_output = self.self_mha_dropout(self_mha_output)
         # normalize self mha output with residual connection
         self_mha_layer_norm_output = self.self_mha_layer_norm(signals + self_mha_output)
         # compute encoder decoder mha output values
-        enc_dec_mha_output = self.enc_dec_mha((self_mha_layer_norm_output, encoder_output, encoder_output, decoder_zero_input_mask))
+        enc_dec_mha_output, attention_weights = self.enc_dec_mha((self_mha_layer_norm_output, encoder_output, encoder_output, decoder_zero_input_mask))
         # use a dropout layer to prevent overfitting
         enc_dec_mha_output = self.enc_dec_mha_dropout(enc_dec_mha_output)
         # normalize encoder decoder mha output with residual connection
