@@ -50,6 +50,11 @@ def compute_padding_mask(signals):
     return padding_mask[:, tf.newaxis, tf.newaxis, :]
 
 
+def compute_look_ahead_mask(signals):
+    # make sure that no attention to future positions is possible
+    return 1 - tf.linalg.band_part(tf.ones((signals.shape[1], signals.shape[1])), -1, 0)
+
+
 class MultiHeadAttention(tf.keras.layers.Layer):
     def __init__(self, d_model, num_heads):
         super(MultiHeadAttention, self).__init__()
@@ -167,9 +172,9 @@ class DecoderLayer(tf.keras.layers.Layer):
 
     def call(self, inputs, **kwargs):
         # split inputs tuple to the arguments
-        signals, encoder_output, decoder_zero_input_mask = inputs
+        signals, encoder_output, decoder_zero_input_mask, look_ahead_mask = inputs
         # compute multi head self attention output values
-        self_mha_output = self.self_mha((signals, signals, signals, None))
+        self_mha_output = self.self_mha((signals, signals, signals, look_ahead_mask))
         # normalize self mha output with residual connection
         self_mha_layer_norm_output = self.self_mha_layer_norm(signals + self_mha_output)
         # compute encoder decoder mha output values
@@ -209,9 +214,14 @@ class Decoder(tf.keras.layers.Layer):
         else:
             decoder_zero_input_mask = None
         # create a start token
-        tokens = tf.zeros((encoder_output.shape[0], 1, self.token_size))
+        tokens = tf.ones((encoder_output.shape[0], 1, self.token_size))
         # create the right amount of tokens
         for _ in range(self.token_amount):
+            # create a look ahead mask such that tokens can only attend to previous positions
+            look_ahead_mask = compute_look_ahead_mask(tokens)
+            # compute mask to not attend to zero input tokens if enabled
+            if self.mask_zero_inputs:
+                look_ahead_mask = tf.maximum(compute_padding_mask(tokens), look_ahead_mask)
             # embed the current tokens
             embedded_tokens = self.embedding(tokens)
             # scale with with factor
@@ -224,7 +234,7 @@ class Decoder(tf.keras.layers.Layer):
             decoder_layer_inout = positional_embedded_tokens
             for i in range(self.num_layers):
                 # compute output of each decoder layer
-                decoder_layer_inout = self.decoder_layers[i]((decoder_layer_inout, encoder_output, decoder_zero_input_mask))
+                decoder_layer_inout = self.decoder_layers[i]((decoder_layer_inout, encoder_output, decoder_zero_input_mask, look_ahead_mask))
             # the output of the last decoder layer must be fed to the output dense layer to produce output tokens for each input token
             next_tokens = self.token_output_layer(decoder_layer_inout)
             # only the output token corresponding to the last input token is used
