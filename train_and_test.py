@@ -4,13 +4,11 @@ from sys import argv
 
 from numpy import load, array, zeros
 from numpy.random import random, shuffle
-from tensorflow.keras import Model, Input
 from tensorflow.keras.callbacks import ModelCheckpoint
-from tensorflow.keras.layers import RNN, Dense
 from tensorflow.keras.losses import MeanSquaredError
 from tensorflow.keras.optimizers import Adam
 
-from models.neural_circuit_policies import NCP, LTCCell
+from models.neural_circuit_policies import NeuralCircuitPolicies
 from models.transformer import Transformer
 
 
@@ -118,14 +116,8 @@ class ProblemLoader:
             self.transform_sequences()
             model = Transformer(token_amount=self.input_length, token_size=1, d_model=32, num_heads=2, d_ff=128, num_layers=2, dropout_rate=0.1)
         elif self.model == 'neural_circuit_policies':
-            rnn_cell = LTCCell(NCP(inter_neurons=12, command_neurons=8, motor_neurons=4, sensory_fanout=4, inter_fanout=4, recurrent_command_synapses=4, motor_fanin=4))
-            rnn = RNN(rnn_cell, return_sequences=True)
-            signal_input = Input(shape=(self.sequence_length, self.input_length))
-            time_input = Input(shape=(self.sequence_length, 1))
-            rnn_output = rnn(signal_input)
-            inputs = [signal_input, time_input]
-            outputs = [Dense(self.input_length)(rnn_output)]
-            model = Model(inputs=inputs, outputs=outputs)
+            model = NeuralCircuitPolicies(
+                output_length=self.input_length, inter_neurons=12, command_neurons=8, motor_neurons=4, sensory_fanout=4, inter_fanout=4, recurrent_command_synapses=4, motor_fanin=4)
         else:
             raise NotImplementedError()
         model.compile(optimizer=Adam(self.learning_rate), loss=MeanSquaredError(), run_eagerly=True)
