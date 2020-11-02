@@ -246,7 +246,7 @@ class Decoder(tf.keras.layers.Layer):
 
 
 class Transformer(tf.keras.Model):
-    def __init__(self, token_amount, token_size, d_model=64, num_heads=4, d_ff=256, num_layers=4, squeeze_output=True, mask_zero_inputs=True):
+    def __init__(self, token_amount, token_size, d_model, num_heads, d_ff, num_layers, squeeze_output=True, mask_zero_inputs=True):
         super(Transformer, self).__init__()
         # parameters
         self.token_amount = token_amount

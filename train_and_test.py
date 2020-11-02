@@ -5,7 +5,7 @@ from numpy import load, array, zeros
 from numpy.random import random, shuffle
 from tensorflow.keras.callbacks import ModelCheckpoint
 from tensorflow.keras.losses import MeanSquaredError
-from tensorflow.keras.optimizers import RMSprop
+from tensorflow.keras.optimizers import Adam
 
 from models.transformer import Transformer
 
@@ -112,10 +112,10 @@ class ProblemLoader:
     def get_model(self):
         if self.model == 'transformer':
             self.transform_sequences()
-            model = Transformer(self.input_length, 1)
+            model = Transformer(token_amount=self.input_length, token_size=1, d_model=32, num_heads=2, d_ff=128, num_layers=2)
         else:
             raise NotImplementedError()
-        model.compile(optimizer=RMSprop(self.learning_rate), loss=MeanSquaredError(), run_eagerly=True)
+        model.compile(optimizer=Adam(self.learning_rate), loss=MeanSquaredError(), run_eagerly=True)
         print(f'sample predictions: {model.predict((self.test_sequences[0][:self.batch_size], self.test_sequences[1][:self.batch_size]), batch_size=self.batch_size)}')
         model.summary()
         return model
@@ -123,7 +123,7 @@ class ProblemLoader:
     def train(self):
         # train the model parameters using gradient descent
         model = self.get_model()
-        model.load_weights(self.weights_directory).expect_partial()
+        # model.load_weights(self.weights_directory).expect_partial()
         model.fit(
             x=(self.training_sequences[0], self.training_sequences[1]),
             y=self.training_sequences[2],
