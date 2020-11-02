@@ -112,7 +112,7 @@ class ProblemLoader:
     def get_model(self):
         if self.model == 'transformer':
             self.transform_sequences()
-            model = Transformer(token_amount=self.input_length, token_size=1, d_model=32, num_heads=2, d_ff=128, num_layers=2)
+            model = Transformer(token_amount=self.input_length, token_size=1, d_model=32, num_heads=2, d_ff=128, num_layers=2, dropout_rate=0.1)
         else:
             raise NotImplementedError()
         model.compile(optimizer=Adam(self.learning_rate), loss=MeanSquaredError(), run_eagerly=True)
