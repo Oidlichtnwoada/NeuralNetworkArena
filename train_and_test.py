@@ -11,7 +11,7 @@ from models.transformer import Transformer
 
 
 class ProblemLoader:
-    def __init__(self, model, problem_name, sequence_length=64, skip_percentage=0.1, test_data_percentage=0.15, validation_data_percentage=0.1, batch_size=128, epochs=128, learning_rate=0.001):
+    def __init__(self, model, problem_name, sequence_length=64, skip_percentage=0.1, test_data_percentage=0.15, validation_data_percentage=0.1, batch_size=128, epochs=256, learning_rate=0.001):
         self.problem_path = join('problems', problem_name)
         self.sequence_length = sequence_length
         self.skip_percentage = skip_percentage
