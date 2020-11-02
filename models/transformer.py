@@ -31,7 +31,7 @@ def dot_product_attention(queries, keys, values, d_qkv, mask):
     scaled_attention_logits = attention_logits / tf.math.sqrt(tf.cast(d_qkv, dtype=tf.float32))
     # set attention logits to very small value for input positions in mask (if present)
     if mask is not None:
-        scaled_attention_logits -= mask * tf.float32.max
+        scaled_attention_logits -= tf.where(mask == 1, tf.ones_like(mask) * float('inf'), mask)
     # compute the attention weight to each value per query
     attention_weights = tf.nn.softmax(scaled_attention_logits)
     # compute the dpa output by weighting each value with the corresponding attention weight
