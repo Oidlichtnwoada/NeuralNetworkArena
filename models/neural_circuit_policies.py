@@ -1,5 +1,5 @@
-import tensorflow as tf
 import numpy as np
+import tensorflow as tf
 
 
 class Wiring:
@@ -11,7 +11,7 @@ class Wiring:
 
     def build(self, input_shape):
         input_dim = int(input_shape[1])
-        if self.input_dim is not None and self.input_dim != input_dim:
+        if not self.input_dim is None and self.input_dim != input_dim:
             raise ValueError(
                 "Conflicting input dimensions provided. set_input_dim() was called with {} but actual input has dimension {}".format(
                     self.input_dim, input_dim
@@ -227,7 +227,7 @@ class NCP(Wiring):
                 polarity = self._rng.choice([-1, 1])
                 self.add_synapse(src, dest, polarity)
 
-        # If it happens that some command neurons are not connected, connect them now
+        # If it happens that some commandneurons are not connected, connect them now
         mean_command_fanout = int(
             self._num_motor_neurons * self._motor_fanin / self._num_command_neurons
         )
@@ -451,7 +451,7 @@ class LTCCell(tf.keras.layers.Layer):
         x = sigma * mues
         return tf.nn.sigmoid(x)
 
-    def _ode_solver(self, inputs, state):
+    def _ode_solver(self, inputs, state, elapsed_time):
         v_pre = state
 
         # We can pre-compute the effects of the sensory neurons here
@@ -466,7 +466,10 @@ class LTCCell(tf.keras.layers.Layer):
         w_numerator_sensory = tf.reduce_sum(sensory_rev_activation, axis=1)
         w_denominator_sensory = tf.reduce_sum(sensory_w_activation, axis=1)
 
-        # Unfold the multiply ODE multiple times into one RNN step
+        # cm/t is loop invariant
+        cm_t = self._params["cm"] / (elapsed_time / self._ode_unfolds)
+
+        # Unfold the mutliply ODE multiple times into one RNN step
         for t in range(self._ode_unfolds):
             w_activation = self._params["w"] * self._sigmoid(
                 v_pre, self._params["mu"], self._params["sigma"]
@@ -480,7 +483,6 @@ class LTCCell(tf.keras.layers.Layer):
             w_numerator = tf.reduce_sum(rev_activation, axis=1) + w_numerator_sensory
             w_denominator = tf.reduce_sum(w_activation, axis=1) + w_denominator_sensory
 
-            cm_t = self._params["cm"] / (1.0 / self._ode_unfolds)
             numerator = (
                     cm_t * v_pre
                     + self._params["gleak"] * self._params["vleak"]
@@ -512,9 +514,16 @@ class LTCCell(tf.keras.layers.Layer):
         return output
 
     def call(self, inputs, states):
+        if isinstance(inputs, (tuple, list)):
+            # Irregularly sampled mode
+            inputs = inputs[0]
+            elapsed_time = inputs[1]
+        else:
+            # Rregularly sampled mode (elapsed time = 1 second)
+            elapsed_time = 1.0
         inputs = self._map_inputs(inputs)
 
-        next_state = self._ode_solver(inputs, states[0])
+        next_state = self._ode_solver(inputs, states[0], elapsed_time)
 
         outputs = self._map_outputs(next_state)
 
@@ -574,7 +583,6 @@ class LTCCell(tf.keras.layers.Layer):
         # https://stackoverflow.com/questions/62421021/how-do-i-install-cytoscape-on-google-colab
         import networkx as nx
         import matplotlib.patches as mpatches
-        import matplotlib.pyplot as plt
 
         if isinstance(synapse_colors, str):
             synapse_colors = {
@@ -612,7 +620,7 @@ class LTCCell(tf.keras.layers.Layer):
             "spectral": nx.spectral_layout,
             "spiral": nx.spiral_layout,
         }
-        if layout not in layouts.keys():
+        if not layout in layouts.keys():
             raise ValueError(
                 "Unknown layer '{}', use one of '{}'".format(
                     layout, str(layouts.keys())
