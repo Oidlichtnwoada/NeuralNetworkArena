@@ -24,11 +24,14 @@ def feed_forward_network(d_model, d_ff):
     ])
 
 
-def dot_product_attention(queries, keys, values, d_qkv):
+def dot_product_attention(queries, keys, values, d_qkv, mask):
     # compute the attention logits from each query to each key
     attention_logits = tf.matmul(queries, keys, transpose_b=True)
     # scale the attention logits
     scaled_attention_logits = attention_logits / tf.math.sqrt(tf.cast(d_qkv, dtype=tf.float32))
+    # set attention logits to very small value for input positions in mask (if present)
+    if mask is not None:
+        scaled_attention_logits -= mask * tf.float32.max
     # compute the attention weight to each value per query
     attention_weights = tf.nn.softmax(scaled_attention_logits)
     # compute the dpa output by weighting each value with the corresponding attention weight
@@ -38,6 +41,13 @@ def dot_product_attention(queries, keys, values, d_qkv):
 def split_heads(qkv, num_heads, d_qkv):
     # split queries, key or values into num_heads - permutation necessary to compute right dot product
     return tf.transpose(tf.reshape(qkv, qkv.shape[:2] + (num_heads, d_qkv)), perm=[0, 2, 1, 3])
+
+
+def compute_padding_mask(signals):
+    # mask the input away if all vector entries are zero
+    padding_mask = tf.reduce_min(tf.cast(signals == 0, dtype=tf.float32), axis=2)
+    # adjust dimension to enable batch operation during dot product attention
+    return padding_mask[:, tf.newaxis, tf.newaxis, :]
 
 
 class MultiHeadAttention(tf.keras.layers.Layer):
@@ -56,8 +66,8 @@ class MultiHeadAttention(tf.keras.layers.Layer):
         self.mha_output_generator_network = tf.keras.layers.Dense(self.d_model)
 
     def call(self, inputs, **kwargs):
-        # split inputs tuple into the three arguments
-        query_gen_input, key_gen_input, value_gen_input = inputs
+        # split inputs tuple to the arguments
+        query_gen_input, key_gen_input, value_gen_input, mask = inputs
         # generate queries, keys and values
         queries = self.query_generator_network(query_gen_input)
         keys = self.key_generator_network(key_gen_input)
@@ -67,7 +77,7 @@ class MultiHeadAttention(tf.keras.layers.Layer):
         keys_heads = split_heads(keys, self.num_heads, self.d_qkv)
         value_heads = split_heads(values, self.num_heads, self.d_qkv)
         # compute the dot product attention
-        dpa = dot_product_attention(queries_heads, keys_heads, value_heads, self.d_qkv)
+        dpa = dot_product_attention(queries_heads, keys_heads, value_heads, self.d_qkv, mask)
         # transpose dpa matrix such that the heads dimension is behind input dimension
         reshaped_dpa = tf.transpose(dpa, perm=[0, 2, 1, 3])
         # merge heads to single value dimension
@@ -90,10 +100,12 @@ class EncoderLayer(tf.keras.layers.Layer):
         self.ffn_layer_norm = tf.keras.layers.LayerNormalization(epsilon=1e-6)
 
     def call(self, inputs, **kwargs):
+        # split inputs tuple to the arguments
+        signals, encoder_zero_input_mask = inputs
         # compute multi head self attention output values
-        mha_output = self.mha((inputs, inputs, inputs))
+        mha_output = self.mha((signals, signals, signals, encoder_zero_input_mask))
         # normalize mha output with residual connection
-        mha_layer_norm_output = self.mha_layer_norm(inputs + mha_output)
+        mha_layer_norm_output = self.mha_layer_norm(signals + mha_output)
         # compute feed forward network output values
         ffn_output = self.ffn(mha_layer_norm_output)
         # normalize ffn output with residual connection
@@ -103,22 +115,28 @@ class EncoderLayer(tf.keras.layers.Layer):
 
 
 class Encoder(tf.keras.layers.Layer):
-    def __init__(self, d_model, num_heads, d_ff, num_layers):
+    def __init__(self, d_model, num_heads, d_ff, num_layers, mask_zero_inputs):
         super(Encoder, self).__init__()
         # parameters
         self.d_model = d_model
         self.num_heads = num_heads
         self.d_ff = d_ff
         self.num_layers = num_layers
+        self.mask_zero_inputs = mask_zero_inputs
         # used layers
         self.embedding = tf.keras.layers.Dense(self.d_model)
         self.encoder_layers = [EncoderLayer(self.d_model, self.num_heads, self.d_ff) for _ in range(self.num_layers)]
 
     def call(self, inputs, **kwargs):
         # this function computes the output of the encoder
-        signals, times = inputs
+        encoder_input, times = inputs
+        # compute mask to not attend to zero inputs if enabled
+        if self.mask_zero_inputs:
+            encoder_zero_input_mask = compute_padding_mask(encoder_input)
+        else:
+            encoder_zero_input_mask = None
         # embed the signal vectors into vectors of size d_model
-        embedded_signals = self.embedding(signals)
+        embedded_signals = self.embedding(encoder_input)
         # scale with with factor
         embedded_signals *= tf.math.sqrt(tf.cast(self.d_model, dtype=tf.float32))
         # add positional information to the embedded signals using times
@@ -127,7 +145,7 @@ class Encoder(tf.keras.layers.Layer):
         encoder_layer_inout = positional_embedded_signals
         for i in range(self.num_layers):
             # compute output of each encoder layer
-            encoder_layer_inout = self.encoder_layers[i](encoder_layer_inout)
+            encoder_layer_inout = self.encoder_layers[i]((encoder_layer_inout, encoder_zero_input_mask))
         # the output of the last encoder layer is the output of the encoder
         return encoder_layer_inout
 
@@ -148,14 +166,14 @@ class DecoderLayer(tf.keras.layers.Layer):
         self.ffn_layer_norm = tf.keras.layers.LayerNormalization(epsilon=1e-6)
 
     def call(self, inputs, **kwargs):
-        # split inputs tuple to the two arguments
-        signals, encoder_output = inputs
+        # split inputs tuple to the arguments
+        signals, encoder_output, decoder_zero_input_mask = inputs
         # compute multi head self attention output values
-        self_mha_output = self.self_mha((signals, signals, signals))
+        self_mha_output = self.self_mha((signals, signals, signals, None))
         # normalize self mha output with residual connection
         self_mha_layer_norm_output = self.self_mha_layer_norm(signals + self_mha_output)
         # compute encoder decoder mha output values
-        enc_dec_mha_output = self.enc_dec_mha((self_mha_layer_norm_output, encoder_output, encoder_output))
+        enc_dec_mha_output = self.enc_dec_mha((self_mha_layer_norm_output, encoder_output, encoder_output, decoder_zero_input_mask))
         # normalize encoder decoder mha output with residual connection
         enc_dec_mha_layer_norm_output = self.enc_dec_mha_layer_norm(self_mha_layer_norm_output + enc_dec_mha_output)
         # compute feed forward network output values
@@ -167,7 +185,7 @@ class DecoderLayer(tf.keras.layers.Layer):
 
 
 class Decoder(tf.keras.layers.Layer):
-    def __init__(self, d_model, num_heads, d_ff, num_layers, token_amount, token_size):
+    def __init__(self, d_model, num_heads, d_ff, num_layers, token_amount, token_size, mask_zero_inputs):
         super(Decoder, self).__init__()
         # parameters
         self.d_model = d_model
@@ -176,14 +194,22 @@ class Decoder(tf.keras.layers.Layer):
         self.num_layers = num_layers
         self.token_amount = token_amount
         self.token_size = token_size
+        self.mask_zero_inputs = mask_zero_inputs
         # used layers
         self.embedding = tf.keras.layers.Dense(self.d_model)
         self.token_output_layer = tf.keras.layers.Dense(self.token_size)
         self.decoder_layers = [DecoderLayer(self.d_model, self.num_heads, self.d_ff) for _ in range(self.num_layers)]
 
     def call(self, inputs, **kwargs):
+        # split inputs tuple to the arguments
+        encoder_output, encoder_input = inputs
+        # compute mask to not attend to zero inputs if enabled
+        if self.mask_zero_inputs:
+            decoder_zero_input_mask = compute_padding_mask(encoder_input)
+        else:
+            decoder_zero_input_mask = None
         # create a start token
-        tokens = tf.zeros((inputs.shape[0], 1, self.token_size))
+        tokens = tf.zeros((encoder_output.shape[0], 1, self.token_size))
         # create the right amount of tokens
         for _ in range(self.token_amount):
             # embed the current tokens
@@ -198,7 +224,7 @@ class Decoder(tf.keras.layers.Layer):
             decoder_layer_inout = positional_embedded_tokens
             for i in range(self.num_layers):
                 # compute output of each decoder layer
-                decoder_layer_inout = self.decoder_layers[i]((decoder_layer_inout, inputs))
+                decoder_layer_inout = self.decoder_layers[i]((decoder_layer_inout, encoder_output, decoder_zero_input_mask))
             # the output of the last decoder layer must be fed to the output dense layer to produce output tokens for each input token
             next_tokens = self.token_output_layer(decoder_layer_inout)
             # only the output token corresponding to the last input token is used
@@ -210,7 +236,7 @@ class Decoder(tf.keras.layers.Layer):
 
 
 class Transformer(tf.keras.Model):
-    def __init__(self, token_amount, token_size, d_model=64, num_heads=4, d_ff=256, num_layers=4, squeeze_output=True):
+    def __init__(self, token_amount, token_size, d_model=64, num_heads=4, d_ff=256, num_layers=4, squeeze_output=True, mask_zero_inputs=True):
         super(Transformer, self).__init__()
         # parameters
         self.token_amount = token_amount
@@ -220,15 +246,16 @@ class Transformer(tf.keras.Model):
         self.d_ff = d_ff
         self.num_layers = num_layers
         self.squeeze_output = squeeze_output
+        self.mask_zero_inputs = mask_zero_inputs
         # used layers
-        self.encoder = Encoder(self.d_model, self.num_heads, self.d_ff, self.num_layers)
-        self.decoder = Decoder(self.d_model, self.num_heads, self.d_ff, self.num_layers, self.token_amount, self.token_size)
+        self.encoder = Encoder(self.d_model, self.num_heads, self.d_ff, self.num_layers, self.mask_zero_inputs)
+        self.decoder = Decoder(self.d_model, self.num_heads, self.d_ff, self.num_layers, self.token_amount, self.token_size, self.mask_zero_inputs)
 
     def call(self, inputs, training=None, mask=None):
         # build the encoder output
         encoder_output = self.encoder(inputs)
         # build the decoder output
-        decoder_output = self.decoder(encoder_output)
+        decoder_output = self.decoder((encoder_output, inputs[0]))
         # the output of the transformer is the (squeezed) output of the decoder
         if self.squeeze_output:
             return tf.squeeze(decoder_output)
