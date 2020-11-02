@@ -1,12 +1,16 @@
 from os import listdir
 from os.path import join
+from sys import argv
 
 from numpy import load, array, zeros
 from numpy.random import random, shuffle
+from tensorflow.keras import Model, Input
 from tensorflow.keras.callbacks import ModelCheckpoint
+from tensorflow.keras.layers import RNN, Dense
 from tensorflow.keras.losses import MeanSquaredError
 from tensorflow.keras.optimizers import Adam
 
+from models.neural_circuit_policies import NCP, LTCCell
 from models.transformer import Transformer
 
 
@@ -113,6 +117,15 @@ class ProblemLoader:
         if self.model == 'transformer':
             self.transform_sequences()
             model = Transformer(token_amount=self.input_length, token_size=1, d_model=32, num_heads=2, d_ff=128, num_layers=2, dropout_rate=0.1)
+        elif self.model == 'neural_circuit_policies':
+            rnn_cell = LTCCell(NCP(inter_neurons=12, command_neurons=8, motor_neurons=4, sensory_fanout=4, inter_fanout=4, recurrent_command_synapses=4, motor_fanin=4))
+            rnn = RNN(rnn_cell, return_sequences=True)
+            signal_input = Input(shape=(self.sequence_length, self.input_length))
+            time_input = Input(shape=(self.sequence_length, 1))
+            rnn_output = rnn(signal_input)
+            inputs = [signal_input, time_input]
+            outputs = [Dense(self.input_length)(rnn_output)]
+            model = Model(inputs=inputs, outputs=outputs)
         else:
             raise NotImplementedError()
         model.compile(optimizer=Adam(self.learning_rate), loss=MeanSquaredError(), run_eagerly=True)
@@ -141,7 +154,7 @@ class ProblemLoader:
         print(f'test loss: {test_loss}')
 
 
-problem_loader = ProblemLoader(model='transformer', problem_name='walker')
+problem_loader = ProblemLoader(model=argv[1], problem_name=argv[2])
 problem_loader.build_datasets()
 problem_loader.train()
 problem_loader.test()
