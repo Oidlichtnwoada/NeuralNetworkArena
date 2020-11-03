@@ -147,7 +147,11 @@ class ProblemLoader:
         print(f'test loss: {test_loss}')
 
 
+if len(argv) < 4:
+    exit()
 problem_loader = ProblemLoader(model=argv[1], problem_name=argv[2])
 problem_loader.build_datasets()
-problem_loader.train()
-problem_loader.test()
+if argv[3] == 'train':
+    problem_loader.train()
+elif argv[3] == 'test':
+    problem_loader.test()
