@@ -480,7 +480,7 @@ class LTCCell(tf.keras.layers.Layer):
 
         outputs = self.map_outputs(next_state)
 
-        return outputs, [next_state]
+        return outputs, (next_state,)
 
 
 class NeuralCircuitPolicies(tf.keras.Model):
