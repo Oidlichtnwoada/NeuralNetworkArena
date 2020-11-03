@@ -13,6 +13,7 @@ class Wiring:
     def __init__(self, units):
         self.units = units
         self.adjacency_matrix = np.zeros([units, units], dtype=np.int32)
+        self.sensory_adjacency_matrix = None
         self.input_dim = None
         self.output_dim = None
 
@@ -20,10 +21,7 @@ class Wiring:
         input_dim = int(input_shape[1])
         if self.input_dim is not None and self.input_dim != input_dim:
             raise ValueError(
-                "Conflicting input dimensions provided. set_input_dim() was called with {} but actual input has dimension {}".format(
-                    self.input_dim, input_dim
-                )
-            )
+                f'Conflicting input dimensions provided. set_input_dim() was called with {self.input_dim} but actual input has dimension {input_dim}')
         if self.input_dim is None:
             self.set_input_dim(input_dim)
 
@@ -48,47 +46,29 @@ class Wiring:
     def add_synapse(self, src, dest, polarity):
         if src < 0 or src >= self.units:
             raise ValueError(
-                "Cannot add synapse originating in {} if cell has only {} units".format(
-                    src, self.units
-                )
-            )
+                f'Cannot add synapse originating in {src} if cell has only {self.units} units')
         if dest < 0 or dest >= self.units:
             raise ValueError(
-                "Cannot add synapse feeding into {} if cell has only {} units".format(
-                    dest, self.units
-                )
-            )
+                f'Cannot add synapse feeding into {dest} if cell has only {self.units} units')
         if polarity not in [-1, 1]:
             raise ValueError(
-                "Cannot add synapse with polarity {} (expected -1 or +1)".format(
-                    polarity
-                )
-            )
+                f'Cannot add synapse with polarity {polarity} (expected -1 or +1)')
         self.adjacency_matrix[src, dest] = polarity
 
     def add_sensory_synapse(self, src, dest, polarity):
         if self.input_dim is None:
             raise ValueError(
-                "Cannot add sensory synapses before build() has been called!"
+                'Cannot add sensory synapses before build() has been called!'
             )
         if src < 0 or src >= self.input_dim:
             raise ValueError(
-                "Cannot add sensory synapse originating in {} if input has only {} features".format(
-                    src, self.input_dim
-                )
-            )
+                f'Cannot add sensory synapse originating in {src} if input has only {self.input_dim} features')
         if dest < 0 or dest >= self.units:
             raise ValueError(
-                "Cannot add synapse feeding into {} if cell has only {} units".format(
-                    dest, self.units
-                )
-            )
+                f'Cannot add synapse feeding into {dest} if cell has only {self.units} units')
         if polarity not in [-1, 1]:
             raise ValueError(
-                "Cannot add synapse with polarity {} (expected -1 or +1)".format(
-                    polarity
-                )
-            )
+                f'Cannot add synapse with polarity {polarity} (expected -1 or +1)')
         self.sensory_adjacency_matrix[src, dest] = polarity
 
 
@@ -116,6 +96,9 @@ class NCP(Wiring):
         self.recurrent_command_synapses = recurrent_command_synapses
         self.motor_fanin = motor_fanin
 
+        self.num_sensory_neurons = None
+        self.sensory_neurons = None
+
         # Neuron IDs: [0..motor ... command ... inter]
         self.motor_neurons = list(range(0, self.num_motor_neurons))
         self.command_neurons = list(
@@ -135,29 +118,20 @@ class NCP(Wiring):
 
         if self.motor_fanin > self.num_command_neurons:
             raise ValueError(
-                "Error: Motor fanin parameter is {} but there are only {} command neurons".format(
-                    self.motor_fanin, self.num_command_neurons
-                )
-            )
+                f'Motor fanin parameter is {self.motor_fanin} but there are only {self.num_command_neurons} command neurons')
         if self.sensory_fanout > self.num_inter_neurons:
             raise ValueError(
-                "Error: Sensory fanout parameter is {} but there are only {} inter neurons".format(
-                    self.sensory_fanout, self.num_inter_neurons
-                )
-            )
+                f'Sensory fanout parameter is {self.sensory_fanout} but there are only {self.num_inter_neurons} inter neurons')
         if self.inter_fanout > self.num_command_neurons:
             raise ValueError(
-                "Error:: Inter fanout parameter is {} but there are only {} command neurons".format(
-                    self.inter_fanout, self.num_command_neurons
-                )
-            )
+                f'Inter fanout parameter is {self.inter_fanout} but there are only {self.num_command_neurons} command neurons')
 
     def get_type_of_neuron(self, neuron_id):
         if neuron_id < self.num_motor_neurons:
-            return "motor"
+            return 'motor'
         if neuron_id < self.num_motor_neurons + self.num_command_neurons:
-            return "command"
-        return "inter"
+            return 'command'
+        return 'inter'
 
     def build_sensory_to_inter_layer(self):
         unreachable_inter_neurons = [x for x in self.inter_neurons]
@@ -175,7 +149,7 @@ class NCP(Wiring):
         mean_inter_neuron_fanin = int(
             self.num_sensory_neurons * self.sensory_fanout / self.num_inter_neurons
         )
-        # Connect "forgotten" inter neuron by at least 1 and at most all sensory neuron
+        # Connect 'forgotten' inter neuron by at least 1 and at most all sensory neuron
         mean_inter_neuron_fanin = np.clip(
             mean_inter_neuron_fanin, 1, self.num_sensory_neurons
         )
@@ -202,7 +176,7 @@ class NCP(Wiring):
         mean_command_neurons_fanin = int(
             self.num_inter_neurons * self.inter_fanout / self.num_command_neurons
         )
-        # Connect "forgotten" command neuron by at least 1 and at most all inter neuron
+        # Connect 'forgotten' command neuron by at least 1 and at most all inter neuron
         mean_command_neurons_fanin = np.clip(
             mean_command_neurons_fanin, 1, self.num_command_neurons
         )
@@ -233,11 +207,11 @@ class NCP(Wiring):
                 polarity = self.rng.choice([-1, 1])
                 self.add_synapse(src, dest, polarity)
 
-        # If it happens that some commandneurons are not connected, connect them now
+        # If it happens that some command neurons are not connected, connect them now
         mean_command_fanout = int(
             self.num_motor_neurons * self.motor_fanin / self.num_command_neurons
         )
-        # Connect "forgotten" command neuron to at least 1 and at most all motor neuron
+        # Connect 'forgotten' command neuron to at least 1 and at most all motor neuron
         mean_command_fanout = np.clip(mean_command_fanout, 1, self.num_motor_neurons)
         for src in unreachable_command_neurons:
             for dest in self.rng.choice(
@@ -261,8 +235,8 @@ class LTCCell(tf.keras.layers.Layer):
     def __init__(
             self,
             wiring,
-            input_mapping="affine",
-            output_mapping="affine",
+            input_mapping='affine',
+            output_mapping='affine',
             ode_unfolds=6,
             epsilon=1e-8,
             initialization_ranges=None,
@@ -270,36 +244,27 @@ class LTCCell(tf.keras.layers.Layer):
     ):
 
         self.init_ranges = {
-            "gleak": (0.001, 1.0),
-            "vleak": (-0.2, 0.2),
-            "cm": (0.4, 0.6),
-            "w": (0.001, 1.0),
-            "sigma": (3, 8),
-            "mu": (0.3, 0.8),
-            "sensory_w": (0.001, 1.0),
-            "sensory_sigma": (3, 8),
-            "sensory_mu": (0.3, 0.8),
+            'gleak': (0.001, 1.0),
+            'vleak': (-0.2, 0.2),
+            'cm': (0.4, 0.6),
+            'w': (0.001, 1.0),
+            'sigma': (3, 8),
+            'mu': (0.3, 0.8),
+            'sensory_w': (0.001, 1.0),
+            'sensory_sigma': (3, 8),
+            'sensory_mu': (0.3, 0.8),
         }
         if initialization_ranges is not None:
             for k, v in initialization_ranges.items():
                 if k not in self.init_ranges.keys():
                     raise ValueError(
-                        "Unknown parameter '{}' in initialization range dictionary! (Expected only {})".format(
-                            k, str(list(self.init_range.keys()))
-                        )
-                    )
-                if k in ["gleak", "cm", "w", "sensory_w"] and v[0] < 0:
+                        f'Unknown parameter "{k}" in initialization range dictionary! (Expected only {str(list(self.init_range.keys()))}))')
+                if k in ['gleak', 'cm', 'w', 'sensory_w'] and v[0] < 0:
                     raise ValueError(
-                        "Initialization range of parameter '{}' must be non-negative!".format(
-                            k
-                        )
-                    )
+                        f'Initialization range of parameter "{k}" must be non-negative!')
                 if v[0] > v[1]:
                     raise ValueError(
-                        "Initialization range of parameter '{}' is not a valid range".format(
-                            k
-                        )
-                    )
+                        f'Initialization range of parameter "{k}" is not a valid range')
                 self.init_ranges[k] = v
 
         self.wiring = wiring
@@ -307,7 +272,8 @@ class LTCCell(tf.keras.layers.Layer):
         self.output_mapping = output_mapping
         self.ode_unfolds = ode_unfolds
         self.epsilon = epsilon
-        super(LTCCell, self).__init__(name="wormnet", **kwargs)
+        self.params = None
+        super(LTCCell, self).__init__(name='WormNet', **kwargs)
 
     @property
     def state_size(self):
@@ -330,11 +296,11 @@ class LTCCell(tf.keras.layers.Layer):
         return np.sum(np.abs(self.wiring.adjacency_matrix))
 
     def get_initializer(self, param_name):
-        minval, maxval = self.init_ranges[param_name]
-        if minval == maxval:
-            return tf.keras.initializers.Constant(minval)
+        min_val, max_val = self.init_ranges[param_name]
+        if min_val == max_val:
+            return tf.keras.initializers.Constant(min_val)
         else:
-            return tf.keras.initializers.RandomUniform(minval, maxval)
+            return tf.keras.initializers.RandomUniform(min_val, max_val)
 
     def build(self, input_shape):
         if isinstance(input_shape, (tuple, list)):
@@ -343,96 +309,96 @@ class LTCCell(tf.keras.layers.Layer):
         self.wiring.build(input_shape)
 
         self.params = {
-            "gleak": self.add_weight(
-                name="gleak",
+            'gleak': self.add_weight(
+                name='gleak',
                 shape=(self.state_size,),
                 dtype=tf.float32,
                 constraint=tf.keras.constraints.NonNeg(),
-                initializer=self.get_initializer("gleak"),
-            ), "vleak": self.add_weight(
-                name="vleak",
+                initializer=self.get_initializer('gleak'),
+            ), 'vleak': self.add_weight(
+                name='vleak',
                 shape=(self.state_size,),
                 dtype=tf.float32,
-                initializer=self.get_initializer("vleak"),
-            ), "cm": self.add_weight(
-                name="cm",
+                initializer=self.get_initializer('vleak'),
+            ), 'cm': self.add_weight(
+                name='cm',
                 shape=(self.state_size,),
                 dtype=tf.float32,
                 constraint=tf.keras.constraints.NonNeg(),
-                initializer=self.get_initializer("cm"),
-            ), "sigma": self.add_weight(
-                name="sigma",
+                initializer=self.get_initializer('cm'),
+            ), 'sigma': self.add_weight(
+                name='sigma',
                 shape=(self.state_size, self.state_size),
                 dtype=tf.float32,
-                initializer=self.get_initializer("sigma"),
-            ), "mu": self.add_weight(
-                name="mu",
+                initializer=self.get_initializer('sigma'),
+            ), 'mu': self.add_weight(
+                name='mu',
                 shape=(self.state_size, self.state_size),
                 dtype=tf.float32,
-                initializer=self.get_initializer("mu"),
-            ), "w": self.add_weight(
-                name="w",
+                initializer=self.get_initializer('mu'),
+            ), 'w': self.add_weight(
+                name='w',
                 shape=(self.state_size, self.state_size),
                 dtype=tf.float32,
                 constraint=tf.keras.constraints.NonNeg(),
-                initializer=self.get_initializer("w"),
-            ), "erev": self.add_weight(
-                name="erev",
+                initializer=self.get_initializer('w'),
+            ), 'erev': self.add_weight(
+                name='erev',
                 shape=(self.state_size, self.state_size),
                 dtype=tf.float32,
                 initializer=self.wiring.erev_initializer,
-            ), "sensory_sigma": self.add_weight(
-                name="sensory_sigma",
+            ), 'sensory_sigma': self.add_weight(
+                name='sensory_sigma',
                 shape=(self.sensory_size, self.state_size),
                 dtype=tf.float32,
-                initializer=self.get_initializer("sensory_sigma"),
-            ), "sensory_mu": self.add_weight(
-                name="sensory_mu",
+                initializer=self.get_initializer('sensory_sigma'),
+            ), 'sensory_mu': self.add_weight(
+                name='sensory_mu',
                 shape=(self.sensory_size, self.state_size),
                 dtype=tf.float32,
-                initializer=self.get_initializer("sensory_mu"),
-            ), "sensory_w": self.add_weight(
-                name="sensory_w",
+                initializer=self.get_initializer('sensory_mu'),
+            ), 'sensory_w': self.add_weight(
+                name='sensory_w',
                 shape=(self.sensory_size, self.state_size),
                 dtype=tf.float32,
                 constraint=tf.keras.constraints.NonNeg(),
-                initializer=self.get_initializer("sensory_w"),
-            ), "sensory_erev": self.add_weight(
-                name="sensory_erev",
+                initializer=self.get_initializer('sensory_w'),
+            ), 'sensory_erev': self.add_weight(
+                name='sensory_erev',
                 shape=(self.sensory_size, self.state_size),
                 dtype=tf.float32,
                 initializer=self.wiring.sensory_erev_initializer,
-            ), "sparsity_mask": tf.constant(
+            ), 'sparsity_mask': tf.constant(
                 np.abs(self.wiring.adjacency_matrix), dtype=tf.float32
-            ), "sensory_sparsity_mask": tf.constant(
+            ), 'sensory_sparsity_mask': tf.constant(
                 np.abs(self.wiring.sensory_adjacency_matrix), dtype=tf.float32
             )}
 
-        if self.input_mapping in ["affine", "linear"]:
-            self.params["input_w"] = self.add_weight(
-                name="input_w",
+        if self.input_mapping in ['affine', 'linear']:
+            self.params['input_w'] = self.add_weight(
+                name='input_w',
                 shape=(self.sensory_size,),
                 dtype=tf.float32,
                 initializer=tf.keras.initializers.Constant(1),
             )
-        if self.input_mapping == "affine":
-            self.params["input_b"] = self.add_weight(
-                name="input_b",
+        if self.input_mapping == 'affine':
+            self.params['input_b'] = self.add_weight(
+                name='input_b',
                 shape=(self.sensory_size,),
                 dtype=tf.float32,
                 initializer=tf.keras.initializers.Constant(0),
             )
 
-        if self.output_mapping in ["affine", "linear"]:
-            self.params["output_w"] = self.add_weight(
-                name="output_w",
+        if self.output_mapping in ['affine', 'linear']:
+            self.params['output_w'] = self.add_weight(
+                name='output_w',
                 shape=(self.motor_size,),
                 dtype=tf.float32,
                 initializer=tf.keras.initializers.Constant(1),
             )
-        if self.output_mapping == "affine":
-            self.params["output_b"] = self.add_weight(
-                name="output_b",
+        if self.output_mapping == 'affine':
+            self.params['output_b'] = self.add_weight(
+                name='output_b',
                 shape=(self.motor_size,),
                 dtype=tf.float32,
                 initializer=tf.keras.initializers.Constant(0),
@@ -443,29 +409,29 @@ class LTCCell(tf.keras.layers.Layer):
         v_pre = state
 
         # We can pre-compute the effects of the sensory neurons here
-        sensory_w_activation = self.params["sensory_w"] * sigmoid(
-            inputs, self.params["sensory_mu"], self.params["sensory_sigma"]
+        sensory_w_activation = self.params['sensory_w'] * sigmoid(
+            inputs, self.params['sensory_mu'], self.params['sensory_sigma']
         )
-        sensory_w_activation *= self.params["sensory_sparsity_mask"]
+        sensory_w_activation *= self.params['sensory_sparsity_mask']
 
-        sensory_rev_activation = sensory_w_activation * self.params["sensory_erev"]
+        sensory_rev_activation = sensory_w_activation * self.params['sensory_erev']
 
         # Reduce over dimension 1 (=source sensory neurons)
         w_numerator_sensory = tf.reduce_sum(sensory_rev_activation, axis=1)
         w_denominator_sensory = tf.reduce_sum(sensory_w_activation, axis=1)
 
         # cm/t is loop invariant
-        cm_t = self.params["cm"] / (elapsed_time / self.ode_unfolds)
+        cm_t = self.params['cm'] / (elapsed_time / self.ode_unfolds)
 
-        # Unfold the mutliply ODE multiple times into one RNN step
+        # Unfold the multiply ODE multiple times into one RNN step
         for t in range(self.ode_unfolds):
-            w_activation = self.params["w"] * sigmoid(
-                v_pre, self.params["mu"], self.params["sigma"]
+            w_activation = self.params['w'] * sigmoid(
+                v_pre, self.params['mu'], self.params['sigma']
             )
 
-            w_activation *= self.params["sparsity_mask"]
+            w_activation *= self.params['sparsity_mask']
 
-            rev_activation = w_activation * self.params["erev"]
+            rev_activation = w_activation * self.params['erev']
 
             # Reduce over dimension 1 (=source neurons)
             w_numerator = tf.reduce_sum(rev_activation, axis=1) + w_numerator_sensory
@@ -473,10 +439,10 @@ class LTCCell(tf.keras.layers.Layer):
 
             numerator = (
                     cm_t * v_pre
-                    + self.params["gleak"] * self.params["vleak"]
+                    + self.params['gleak'] * self.params['vleak']
                     + w_numerator
             )
-            denominator = cm_t + self.params["gleak"] + w_denominator
+            denominator = cm_t + self.params['gleak'] + w_denominator
 
             # Avoid dividing by 0
             v_pre = numerator / (denominator + self.epsilon)
@@ -484,10 +450,10 @@ class LTCCell(tf.keras.layers.Layer):
         return v_pre
 
     def map_inputs(self, inputs):
-        if self.input_mapping in ["affine", "linear"]:
-            inputs = inputs * self.params["input_w"]
-        if self.input_mapping == "affine":
-            inputs = inputs + self.params["input_b"]
+        if self.input_mapping in ['affine', 'linear']:
+            inputs = inputs * self.params['input_w']
+        if self.input_mapping == 'affine':
+            inputs = inputs + self.params['input_b']
         return inputs
 
     def map_outputs(self, state):
@@ -495,10 +461,10 @@ class LTCCell(tf.keras.layers.Layer):
         if self.motor_size < self.state_size:
             output = output[:, 0: self.motor_size]
 
-        if self.output_mapping in ["affine", "linear"]:
-            output = output * self.params["output_w"]
-        if self.output_mapping == "affine":
-            output = output + self.params["output_b"]
+        if self.output_mapping in ['affine', 'linear']:
+            output = output * self.params['output_w']
+        if self.output_mapping == 'affine':
+            output = output + self.params['output_b']
         return output
 
     def call(self, inputs, states):
