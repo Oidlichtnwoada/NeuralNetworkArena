@@ -42,9 +42,8 @@ class Wiring:
     def set_output_dim(self, output_dim):
         self.output_dim = output_dim
 
-    # May be overwritten by child class
     def get_type_of_neuron(self, neuron_id):
-        return "motor" if neuron_id < self.output_dim else "inter"
+        raise NotImplementedError()
 
     def add_synapse(self, src, dest, polarity):
         if src < 0 or src >= self.units:
@@ -516,134 +515,6 @@ class LTCCell(tf.keras.layers.Layer):
         outputs = self.map_outputs(next_state)
 
         return outputs, [next_state]
-
-    def get_graph(self, include_sensory_neurons=True):
-        if not self.built:
-            raise ValueError(
-                "LTCCell layer is not built yet.\n"
-                "This is probably because the input shape is not known yet.\n"
-                "Consider calling the model.build(...) method using the shape of the inputs."
-            )
-        # Only import networkx if we really need it
-        import networkx as nx
-
-        digraph = nx.DiGraph()
-        for i in range(self.state_size):
-            neuron_type = self.wiring.get_type_of_neuron(i)
-            digraph.add_node("neuron_{:d}".format(i), neuron_type=neuron_type)
-        for i in range(self.sensory_size):
-            digraph.add_node("sensory_{:d}".format(i), neuron_type="sensory")
-
-        erev = self.params["erev"].numpy()
-        sensory_erev = self.params["sensory_erev"].numpy()
-
-        for src in range(self.sensory_size):
-            for dest in range(self.state_size):
-                if self.wiring.sensory_adjacency_matrix[src, dest] != 0:
-                    polarity = (
-                        "excitatory" if sensory_erev[src, dest] >= 0.0 else "inhibitory"
-                    )
-                    digraph.add_edge(
-                        "sensory_{:d}".format(src),
-                        "neuron_{:d}".format(dest),
-                        polarity=polarity,
-                    )
-
-        for src in range(self.state_size):
-            for dest in range(self.state_size):
-                if self.wiring.adjacency_matrix[src, dest] != 0:
-                    polarity = "excitatory" if erev[src, dest] >= 0.0 else "inhibitory"
-                    digraph.add_edge(
-                        "neuron_{:d}".format(src),
-                        "neuron_{:d}".format(dest),
-                        polarity=polarity,
-                    )
-        return digraph
-
-    def draw_graph(
-            self,
-            layout="shell",
-            neuron_colors=None,
-            synapse_colors=None,
-            draw_labels=False,
-    ):
-        # May switch to Cytoscape once support in Google Colab is available
-        # https://stackoverflow.com/questions/62421021/how-do-i-install-cytoscape-on-google-colab
-        import networkx as nx
-        import matplotlib.patches as mpatches
-
-        if isinstance(synapse_colors, str):
-            synapse_colors = {
-                "excitatory": synapse_colors,
-                "inhibitory": synapse_colors,
-            }
-        elif synapse_colors is None:
-            synapse_colors = {"excitatory": "tab:green", "inhibitory": "tab:red"}
-
-        default_colors = {
-            "inter": "tab:blue",
-            "motor": "tab:orange",
-            "sensory": "tab:olive",
-        }
-        if neuron_colors is None:
-            neuron_colors = {}
-        # Merge default with user provided color dict
-        for k, v in default_colors.items():
-            if k not in neuron_colors.keys():
-                neuron_colors[k] = v
-
-        legend_patches = []
-        for k, v in neuron_colors.items():
-            label = "{}{} neurons".format(k[0].upper(), k[1:])
-            color = v
-            legend_patches.append(mpatches.Patch(color=color, label=label))
-
-        graph = self.get_graph()
-        layouts = {
-            "kamada": nx.kamada_kawai_layout,
-            "circular": nx.circular_layout,
-            "random": nx.random_layout,
-            "shell": nx.shell_layout,
-            "spring": nx.spring_layout,
-            "spectral": nx.spectral_layout,
-            "spiral": nx.spiral_layout,
-        }
-        if layout not in layouts.keys():
-            raise ValueError(
-                "Unknown layer '{}', use one of '{}'".format(
-                    layout, str(layouts.keys())
-                )
-            )
-        pos = layouts[layout](graph)
-
-        # Draw neurons
-        for i in range(self.state_size):
-            node_name = "neuron_{:d}".format(i)
-            neuron_type = graph.nodes[node_name]["neuron_type"]
-            neuron_color = "tab:blue"
-            if neuron_type in neuron_colors.keys():
-                neuron_color = neuron_colors[neuron_type]
-            nx.draw_networkx_nodes(graph, pos, [node_name], node_color=neuron_color)
-
-        # Draw sensory neurons
-        for i in range(self.sensory_size):
-            node_name = "sensory_{:d}".format(i)
-            neuron_color = "blue"
-            if "sensory" in neuron_colors.keys():
-                neuron_color = neuron_colors["sensory"]
-            nx.draw_networkx_nodes(graph, pos, [node_name], node_color=neuron_color)
-
-        # Optional: draw labels
-        if draw_labels:
-            nx.draw_networkx_labels(graph, pos)
-
-        # Draw edges
-        for node1, node2, data in graph.edges(data=True):
-            polarity = data["polarity"]
-            edge_color = synapse_colors[polarity]
-            nx.draw_networkx_edges(graph, pos, [(node1, node2)], edge_color=edge_color)
-
-        return legend_patches
 
 
 class NeuralCircuitPolicies(tf.keras.Model):
