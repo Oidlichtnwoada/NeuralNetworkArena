@@ -13,8 +13,10 @@ from models.transformer import Transformer
 
 
 class ProblemLoader:
-    def __init__(self, model, problem_name, sequence_length=64, skip_percentage=0.1, test_data_percentage=0.15, validation_data_percentage=0.1, batch_size=128, epochs=256, learning_rate=0.001):
+    def __init__(self, model, problem_name, shrink_divisor, sequence_length=64, skip_percentage=0.1, test_data_percentage=0.15, validation_data_percentage=0.1, batch_size=128, epochs=256,
+                 learning_rate=0.001):
         self.problem_path = join('problems', problem_name)
+        self.shrink_divisor = shrink_divisor
         self.sequence_length = sequence_length
         self.skip_percentage = skip_percentage
         self.test_data_percentage = test_data_percentage
@@ -89,12 +91,12 @@ class ProblemLoader:
                                         array([x[2] for x in sequence])])
         return processed_sequences
 
-    def transform_sequences(self, shrink_divisor=8):
+    def transform_sequences(self):
         # transform rnn training sequences to transformer training sequences
         test_sequences, validation_sequences, training_sequences = [[], [], []], [[], [], []], [[], [], []]
         for input_sequences, output_sequences in [(self.test_sequences, test_sequences), (self.validation_sequences, validation_sequences), (self.training_sequences, training_sequences)]:
             # create a transformer training sample for each memory length and sequence (shrink to fit in RAM)
-            for sequence_index in range(len(input_sequences[0]) // shrink_divisor):
+            for sequence_index in range(len(input_sequences[0]) // self.shrink_divisor):
                 for memory_length in range(1, self.sequence_length + 1):
                     # zero pad information from future events
                     input_sequence = input_sequences[0][sequence_index].copy()
@@ -147,11 +149,11 @@ class ProblemLoader:
         print(f'test loss: {test_loss}')
 
 
-if len(argv) < 4:
+if len(argv) < 5:
     exit()
-problem_loader = ProblemLoader(model=argv[1], problem_name=argv[2])
+problem_loader = ProblemLoader(model=argv[1], problem_name=argv[2], shrink_divisor=int(argv[3]))
 problem_loader.build_datasets()
-if argv[3] == 'train':
+if argv[4] == 'train':
     problem_loader.train()
-elif argv[3] == 'test':
+elif argv[4] == 'test':
     problem_loader.test()
