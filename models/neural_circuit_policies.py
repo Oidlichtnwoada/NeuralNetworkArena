@@ -108,154 +108,154 @@ class NCP(Wiring):
 
         super(NCP, self).__init__(inter_neurons + command_neurons + motor_neurons)
         self.set_output_dim(motor_neurons)
-        self._rng = np.random.RandomState(seed)
-        self._num_inter_neurons = inter_neurons
-        self._num_command_neurons = command_neurons
-        self._num_motor_neurons = motor_neurons
-        self._sensory_fanout = sensory_fanout
-        self._inter_fanout = inter_fanout
-        self._recurrent_command_synapses = recurrent_command_synapses
-        self._motor_fanin = motor_fanin
+        self.rng = np.random.RandomState(seed)
+        self.num_inter_neurons = inter_neurons
+        self.num_command_neurons = command_neurons
+        self.num_motor_neurons = motor_neurons
+        self.sensory_fanout = sensory_fanout
+        self.inter_fanout = inter_fanout
+        self.recurrent_command_synapses = recurrent_command_synapses
+        self.motor_fanin = motor_fanin
 
         # Neuron IDs: [0..motor ... command ... inter]
-        self._motor_neurons = list(range(0, self._num_motor_neurons))
-        self._command_neurons = list(
+        self.motor_neurons = list(range(0, self.num_motor_neurons))
+        self.command_neurons = list(
             range(
-                self._num_motor_neurons,
-                self._num_motor_neurons + self._num_command_neurons,
+                self.num_motor_neurons,
+                self.num_motor_neurons + self.num_command_neurons,
             )
         )
-        self._inter_neurons = list(
+        self.inter_neurons = list(
             range(
-                self._num_motor_neurons + self._num_command_neurons,
-                self._num_motor_neurons
-                + self._num_command_neurons
-                + self._num_inter_neurons,
+                self.num_motor_neurons + self.num_command_neurons,
+                self.num_motor_neurons
+                + self.num_command_neurons
+                + self.num_inter_neurons,
             )
         )
 
-        if self._motor_fanin > self._num_command_neurons:
+        if self.motor_fanin > self.num_command_neurons:
             raise ValueError(
                 "Error: Motor fanin parameter is {} but there are only {} command neurons".format(
-                    self._motor_fanin, self._num_command_neurons
+                    self.motor_fanin, self.num_command_neurons
                 )
             )
-        if self._sensory_fanout > self._num_inter_neurons:
+        if self.sensory_fanout > self.num_inter_neurons:
             raise ValueError(
                 "Error: Sensory fanout parameter is {} but there are only {} inter neurons".format(
-                    self._sensory_fanout, self._num_inter_neurons
+                    self.sensory_fanout, self.num_inter_neurons
                 )
             )
-        if self._inter_fanout > self._num_command_neurons:
+        if self.inter_fanout > self.num_command_neurons:
             raise ValueError(
                 "Error:: Inter fanout parameter is {} but there are only {} command neurons".format(
-                    self._inter_fanout, self._num_command_neurons
+                    self.inter_fanout, self.num_command_neurons
                 )
             )
 
     def get_type_of_neuron(self, neuron_id):
-        if neuron_id < self._num_motor_neurons:
+        if neuron_id < self.num_motor_neurons:
             return "motor"
-        if neuron_id < self._num_motor_neurons + self._num_command_neurons:
+        if neuron_id < self.num_motor_neurons + self.num_command_neurons:
             return "command"
         return "inter"
 
-    def _build_sensory_to_inter_layer(self):
-        unreachable_inter_neurons = [x for x in self._inter_neurons]
+    def build_sensory_to_inter_layer(self):
+        unreachable_inter_neurons = [x for x in self.inter_neurons]
         # Randomly connects each sensory neuron to exactly _sensory_fanout number of interneurons
-        for src in self._sensory_neurons:
-            for dest in self._rng.choice(
-                    self._inter_neurons, size=self._sensory_fanout, replace=False
+        for src in self.sensory_neurons:
+            for dest in self.rng.choice(
+                    self.inter_neurons, size=self.sensory_fanout, replace=False
             ):
                 if dest in unreachable_inter_neurons:
                     unreachable_inter_neurons.remove(dest)
-                polarity = self._rng.choice([-1, 1])
+                polarity = self.rng.choice([-1, 1])
                 self.add_sensory_synapse(src, dest, polarity)
 
         # If it happens that some interneurons are not connected, connect them now
         mean_inter_neuron_fanin = int(
-            self._num_sensory_neurons * self._sensory_fanout / self._num_inter_neurons
+            self.num_sensory_neurons * self.sensory_fanout / self.num_inter_neurons
         )
         # Connect "forgotten" inter neuron by at least 1 and at most all sensory neuron
         mean_inter_neuron_fanin = np.clip(
-            mean_inter_neuron_fanin, 1, self._num_sensory_neurons
+            mean_inter_neuron_fanin, 1, self.num_sensory_neurons
         )
         for dest in unreachable_inter_neurons:
-            for src in self._rng.choice(
-                    self._sensory_neurons, size=mean_inter_neuron_fanin, replace=False
+            for src in self.rng.choice(
+                    self.sensory_neurons, size=mean_inter_neuron_fanin, replace=False
             ):
-                polarity = self._rng.choice([-1, 1])
+                polarity = self.rng.choice([-1, 1])
                 self.add_sensory_synapse(src, dest, polarity)
 
-    def _build_inter_to_command_layer(self):
+    def build_inter_to_command_layer(self):
         # Randomly connect interneurons to command neurons
-        unreachable_command_neurons = [x for x in self._command_neurons]
-        for src in self._inter_neurons:
-            for dest in self._rng.choice(
-                    self._command_neurons, size=self._inter_fanout, replace=False
+        unreachable_command_neurons = [x for x in self.command_neurons]
+        for src in self.inter_neurons:
+            for dest in self.rng.choice(
+                    self.command_neurons, size=self.inter_fanout, replace=False
             ):
                 if dest in unreachable_command_neurons:
                     unreachable_command_neurons.remove(dest)
-                polarity = self._rng.choice([-1, 1])
+                polarity = self.rng.choice([-1, 1])
                 self.add_synapse(src, dest, polarity)
 
         # If it happens that some command neurons are not connected, connect them now
         mean_command_neurons_fanin = int(
-            self._num_inter_neurons * self._inter_fanout / self._num_command_neurons
+            self.num_inter_neurons * self.inter_fanout / self.num_command_neurons
         )
         # Connect "forgotten" command neuron by at least 1 and at most all inter neuron
         mean_command_neurons_fanin = np.clip(
-            mean_command_neurons_fanin, 1, self._num_command_neurons
+            mean_command_neurons_fanin, 1, self.num_command_neurons
         )
         for dest in unreachable_command_neurons:
-            for src in self._rng.choice(
-                    self._inter_neurons, size=mean_command_neurons_fanin, replace=False
+            for src in self.rng.choice(
+                    self.inter_neurons, size=mean_command_neurons_fanin, replace=False
             ):
-                polarity = self._rng.choice([-1, 1])
+                polarity = self.rng.choice([-1, 1])
                 self.add_synapse(src, dest, polarity)
 
-    def _build_recurrent_command_layer(self):
+    def build_recurrent_command_layer(self):
         # Add recurrency in command neurons
-        for i in range(self._recurrent_command_synapses):
-            src = self._rng.choice(self._command_neurons)
-            dest = self._rng.choice(self._command_neurons)
-            polarity = self._rng.choice([-1, 1])
+        for i in range(self.recurrent_command_synapses):
+            src = self.rng.choice(self.command_neurons)
+            dest = self.rng.choice(self.command_neurons)
+            polarity = self.rng.choice([-1, 1])
             self.add_synapse(src, dest, polarity)
 
-    def _build_command__to_motor_layer(self):
+    def build_command__to_motor_layer(self):
         # Randomly connect command neurons to motor neurons
-        unreachable_command_neurons = [x for x in self._command_neurons]
-        for dest in self._motor_neurons:
-            for src in self._rng.choice(
-                    self._command_neurons, size=self._motor_fanin, replace=False
+        unreachable_command_neurons = [x for x in self.command_neurons]
+        for dest in self.motor_neurons:
+            for src in self.rng.choice(
+                    self.command_neurons, size=self.motor_fanin, replace=False
             ):
                 if src in unreachable_command_neurons:
                     unreachable_command_neurons.remove(src)
-                polarity = self._rng.choice([-1, 1])
+                polarity = self.rng.choice([-1, 1])
                 self.add_synapse(src, dest, polarity)
 
         # If it happens that some commandneurons are not connected, connect them now
         mean_command_fanout = int(
-            self._num_motor_neurons * self._motor_fanin / self._num_command_neurons
+            self.num_motor_neurons * self.motor_fanin / self.num_command_neurons
         )
         # Connect "forgotten" command neuron to at least 1 and at most all motor neuron
-        mean_command_fanout = np.clip(mean_command_fanout, 1, self._num_motor_neurons)
+        mean_command_fanout = np.clip(mean_command_fanout, 1, self.num_motor_neurons)
         for src in unreachable_command_neurons:
-            for dest in self._rng.choice(
-                    self._motor_neurons, size=mean_command_fanout, replace=False
+            for dest in self.rng.choice(
+                    self.motor_neurons, size=mean_command_fanout, replace=False
             ):
-                polarity = self._rng.choice([-1, 1])
+                polarity = self.rng.choice([-1, 1])
                 self.add_synapse(src, dest, polarity)
 
     def build(self, input_shape):
         super().build(input_shape)
-        self._num_sensory_neurons = self.input_dim
-        self._sensory_neurons = list(range(0, self._num_sensory_neurons))
+        self.num_sensory_neurons = self.input_dim
+        self.sensory_neurons = list(range(0, self.num_sensory_neurons))
 
-        self._build_sensory_to_inter_layer()
-        self._build_inter_to_command_layer()
-        self._build_recurrent_command_layer()
-        self._build_command__to_motor_layer()
+        self.build_sensory_to_inter_layer()
+        self.build_inter_to_command_layer()
+        self.build_recurrent_command_layer()
+        self.build_command__to_motor_layer()
 
 
 class LTCCell(tf.keras.layers.Layer):
@@ -270,7 +270,7 @@ class LTCCell(tf.keras.layers.Layer):
             **kwargs
     ):
 
-        self._init_ranges = {
+        self.init_ranges = {
             "gleak": (0.001, 1.0),
             "vleak": (-0.2, 0.2),
             "cm": (0.4, 0.6),
@@ -283,10 +283,10 @@ class LTCCell(tf.keras.layers.Layer):
         }
         if initialization_ranges is not None:
             for k, v in initialization_ranges.items():
-                if k not in self._init_ranges.keys():
+                if k not in self.init_ranges.keys():
                     raise ValueError(
                         "Unknown parameter '{}' in initialization range dictionary! (Expected only {})".format(
-                            k, str(list(self._init_range.keys()))
+                            k, str(list(self.init_range.keys()))
                         )
                     )
                 if k in ["gleak", "cm", "w", "sensory_w"] and v[0] < 0:
@@ -301,37 +301,37 @@ class LTCCell(tf.keras.layers.Layer):
                             k
                         )
                     )
-                self._init_ranges[k] = v
+                self.init_ranges[k] = v
 
-        self._wiring = wiring
-        self._input_mapping = input_mapping
-        self._output_mapping = output_mapping
-        self._ode_unfolds = ode_unfolds
-        self._epsilon = epsilon
+        self.wiring = wiring
+        self.input_mapping = input_mapping
+        self.output_mapping = output_mapping
+        self.ode_unfolds = ode_unfolds
+        self.epsilon = epsilon
         super(LTCCell, self).__init__(name="wormnet", **kwargs)
 
     @property
     def state_size(self):
-        return self._wiring.units
+        return self.wiring.units
 
     @property
     def sensory_size(self):
-        return self._wiring.input_dim
+        return self.wiring.input_dim
 
     @property
     def motor_size(self):
-        return self._wiring.output_dim
+        return self.wiring.output_dim
 
     @property
     def synapse_count(self):
-        return np.sum(np.abs(self._wiring.adjacency_matrix))
+        return np.sum(np.abs(self.wiring.adjacency_matrix))
 
     @property
     def sensory_synapse_count(self):
-        return np.sum(np.abs(self._wiring.adjacency_matrix))
+        return np.sum(np.abs(self.wiring.adjacency_matrix))
 
-    def _get_initializer(self, param_name):
-        minval, maxval = self._init_ranges[param_name]
+    def get_initializer(self, param_name):
+        minval, maxval = self.init_ranges[param_name]
         if minval == maxval:
             return tf.keras.initializers.Constant(minval)
         else:
@@ -341,98 +341,98 @@ class LTCCell(tf.keras.layers.Layer):
         if isinstance(input_shape, (tuple, list)):
             input_shape = input_shape[0]
 
-        self._wiring.build(input_shape)
+        self.wiring.build(input_shape)
 
-        self._params = {
+        self.params = {
             "gleak": self.add_weight(
                 name="gleak",
                 shape=(self.state_size,),
                 dtype=tf.float32,
                 constraint=tf.keras.constraints.NonNeg(),
-                initializer=self._get_initializer("gleak"),
+                initializer=self.get_initializer("gleak"),
             ), "vleak": self.add_weight(
                 name="vleak",
                 shape=(self.state_size,),
                 dtype=tf.float32,
-                initializer=self._get_initializer("vleak"),
+                initializer=self.get_initializer("vleak"),
             ), "cm": self.add_weight(
                 name="cm",
                 shape=(self.state_size,),
                 dtype=tf.float32,
                 constraint=tf.keras.constraints.NonNeg(),
-                initializer=self._get_initializer("cm"),
+                initializer=self.get_initializer("cm"),
             ), "sigma": self.add_weight(
                 name="sigma",
                 shape=(self.state_size, self.state_size),
                 dtype=tf.float32,
-                initializer=self._get_initializer("sigma"),
+                initializer=self.get_initializer("sigma"),
             ), "mu": self.add_weight(
                 name="mu",
                 shape=(self.state_size, self.state_size),
                 dtype=tf.float32,
-                initializer=self._get_initializer("mu"),
+                initializer=self.get_initializer("mu"),
             ), "w": self.add_weight(
                 name="w",
                 shape=(self.state_size, self.state_size),
                 dtype=tf.float32,
                 constraint=tf.keras.constraints.NonNeg(),
-                initializer=self._get_initializer("w"),
+                initializer=self.get_initializer("w"),
             ), "erev": self.add_weight(
                 name="erev",
                 shape=(self.state_size, self.state_size),
                 dtype=tf.float32,
-                initializer=self._wiring.erev_initializer,
+                initializer=self.wiring.erev_initializer,
             ), "sensory_sigma": self.add_weight(
                 name="sensory_sigma",
                 shape=(self.sensory_size, self.state_size),
                 dtype=tf.float32,
-                initializer=self._get_initializer("sensory_sigma"),
+                initializer=self.get_initializer("sensory_sigma"),
             ), "sensory_mu": self.add_weight(
                 name="sensory_mu",
                 shape=(self.sensory_size, self.state_size),
                 dtype=tf.float32,
-                initializer=self._get_initializer("sensory_mu"),
+                initializer=self.get_initializer("sensory_mu"),
             ), "sensory_w": self.add_weight(
                 name="sensory_w",
                 shape=(self.sensory_size, self.state_size),
                 dtype=tf.float32,
                 constraint=tf.keras.constraints.NonNeg(),
-                initializer=self._get_initializer("sensory_w"),
+                initializer=self.get_initializer("sensory_w"),
             ), "sensory_erev": self.add_weight(
                 name="sensory_erev",
                 shape=(self.sensory_size, self.state_size),
                 dtype=tf.float32,
-                initializer=self._wiring.sensory_erev_initializer,
+                initializer=self.wiring.sensory_erev_initializer,
             ), "sparsity_mask": tf.constant(
-                np.abs(self._wiring.adjacency_matrix), dtype=tf.float32
+                np.abs(self.wiring.adjacency_matrix), dtype=tf.float32
             ), "sensory_sparsity_mask": tf.constant(
-                np.abs(self._wiring.sensory_adjacency_matrix), dtype=tf.float32
+                np.abs(self.wiring.sensory_adjacency_matrix), dtype=tf.float32
             )}
 
-        if self._input_mapping in ["affine", "linear"]:
-            self._params["input_w"] = self.add_weight(
+        if self.input_mapping in ["affine", "linear"]:
+            self.params["input_w"] = self.add_weight(
                 name="input_w",
                 shape=(self.sensory_size,),
                 dtype=tf.float32,
                 initializer=tf.keras.initializers.Constant(1),
             )
-        if self._input_mapping == "affine":
-            self._params["input_b"] = self.add_weight(
+        if self.input_mapping == "affine":
+            self.params["input_b"] = self.add_weight(
                 name="input_b",
                 shape=(self.sensory_size,),
                 dtype=tf.float32,
                 initializer=tf.keras.initializers.Constant(0),
             )
 
-        if self._output_mapping in ["affine", "linear"]:
-            self._params["output_w"] = self.add_weight(
+        if self.output_mapping in ["affine", "linear"]:
+            self.params["output_w"] = self.add_weight(
                 name="output_w",
                 shape=(self.motor_size,),
                 dtype=tf.float32,
                 initializer=tf.keras.initializers.Constant(1),
             )
-        if self._output_mapping == "affine":
-            self._params["output_b"] = self.add_weight(
+        if self.output_mapping == "affine":
+            self.params["output_b"] = self.add_weight(
                 name="output_b",
                 shape=(self.motor_size,),
                 dtype=tf.float32,
@@ -440,33 +440,33 @@ class LTCCell(tf.keras.layers.Layer):
             )
         self.built = True
 
-    def _ode_solver(self, inputs, state, elapsed_time):
+    def ode_solver(self, inputs, state, elapsed_time):
         v_pre = state
 
         # We can pre-compute the effects of the sensory neurons here
-        sensory_w_activation = self._params["sensory_w"] * sigmoid(
-            inputs, self._params["sensory_mu"], self._params["sensory_sigma"]
+        sensory_w_activation = self.params["sensory_w"] * sigmoid(
+            inputs, self.params["sensory_mu"], self.params["sensory_sigma"]
         )
-        sensory_w_activation *= self._params["sensory_sparsity_mask"]
+        sensory_w_activation *= self.params["sensory_sparsity_mask"]
 
-        sensory_rev_activation = sensory_w_activation * self._params["sensory_erev"]
+        sensory_rev_activation = sensory_w_activation * self.params["sensory_erev"]
 
         # Reduce over dimension 1 (=source sensory neurons)
         w_numerator_sensory = tf.reduce_sum(sensory_rev_activation, axis=1)
         w_denominator_sensory = tf.reduce_sum(sensory_w_activation, axis=1)
 
         # cm/t is loop invariant
-        cm_t = self._params["cm"] / (elapsed_time / self._ode_unfolds)
+        cm_t = self.params["cm"] / (elapsed_time / self.ode_unfolds)
 
         # Unfold the mutliply ODE multiple times into one RNN step
-        for t in range(self._ode_unfolds):
-            w_activation = self._params["w"] * sigmoid(
-                v_pre, self._params["mu"], self._params["sigma"]
+        for t in range(self.ode_unfolds):
+            w_activation = self.params["w"] * sigmoid(
+                v_pre, self.params["mu"], self.params["sigma"]
             )
 
-            w_activation *= self._params["sparsity_mask"]
+            w_activation *= self.params["sparsity_mask"]
 
-            rev_activation = w_activation * self._params["erev"]
+            rev_activation = w_activation * self.params["erev"]
 
             # Reduce over dimension 1 (=source neurons)
             w_numerator = tf.reduce_sum(rev_activation, axis=1) + w_numerator_sensory
@@ -474,32 +474,32 @@ class LTCCell(tf.keras.layers.Layer):
 
             numerator = (
                     cm_t * v_pre
-                    + self._params["gleak"] * self._params["vleak"]
+                    + self.params["gleak"] * self.params["vleak"]
                     + w_numerator
             )
-            denominator = cm_t + self._params["gleak"] + w_denominator
+            denominator = cm_t + self.params["gleak"] + w_denominator
 
             # Avoid dividing by 0
-            v_pre = numerator / (denominator + self._epsilon)
+            v_pre = numerator / (denominator + self.epsilon)
 
         return v_pre
 
-    def _map_inputs(self, inputs):
-        if self._input_mapping in ["affine", "linear"]:
-            inputs = inputs * self._params["input_w"]
-        if self._input_mapping == "affine":
-            inputs = inputs + self._params["input_b"]
+    def map_inputs(self, inputs):
+        if self.input_mapping in ["affine", "linear"]:
+            inputs = inputs * self.params["input_w"]
+        if self.input_mapping == "affine":
+            inputs = inputs + self.params["input_b"]
         return inputs
 
-    def _map_outputs(self, state):
+    def map_outputs(self, state):
         output = state
         if self.motor_size < self.state_size:
             output = output[:, 0: self.motor_size]
 
-        if self._output_mapping in ["affine", "linear"]:
-            output = output * self._params["output_w"]
-        if self._output_mapping == "affine":
-            output = output + self._params["output_b"]
+        if self.output_mapping in ["affine", "linear"]:
+            output = output * self.params["output_w"]
+        if self.output_mapping == "affine":
+            output = output + self.params["output_b"]
         return output
 
     def call(self, inputs, states):
@@ -509,11 +509,11 @@ class LTCCell(tf.keras.layers.Layer):
         else:
             # regularly sampled mode
             elapsed_time = 1.0
-        inputs = self._map_inputs(inputs)
+        inputs = self.map_inputs(inputs)
 
-        next_state = self._ode_solver(inputs, states[0], elapsed_time)
+        next_state = self.ode_solver(inputs, states[0], elapsed_time)
 
-        outputs = self._map_outputs(next_state)
+        outputs = self.map_outputs(next_state)
 
         return outputs, [next_state]
 
@@ -529,17 +529,17 @@ class LTCCell(tf.keras.layers.Layer):
 
         digraph = nx.DiGraph()
         for i in range(self.state_size):
-            neuron_type = self._wiring.get_type_of_neuron(i)
+            neuron_type = self.wiring.get_type_of_neuron(i)
             digraph.add_node("neuron_{:d}".format(i), neuron_type=neuron_type)
         for i in range(self.sensory_size):
             digraph.add_node("sensory_{:d}".format(i), neuron_type="sensory")
 
-        erev = self._params["erev"].numpy()
-        sensory_erev = self._params["sensory_erev"].numpy()
+        erev = self.params["erev"].numpy()
+        sensory_erev = self.params["sensory_erev"].numpy()
 
         for src in range(self.sensory_size):
             for dest in range(self.state_size):
-                if self._wiring.sensory_adjacency_matrix[src, dest] != 0:
+                if self.wiring.sensory_adjacency_matrix[src, dest] != 0:
                     polarity = (
                         "excitatory" if sensory_erev[src, dest] >= 0.0 else "inhibitory"
                     )
@@ -551,7 +551,7 @@ class LTCCell(tf.keras.layers.Layer):
 
         for src in range(self.state_size):
             for dest in range(self.state_size):
-                if self._wiring.adjacency_matrix[src, dest] != 0:
+                if self.wiring.adjacency_matrix[src, dest] != 0:
                     polarity = "excitatory" if erev[src, dest] >= 0.0 else "inhibitory"
                     digraph.add_edge(
                         "neuron_{:d}".format(src),
