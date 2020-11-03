@@ -331,7 +331,7 @@ class LTCCell(tf.keras.layers.Layer):
             return tf.keras.initializers.RandomUniform(minval, maxval)
 
     def build(self, input_shape):
-        if isinstance(input_shape, tuple):
+        if isinstance(input_shape, (tuple, list)):
             input_shape = input_shape[0]
 
         self._wiring.build(input_shape)
@@ -469,7 +469,7 @@ class LTCCell(tf.keras.layers.Layer):
         w_denominator_sensory = tf.reduce_sum(sensory_w_activation, axis=1)
 
         # cm/t is loop invariant
-        cm_t = self._params["cm"] / tf.cast(elapsed_time / self._ode_unfolds, dtype=tf.float32)
+        cm_t = self._params["cm"] / (elapsed_time / self._ode_unfolds)
 
         # Unfold the mutliply ODE multiple times into one RNN step
         for t in range(self._ode_unfolds):
@@ -517,10 +517,10 @@ class LTCCell(tf.keras.layers.Layer):
 
     def call(self, inputs, states):
         if isinstance(inputs, (tuple, list)):
-            # Irregularly sampled mode
+            # irregularly sampled mode
             inputs, elapsed_time = inputs
         else:
-            # Rregularly sampled mode (elapsed time = 1 second)
+            # regularly sampled mode
             elapsed_time = 1.0
         inputs = self._map_inputs(inputs)
 
@@ -678,7 +678,10 @@ class NeuralCircuitPolicies(tf.keras.Model):
         self.dense_layer = tf.keras.layers.Dense(self.output_length)
 
     def call(self, inputs, training=None, mask=None):
-        rnn_output = self.rnn(inputs)
+        signals, times = inputs
+        signals = tf.cast(signals, dtype=tf.float32)
+        times = tf.cast(times, dtype=tf.float32)
+        rnn_output = self.rnn((signals, times))
         return self.dense_layer(rnn_output)
 
     def get_config(self):

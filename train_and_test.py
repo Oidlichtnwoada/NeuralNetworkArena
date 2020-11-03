@@ -117,7 +117,8 @@ class ProblemLoader:
             model = Transformer(token_amount=self.input_length, token_size=1, d_model=32, num_heads=2, d_ff=128, num_layers=2, dropout_rate=0.1)
         elif self.model == 'neural_circuit_policies':
             model = NeuralCircuitPolicies(
-                output_length=self.input_length, inter_neurons=12, command_neurons=8, motor_neurons=4, sensory_fanout=4, inter_fanout=4, recurrent_command_synapses=4, motor_fanin=4)
+                output_length=self.input_length, inter_neurons=16, command_neurons=16, motor_neurons=self.input_length,
+                sensory_fanout=8, inter_fanout=8, recurrent_command_synapses=32, motor_fanin=16)
         else:
             raise NotImplementedError()
         model.compile(optimizer=Adam(self.learning_rate), loss=MeanSquaredError(), run_eagerly=True)
