@@ -2,6 +2,13 @@ import numpy as np
 import tensorflow as tf
 
 
+def sigmoid(v_pre, mu, sigma):
+    v_pre = tf.expand_dims(v_pre, axis=-1)
+    mus = v_pre - mu
+    x = sigma * mus
+    return tf.nn.sigmoid(x)
+
+
 class Wiring:
     def __init__(self, units):
         self.units = units
@@ -11,7 +18,7 @@ class Wiring:
 
     def build(self, input_shape):
         input_dim = int(input_shape[1])
-        if not self.input_dim is None and self.input_dim != input_dim:
+        if self.input_dim is not None and self.input_dim != input_dim:
             raise ValueError(
                 "Conflicting input dimensions provided. set_input_dim() was called with {} but actual input has dimension {}".format(
                     self.input_dim, input_dim
@@ -52,7 +59,7 @@ class Wiring:
                     dest, self.units
                 )
             )
-        if not polarity in [-1, 1]:
+        if polarity not in [-1, 1]:
             raise ValueError(
                 "Cannot add synapse with polarity {} (expected -1 or +1)".format(
                     polarity
@@ -77,7 +84,7 @@ class Wiring:
                     dest, self.units
                 )
             )
-        if not polarity in [-1, 1]:
+        if polarity not in [-1, 1]:
             raise ValueError(
                 "Cannot add synapse with polarity {} (expected -1 or +1)".format(
                     polarity
@@ -154,7 +161,7 @@ class NCP(Wiring):
         return "inter"
 
     def _build_sensory_to_inter_layer(self):
-        unreachable_inter_neurons = [l for l in self._inter_neurons]
+        unreachable_inter_neurons = [x for x in self._inter_neurons]
         # Randomly connects each sensory neuron to exactly _sensory_fanout number of interneurons
         for src in self._sensory_neurons:
             for dest in self._rng.choice(
@@ -182,7 +189,7 @@ class NCP(Wiring):
 
     def _build_inter_to_command_layer(self):
         # Randomly connect interneurons to command neurons
-        unreachable_command_neurons = [l for l in self._command_neurons]
+        unreachable_command_neurons = [x for x in self._command_neurons]
         for src in self._inter_neurons:
             for dest in self._rng.choice(
                     self._command_neurons, size=self._inter_fanout, replace=False
@@ -217,7 +224,7 @@ class NCP(Wiring):
 
     def _build_command__to_motor_layer(self):
         # Randomly connect command neurons to motor neurons
-        unreachable_command_neurons = [l for l in self._command_neurons]
+        unreachable_command_neurons = [x for x in self._command_neurons]
         for dest in self._motor_neurons:
             for src in self._rng.choice(
                     self._command_neurons, size=self._motor_fanin, replace=False
@@ -274,7 +281,7 @@ class LTCCell(tf.keras.layers.Layer):
             "sensory_sigma": (3, 8),
             "sensory_mu": (0.3, 0.8),
         }
-        if not initialization_ranges is None:
+        if initialization_ranges is not None:
             for k, v in initialization_ranges.items():
                 if k not in self._init_ranges.keys():
                     raise ValueError(
@@ -336,85 +343,71 @@ class LTCCell(tf.keras.layers.Layer):
 
         self._wiring.build(input_shape)
 
-        self._params = {}
-        self._params["gleak"] = self.add_weight(
-            name="gleak",
-            shape=(self.state_size,),
-            dtype=tf.float32,
-            constraint=tf.keras.constraints.NonNeg(),
-            initializer=self._get_initializer("gleak"),
-        )
-        self._params["vleak"] = self.add_weight(
-            name="vleak",
-            shape=(self.state_size,),
-            dtype=tf.float32,
-            initializer=self._get_initializer("vleak"),
-        )
-        self._params["cm"] = self.add_weight(
-            name="cm",
-            shape=(self.state_size,),
-            dtype=tf.float32,
-            constraint=tf.keras.constraints.NonNeg(),
-            initializer=self._get_initializer("cm"),
-        )
-        self._params["sigma"] = self.add_weight(
-            name="sigma",
-            shape=(self.state_size, self.state_size),
-            dtype=tf.float32,
-            initializer=self._get_initializer("sigma"),
-        )
-        self._params["mu"] = self.add_weight(
-            name="mu",
-            shape=(self.state_size, self.state_size),
-            dtype=tf.float32,
-            initializer=self._get_initializer("mu"),
-        )
-        self._params["w"] = self.add_weight(
-            name="w",
-            shape=(self.state_size, self.state_size),
-            dtype=tf.float32,
-            constraint=tf.keras.constraints.NonNeg(),
-            initializer=self._get_initializer("w"),
-        )
-        self._params["erev"] = self.add_weight(
-            name="erev",
-            shape=(self.state_size, self.state_size),
-            dtype=tf.float32,
-            initializer=self._wiring.erev_initializer,
-        )
-
-        self._params["sensory_sigma"] = self.add_weight(
-            name="sensory_sigma",
-            shape=(self.sensory_size, self.state_size),
-            dtype=tf.float32,
-            initializer=self._get_initializer("sensory_sigma"),
-        )
-        self._params["sensory_mu"] = self.add_weight(
-            name="sensory_mu",
-            shape=(self.sensory_size, self.state_size),
-            dtype=tf.float32,
-            initializer=self._get_initializer("sensory_mu"),
-        )
-        self._params["sensory_w"] = self.add_weight(
-            name="sensory_w",
-            shape=(self.sensory_size, self.state_size),
-            dtype=tf.float32,
-            constraint=tf.keras.constraints.NonNeg(),
-            initializer=self._get_initializer("sensory_w"),
-        )
-        self._params["sensory_erev"] = self.add_weight(
-            name="sensory_erev",
-            shape=(self.sensory_size, self.state_size),
-            dtype=tf.float32,
-            initializer=self._wiring.sensory_erev_initializer,
-        )
-
-        self._params["sparsity_mask"] = tf.constant(
-            np.abs(self._wiring.adjacency_matrix), dtype=tf.float32
-        )
-        self._params["sensory_sparsity_mask"] = tf.constant(
-            np.abs(self._wiring.sensory_adjacency_matrix), dtype=tf.float32
-        )
+        self._params = {
+            "gleak": self.add_weight(
+                name="gleak",
+                shape=(self.state_size,),
+                dtype=tf.float32,
+                constraint=tf.keras.constraints.NonNeg(),
+                initializer=self._get_initializer("gleak"),
+            ), "vleak": self.add_weight(
+                name="vleak",
+                shape=(self.state_size,),
+                dtype=tf.float32,
+                initializer=self._get_initializer("vleak"),
+            ), "cm": self.add_weight(
+                name="cm",
+                shape=(self.state_size,),
+                dtype=tf.float32,
+                constraint=tf.keras.constraints.NonNeg(),
+                initializer=self._get_initializer("cm"),
+            ), "sigma": self.add_weight(
+                name="sigma",
+                shape=(self.state_size, self.state_size),
+                dtype=tf.float32,
+                initializer=self._get_initializer("sigma"),
+            ), "mu": self.add_weight(
+                name="mu",
+                shape=(self.state_size, self.state_size),
+                dtype=tf.float32,
+                initializer=self._get_initializer("mu"),
+            ), "w": self.add_weight(
+                name="w",
+                shape=(self.state_size, self.state_size),
+                dtype=tf.float32,
+                constraint=tf.keras.constraints.NonNeg(),
+                initializer=self._get_initializer("w"),
+            ), "erev": self.add_weight(
+                name="erev",
+                shape=(self.state_size, self.state_size),
+                dtype=tf.float32,
+                initializer=self._wiring.erev_initializer,
+            ), "sensory_sigma": self.add_weight(
+                name="sensory_sigma",
+                shape=(self.sensory_size, self.state_size),
+                dtype=tf.float32,
+                initializer=self._get_initializer("sensory_sigma"),
+            ), "sensory_mu": self.add_weight(
+                name="sensory_mu",
+                shape=(self.sensory_size, self.state_size),
+                dtype=tf.float32,
+                initializer=self._get_initializer("sensory_mu"),
+            ), "sensory_w": self.add_weight(
+                name="sensory_w",
+                shape=(self.sensory_size, self.state_size),
+                dtype=tf.float32,
+                constraint=tf.keras.constraints.NonNeg(),
+                initializer=self._get_initializer("sensory_w"),
+            ), "sensory_erev": self.add_weight(
+                name="sensory_erev",
+                shape=(self.sensory_size, self.state_size),
+                dtype=tf.float32,
+                initializer=self._wiring.sensory_erev_initializer,
+            ), "sparsity_mask": tf.constant(
+                np.abs(self._wiring.adjacency_matrix), dtype=tf.float32
+            ), "sensory_sparsity_mask": tf.constant(
+                np.abs(self._wiring.sensory_adjacency_matrix), dtype=tf.float32
+            )}
 
         if self._input_mapping in ["affine", "linear"]:
             self._params["input_w"] = self.add_weight(
@@ -447,17 +440,11 @@ class LTCCell(tf.keras.layers.Layer):
             )
         self.built = True
 
-    def _sigmoid(self, v_pre, mu, sigma):
-        v_pre = tf.expand_dims(v_pre, axis=-1)  # For broadcasting
-        mues = v_pre - mu
-        x = sigma * mues
-        return tf.nn.sigmoid(x)
-
     def _ode_solver(self, inputs, state, elapsed_time):
         v_pre = state
 
         # We can pre-compute the effects of the sensory neurons here
-        sensory_w_activation = self._params["sensory_w"] * self._sigmoid(
+        sensory_w_activation = self._params["sensory_w"] * sigmoid(
             inputs, self._params["sensory_mu"], self._params["sensory_sigma"]
         )
         sensory_w_activation *= self._params["sensory_sparsity_mask"]
@@ -473,7 +460,7 @@ class LTCCell(tf.keras.layers.Layer):
 
         # Unfold the mutliply ODE multiple times into one RNN step
         for t in range(self._ode_unfolds):
-            w_activation = self._params["w"] * self._sigmoid(
+            w_activation = self._params["w"] * sigmoid(
                 v_pre, self._params["mu"], self._params["sigma"]
             )
 
@@ -540,12 +527,12 @@ class LTCCell(tf.keras.layers.Layer):
         # Only import networkx if we really need it
         import networkx as nx
 
-        DG = nx.DiGraph()
+        digraph = nx.DiGraph()
         for i in range(self.state_size):
             neuron_type = self._wiring.get_type_of_neuron(i)
-            DG.add_node("neuron_{:d}".format(i), neuron_type=neuron_type)
+            digraph.add_node("neuron_{:d}".format(i), neuron_type=neuron_type)
         for i in range(self.sensory_size):
-            DG.add_node("sensory_{:d}".format(i), neuron_type="sensory")
+            digraph.add_node("sensory_{:d}".format(i), neuron_type="sensory")
 
         erev = self._params["erev"].numpy()
         sensory_erev = self._params["sensory_erev"].numpy()
@@ -556,7 +543,7 @@ class LTCCell(tf.keras.layers.Layer):
                     polarity = (
                         "excitatory" if sensory_erev[src, dest] >= 0.0 else "inhibitory"
                     )
-                    DG.add_edge(
+                    digraph.add_edge(
                         "sensory_{:d}".format(src),
                         "neuron_{:d}".format(dest),
                         polarity=polarity,
@@ -566,12 +553,12 @@ class LTCCell(tf.keras.layers.Layer):
             for dest in range(self.state_size):
                 if self._wiring.adjacency_matrix[src, dest] != 0:
                     polarity = "excitatory" if erev[src, dest] >= 0.0 else "inhibitory"
-                    DG.add_edge(
+                    digraph.add_edge(
                         "neuron_{:d}".format(src),
                         "neuron_{:d}".format(dest),
                         polarity=polarity,
                     )
-        return DG
+        return digraph
 
     def draw_graph(
             self,
@@ -602,7 +589,7 @@ class LTCCell(tf.keras.layers.Layer):
             neuron_colors = {}
         # Merge default with user provided color dict
         for k, v in default_colors.items():
-            if not k in neuron_colors.keys():
+            if k not in neuron_colors.keys():
                 neuron_colors[k] = v
 
         legend_patches = []
@@ -611,7 +598,7 @@ class LTCCell(tf.keras.layers.Layer):
             color = v
             legend_patches.append(mpatches.Patch(color=color, label=label))
 
-        G = self.get_graph()
+        graph = self.get_graph()
         layouts = {
             "kamada": nx.kamada_kawai_layout,
             "circular": nx.circular_layout,
@@ -621,22 +608,22 @@ class LTCCell(tf.keras.layers.Layer):
             "spectral": nx.spectral_layout,
             "spiral": nx.spiral_layout,
         }
-        if not layout in layouts.keys():
+        if layout not in layouts.keys():
             raise ValueError(
                 "Unknown layer '{}', use one of '{}'".format(
                     layout, str(layouts.keys())
                 )
             )
-        pos = layouts[layout](G)
+        pos = layouts[layout](graph)
 
         # Draw neurons
         for i in range(self.state_size):
             node_name = "neuron_{:d}".format(i)
-            neuron_type = G.nodes[node_name]["neuron_type"]
+            neuron_type = graph.nodes[node_name]["neuron_type"]
             neuron_color = "tab:blue"
             if neuron_type in neuron_colors.keys():
                 neuron_color = neuron_colors[neuron_type]
-            nx.draw_networkx_nodes(G, pos, [node_name], node_color=neuron_color)
+            nx.draw_networkx_nodes(graph, pos, [node_name], node_color=neuron_color)
 
         # Draw sensory neurons
         for i in range(self.sensory_size):
@@ -644,17 +631,17 @@ class LTCCell(tf.keras.layers.Layer):
             neuron_color = "blue"
             if "sensory" in neuron_colors.keys():
                 neuron_color = neuron_colors["sensory"]
-            nx.draw_networkx_nodes(G, pos, [node_name], node_color=neuron_color)
+            nx.draw_networkx_nodes(graph, pos, [node_name], node_color=neuron_color)
 
         # Optional: draw labels
         if draw_labels:
-            nx.draw_networkx_labels(G, pos)
+            nx.draw_networkx_labels(graph, pos)
 
         # Draw edges
-        for node1, node2, data in G.edges(data=True):
+        for node1, node2, data in graph.edges(data=True):
             polarity = data["polarity"]
             edge_color = synapse_colors[polarity]
-            nx.draw_networkx_edges(G, pos, [(node1, node2)], edge_color=edge_color)
+            nx.draw_networkx_edges(graph, pos, [(node1, node2)], edge_color=edge_color)
 
         return legend_patches
 
