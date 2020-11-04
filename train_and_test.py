@@ -13,9 +13,11 @@ from models.transformer import Transformer
 
 
 class ProblemLoader:
-    def __init__(self, model, problem_name, shrink_divisor=1, sequence_length=64, skip_percentage=0.1, test_data_percentage=0.15, validation_data_percentage=0.1, batch_size=128, epochs=256,
+    def __init__(self, model, problem_name, use_saved_weights=False, shrink_divisor=1, sequence_length=64, skip_percentage=0.1, test_data_percentage=0.15, validation_data_percentage=0.1,
+                 batch_size=128, epochs=256,
                  learning_rate=0.005):
         self.problem_path = join('problems', problem_name)
+        self.use_saved_weights = use_saved_weights
         self.shrink_divisor = shrink_divisor
         self.sequence_length = sequence_length
         self.skip_percentage = skip_percentage
@@ -131,7 +133,8 @@ class ProblemLoader:
     def train(self):
         # train the model parameters using gradient descent
         model = self.get_model()
-        # model.load_weights(self.weights_directory).expect_partial()
+        if self.use_saved_weights:
+            model.load_weights(self.weights_directory).expect_partial()
         model.fit(
             x=(self.training_sequences[0], self.training_sequences[1]),
             y=self.training_sequences[2],
@@ -149,13 +152,13 @@ class ProblemLoader:
         print(f'test loss: {test_loss}')
 
 
-if len(argv) < 4:
+if len(argv) < 5:
     problem_loader = None
     exit()
-elif len(argv) == 4:
+elif len(argv) == 5:
     problem_loader = ProblemLoader(model=argv[1], problem_name=argv[2])
 else:
-    problem_loader = ProblemLoader(model=argv[1], problem_name=argv[2], shrink_divisor=int(argv[4]))
+    problem_loader = ProblemLoader(model=argv[1], problem_name=argv[2], use_saved_weights=bool(int(argv[4])), shrink_divisor=int(argv[5]))
 problem_loader.build_datasets()
 if argv[3] == 'train':
     problem_loader.train()
