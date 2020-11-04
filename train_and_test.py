@@ -1,20 +1,20 @@
 from os import listdir
 from os.path import join
-from sys import argv
+from sys import argv, exit
 
 from numpy import load, array, zeros
 from numpy.random import random, shuffle
 from tensorflow.keras.callbacks import ModelCheckpoint
 from tensorflow.keras.losses import MeanSquaredError
-from tensorflow.keras.optimizers import Adam
+from tensorflow.keras.optimizers import RMSprop
 
 from models.neural_circuit_policies import NeuralCircuitPolicies
 from models.transformer import Transformer
 
 
 class ProblemLoader:
-    def __init__(self, model, problem_name, shrink_divisor, sequence_length=64, skip_percentage=0.1, test_data_percentage=0.15, validation_data_percentage=0.1, batch_size=128, epochs=256,
-                 learning_rate=0.001):
+    def __init__(self, model, problem_name, shrink_divisor=1, sequence_length=64, skip_percentage=0.1, test_data_percentage=0.15, validation_data_percentage=0.1, batch_size=128, epochs=256,
+                 learning_rate=0.005):
         self.problem_path = join('problems', problem_name)
         self.shrink_divisor = shrink_divisor
         self.sequence_length = sequence_length
@@ -116,14 +116,14 @@ class ProblemLoader:
     def get_model(self):
         if self.model == 'transformer':
             self.transform_sequences()
-            model = Transformer(token_amount=self.input_length, token_size=1, d_model=32, num_heads=2, d_ff=128, num_layers=2, dropout_rate=0.1)
+            model = Transformer(token_amount=1, token_size=self.input_length, d_model=64, num_heads=4, d_ff=256, num_layers=4, dropout_rate=0.1)
         elif self.model == 'neural_circuit_policies':
             model = NeuralCircuitPolicies(
                 output_length=self.input_length, inter_neurons=16, command_neurons=16, motor_neurons=self.input_length,
-                sensory_fanout=8, inter_fanout=8, recurrent_command_synapses=32, motor_fanin=16)
+                sensory_fanout=4, inter_fanout=4, recurrent_command_synapses=8, motor_fanin=6)
         else:
             raise NotImplementedError()
-        model.compile(optimizer=Adam(self.learning_rate), loss=MeanSquaredError(), run_eagerly=True)
+        model.compile(optimizer=RMSprop(self.learning_rate), loss=MeanSquaredError(), run_eagerly=True)
         print(f'sample predictions: {model.predict((self.test_sequences[0][:self.batch_size], self.test_sequences[1][:self.batch_size]), batch_size=self.batch_size)}')
         model.summary()
         return model
@@ -149,11 +149,15 @@ class ProblemLoader:
         print(f'test loss: {test_loss}')
 
 
-if len(argv) < 5:
+if len(argv) < 4:
+    problem_loader = None
     exit()
-problem_loader = ProblemLoader(model=argv[1], problem_name=argv[2], shrink_divisor=int(argv[3]))
+elif len(argv) == 4:
+    problem_loader = ProblemLoader(model=argv[1], problem_name=argv[2])
+else:
+    problem_loader = ProblemLoader(model=argv[1], problem_name=argv[2], shrink_divisor=int(argv[4]))
 problem_loader.build_datasets()
-if argv[4] == 'train':
+if argv[3] == 'train':
     problem_loader.train()
-elif argv[4] == 'test':
+elif argv[3] == 'test':
     problem_loader.test()
