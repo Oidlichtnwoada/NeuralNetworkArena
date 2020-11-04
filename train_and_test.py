@@ -6,7 +6,7 @@ from numpy import load, array, zeros
 from numpy.random import random, shuffle
 from tensorflow.keras.callbacks import ModelCheckpoint
 from tensorflow.keras.losses import MeanSquaredError
-from tensorflow.keras.optimizers import RMSprop
+from tensorflow.keras.optimizers import Adam
 
 from models.neural_circuit_policies import NeuralCircuitPolicies
 from models.transformer import Transformer
@@ -15,7 +15,7 @@ from models.transformer import Transformer
 class ProblemLoader:
     def __init__(self, model, problem_name, use_saved_weights=False, shrink_divisor=1, sequence_length=64, skip_percentage=0.1, test_data_percentage=0.15, validation_data_percentage=0.1,
                  batch_size=128, epochs=256,
-                 learning_rate=0.005):
+                 learning_rate=0.001):
         self.problem_path = join('problems', problem_name)
         self.use_saved_weights = use_saved_weights
         self.shrink_divisor = shrink_divisor
@@ -118,14 +118,14 @@ class ProblemLoader:
     def get_model(self):
         if self.model == 'transformer':
             self.transform_sequences()
-            model = Transformer(token_amount=1, token_size=self.input_length, d_model=64, num_heads=4, d_ff=256, num_layers=4, dropout_rate=0.1)
+            model = Transformer(token_amount=1, token_size=self.input_length, d_model=64, num_heads=4, d_ff=128, num_layers=4, dropout_rate=0.1)
         elif self.model == 'neural_circuit_policies':
             model = NeuralCircuitPolicies(
                 output_length=self.input_length, inter_neurons=16, command_neurons=16, motor_neurons=self.input_length,
                 sensory_fanout=4, inter_fanout=4, recurrent_command_synapses=8, motor_fanin=6)
         else:
             raise NotImplementedError()
-        model.compile(optimizer=RMSprop(self.learning_rate), loss=MeanSquaredError(), run_eagerly=True)
+        model.compile(optimizer=Adam(self.learning_rate), loss=MeanSquaredError(), run_eagerly=True)
         print(f'sample predictions: {model.predict((self.test_sequences[0][:self.batch_size], self.test_sequences[1][:self.batch_size]), batch_size=self.batch_size)}')
         model.summary()
         return model
@@ -158,7 +158,7 @@ if len(argv) < 5:
 elif len(argv) == 5:
     problem_loader = ProblemLoader(model=argv[1], problem_name=argv[2])
 else:
-    problem_loader = ProblemLoader(model=argv[1], problem_name=argv[2], use_saved_weights=bool(int(argv[4])), shrink_divisor=int(argv[5]))
+    problem_loader = ProblemLoader(model=argv[1], problem_name=argv[2], use_saved_weights=bool(int(argv[4])), shrink_divisor=int(argv[-1]))
 problem_loader.build_datasets()
 if argv[3] == 'train':
     problem_loader.train()
