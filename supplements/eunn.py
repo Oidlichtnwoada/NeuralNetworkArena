@@ -1,10 +1,7 @@
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
-import tensorflow as tf
 import math
+
 import numpy as np
+import tensorflow as tf
 from tensorflow.python.ops import rnn_cell_impl
 
 
@@ -83,8 +80,8 @@ def generate_index_fft(s):
             temp = np.array(range(2 ** k))
             list0 = [np.append(temp + 2 ** k, temp)]
             list1 = ind_s(k - 1)
-            for i in range(k):
-                list0.append(np.append(list1[i], list1[i] + 2 ** k))
+            for index in range(k):
+                list0.append(np.append(list1[index], list1[index] + 2 ** k))
             return list0
 
     t = ind_s(int(math.log(s / 2, 2)))
@@ -108,14 +105,14 @@ def fft_param(num_units, cplex):
     phase_init = tf.random_uniform_initializer(-3.14, 3.14)
     capacity = int(math.log(num_units, 2))
 
-    theta = tf.get_variable("theta", [capacity, num_units // 2],
-                            initializer=phase_init)
+    theta = tf.compat.v1.get_variable("theta", [capacity, num_units // 2],
+                                      initializer=phase_init)
     cos_theta = tf.cos(theta)
     sin_theta = tf.sin(theta)
 
     if cplex:
-        phi = tf.get_variable("phi", [capacity, num_units // 2],
-                              initializer=phase_init)
+        phi = tf.compat.v1.get_variable("phi", [capacity, num_units // 2],
+                                        initializer=phase_init)
         cos_phi = tf.cos(phi)
         sin_phi = tf.sin(phi)
 
@@ -136,8 +133,8 @@ def fft_param(num_units, cplex):
     v2 = tf.stack([tf.gather(sin_list[i, :], index_fft[i]) for i in range(capacity)])
 
     if cplex:
-        omega = tf.get_variable("omega", [num_units],
-                                initializer=phase_init)
+        omega = tf.compat.v1.get_variable("omega", [num_units],
+                                          initializer=phase_init)
         D = tf.complex(tf.cos(omega), tf.sin(omega))
     else:
         D = None
@@ -152,14 +149,14 @@ def tunable_param(num_units, cplex, capacity):
     capacity_B = capacity - capacity_A
     phase_init = tf.random_uniform_initializer(-3.14, 3.14)
 
-    theta_A = tf.get_variable("theta_A", [capacity_A, num_units // 2],
-                              initializer=phase_init)
+    theta_A = tf.compat.v1.get_variable("theta_A", [capacity_A, num_units // 2],
+                                        initializer=phase_init)
     cos_theta_A = tf.cos(theta_A)
     sin_theta_A = tf.sin(theta_A)
 
     if cplex:
-        phi_A = tf.get_variable("phi_A", [capacity_A, num_units // 2],
-                                initializer=phase_init)
+        phi_A = tf.compat.v1.get_variable("phi_A", [capacity_A, num_units // 2],
+                                          initializer=phase_init)
         cos_phi_A = tf.cos(phi_A)
         sin_phi_A = tf.sin(phi_A)
 
@@ -173,14 +170,14 @@ def tunable_param(num_units, cplex, capacity):
         cos_list_A = tf.concat([cos_theta_A, cos_theta_A], axis=1)
         sin_list_A = tf.concat([sin_theta_A, -sin_theta_A], axis=1)
 
-    theta_B = tf.get_variable("theta_B", [capacity_B, num_units // 2 - 1],
-                              initializer=phase_init)
+    theta_B = tf.compat.v1.get_variable("theta_B", [capacity_B, num_units // 2 - 1],
+                                        initializer=phase_init)
     cos_theta_B = tf.cos(theta_B)
     sin_theta_B = tf.sin(theta_B)
 
     if cplex:
-        phi_B = tf.get_variable("phi_B", [capacity_B, num_units // 2 - 1],
-                                initializer=phase_init)
+        phi_B = tf.compat.v1.get_variable("phi_B", [capacity_B, num_units // 2 - 1],
+                                          initializer=phase_init)
         cos_phi_B = tf.cos(phi_B)
         sin_phi_B = tf.sin(phi_B)
 
@@ -211,8 +208,8 @@ def tunable_param(num_units, cplex, capacity):
     v2 = tf.reshape(tf.concat([off_list_A, off_list_B], axis=1), [capacity, num_units])
 
     if cplex:
-        omega = tf.get_variable("omega", [num_units],
-                                initializer=phase_init)
+        omega = tf.compat.v1.get_variable("omega", [num_units],
+                                          initializer=phase_init)
         D = tf.complex(tf.cos(omega), tf.sin(omega))
     else:
         D = None
@@ -294,31 +291,29 @@ class EUNNCell(rnn_cell_impl.RNNCell):
         return h
 
     def __call__(self, inputs, state, scope=None):
-        with tf.variable_scope(scope or "eunn_cell"):
+        with tf.compat.v1.variable_scope(scope or "eunn_cell"):
 
             inputs_size = inputs.get_shape()[-1]
-
-            # state = _eunn_loop(state, self._capacity, self.diag_vec, self.off_vec, self.diag, self._fft)
 
             # inputs to hidden
             input_matrix_init = tf.random_uniform_initializer(-0.01, 0.01)
             if self._cplex:
-                U_re = tf.get_variable("U_re", [inputs_size, self._num_units], initializer=input_matrix_init)
-                U_im = tf.get_variable("U_im", [inputs_size, self._num_units], initializer=input_matrix_init)
+                U_re = tf.compat.v1.get_variable("U_re", [inputs_size, self._num_units], initializer=input_matrix_init)
+                U_im = tf.compat.v1.get_variable("U_im", [inputs_size, self._num_units], initializer=input_matrix_init)
                 inputs_re = tf.matmul(inputs, U_re)
                 inputs_im = tf.matmul(inputs, U_im)
                 inputs = tf.complex(inputs_re, inputs_im)
             else:
-                U = tf.get_variable("U", [inputs_size, self._num_units],
-                                    initializer=input_matrix_init)
+                U = tf.compat.v1.get_variable("U", [inputs_size, self._num_units],
+                                              initializer=input_matrix_init)
                 inputs = tf.matmul(inputs, U)
 
             # hidden to hidden
-            state = self.loop(state)
+            state = self.loop(tf.cast(state, dtype=tf.complex64))
 
             # activation
-            bias = tf.get_variable("modReLUBias", [self._num_units],
-                                   initializer=tf.constant_initializer())
+            bias = tf.compat.v1.get_variable("modReLUBias", [self._num_units],
+                                             initializer=tf.constant_initializer())
             output = self._activation((inputs + state), bias, self._cplex)
 
         return output, output

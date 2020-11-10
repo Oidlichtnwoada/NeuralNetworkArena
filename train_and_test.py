@@ -6,7 +6,7 @@ from numpy import load, array, zeros
 from numpy.random import random, shuffle
 from tensorflow.keras.callbacks import ModelCheckpoint
 from tensorflow.keras.losses import MeanSquaredError
-from tensorflow.keras.optimizers import Adam
+from tensorflow.keras.optimizers import Adam, RMSprop
 
 from models.neural_circuit_policies import NeuralCircuitPolicies
 from models.transformer import Transformer
@@ -115,16 +115,19 @@ class ProblemLoader:
         self.test_sequences, self.validation_sequences, self.training_sequences = test_sequences, validation_sequences, training_sequences
 
     def get_model(self):
+        loss = MeanSquaredError()
         if self.model == 'transformer':
             self.transform_sequences()
             model = Transformer(token_amount=1, token_size=self.input_length, d_model=64, num_heads=4, d_ff=128, num_layers=4, dropout_rate=0.1)
+            optimizer = Adam(self.learning_rate)
         elif self.model == 'neural_circuit_policies':
             model = NeuralCircuitPolicies(
                 output_length=self.input_length, inter_neurons=16, command_neurons=16, motor_neurons=self.input_length,
                 sensory_fanout=4, inter_fanout=4, recurrent_command_synapses=8, motor_fanin=6)
+            optimizer = RMSprop(self.learning_rate)
         else:
             raise NotImplementedError()
-        model.compile(optimizer=Adam(self.learning_rate), loss=MeanSquaredError(), run_eagerly=True)
+        model.compile(optimizer=optimizer, loss=loss, run_eagerly=True)
         print(f'sample predictions: {model.predict((self.test_sequences[0][:self.batch_size], self.test_sequences[1][:self.batch_size]), batch_size=self.batch_size)}')
         model.summary()
         return model
