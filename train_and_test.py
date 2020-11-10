@@ -1,6 +1,6 @@
+from argparse import ArgumentParser
 from os import listdir
 from os.path import join
-from sys import argv, exit
 
 from numpy import load, array, zeros
 from numpy.random import random, shuffle
@@ -13,10 +13,9 @@ from models.transformer import Transformer
 
 
 class ProblemLoader:
-    def __init__(self, model, problem_name, use_saved_weights=False, shrink_divisor=1, sequence_length=64, skip_percentage=0.1, test_data_percentage=0.15, validation_data_percentage=0.1,
-                 batch_size=128, epochs=256,
-                 learning_rate=0.001):
-        self.problem_path = join('problems', problem_name)
+    def __init__(self, model, problem, use_saved_weights, shrink_divisor, sequence_length, batch_size, epochs, learning_rate,
+                 skip_percentage=0.1, test_data_percentage=0.15, validation_data_percentage=0.1):
+        self.problem_path = join('problems', problem)
         self.use_saved_weights = use_saved_weights
         self.shrink_divisor = shrink_divisor
         self.sequence_length = sequence_length
@@ -31,7 +30,7 @@ class ProblemLoader:
         self.training_sequences = None
         self.input_length = None
         self.model = model
-        self.weights_directory = f'weights/{problem_name}/{self.model}/checkpoint'
+        self.weights_directory = f'weights/{problem}/{self.model}/checkpoint'
 
     def build_datasets(self):
         # return test, training and validation set
@@ -152,15 +151,24 @@ class ProblemLoader:
         print(f'test loss: {test_loss}')
 
 
-if len(argv) < 5:
-    problem_loader = None
-    exit()
-elif len(argv) == 5:
-    problem_loader = ProblemLoader(model=argv[1], problem_name=argv[2])
-else:
-    problem_loader = ProblemLoader(model=argv[1], problem_name=argv[2], use_saved_weights=bool(int(argv[4])), shrink_divisor=int(argv[-1]))
+# parse arguments and start program
+parser = ArgumentParser()
+parser.add_argument('--model', default='transformer')
+parser.add_argument('--problem', default='walker')
+parser.add_argument('--mode', default='train')
+parser.add_argument('--use_saved_weights', default=False)
+parser.add_argument('--shrink_divisor', default=8)
+parser.add_argument('--sequence_length', default=64)
+parser.add_argument('--batch_size', default=128)
+parser.add_argument('--epochs', default=256)
+parser.add_argument('--learning_rate', default=1E-3)
+args = parser.parse_args()
+
+# build the problem loader using the arguments
+problem_loader = ProblemLoader(model=args.model, problem=args.problem, use_saved_weights=args.use_saved_weights, shrink_divisor=args.shrink_divisor,
+                               sequence_length=args.sequence_length, batch_size=args.batch_size, epochs=args.epochs, learning_rate=args.learning_rate)
 problem_loader.build_datasets()
-if argv[3] == 'train':
+if args.mode == 'train':
     problem_loader.train()
-elif argv[3] == 'test':
+elif args.mode == 'test':
     problem_loader.test()
