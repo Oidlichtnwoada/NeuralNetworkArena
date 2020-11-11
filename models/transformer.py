@@ -5,13 +5,13 @@ def positional_encoding(positions, d_model):
     # compute factors for all dimensions
     positional_encoding_factors = 1 / tf.pow(1E4, tf.cast(2 * (tf.range(d_model) // 2) / d_model, dtype=tf.float32))
     # multiply each factor with the corresponding position to get the argument for the trigonometric functions
-    positional_encoding_matrix = tf.Variable(tf.cast(positions, dtype=tf.float32) * positional_encoding_factors)
+    positional_encoding_matrix = tf.cast(positions, dtype=tf.float32) * positional_encoding_factors
     # apply a sine to the even dimensions
-    positional_encoding_matrix[:, :, 0::2].assign(tf.sin(positional_encoding_matrix[:, :, 0::2]))
+    pem_sine = tf.sin(positional_encoding_matrix[:, :, 0::2])
     # apply a cosine to the odd dimensions
-    positional_encoding_matrix[:, :, 1::2].assign(tf.cos(positional_encoding_matrix[:, :, 1::2]))
+    pem_cosine = tf.cos(positional_encoding_matrix[:, :, 1::2])
     # cast the result and return a tensor
-    return tf.convert_to_tensor(positional_encoding_matrix)
+    return tf.reshape(tf.concat([pem_sine[..., tf.newaxis], pem_cosine[..., tf.newaxis]], axis=-1), (-1,) + (positional_encoding_matrix.shape[1],) + (positional_encoding_matrix.shape[2],))
 
 
 def feed_forward_network(d_model, d_ff):
@@ -40,7 +40,7 @@ def dot_product_attention(queries, keys, values, d_qkv, mask):
 
 def split_heads(qkv, num_heads, d_qkv):
     # split queries, key or values into num_heads - permutation necessary to compute right dot product
-    return tf.transpose(tf.reshape(qkv, qkv.shape[:2] + (num_heads, d_qkv)), perm=[0, 2, 1, 3])
+    return tf.transpose(tf.reshape(qkv, (-1,) + (qkv.shape[1],) + (num_heads, d_qkv)), perm=[0, 2, 1, 3])
 
 
 def compute_padding_mask(signals):
@@ -68,7 +68,7 @@ class MultiHeadAttention(tf.keras.layers.Layer):
         self.query_generator_network = tf.keras.layers.Dense(self.d_model)
         self.key_generator_network = tf.keras.layers.Dense(self.d_model)
         self.value_generator_network = tf.keras.layers.Dense(self.d_model)
-        self.mha_output_generator_network = tf.keras.layers.Dense(self.d_model)
+        self.att_output_generator_network = tf.keras.layers.Dense(self.d_model)
 
     def call(self, inputs, **kwargs):
         # split inputs tuple to the arguments
@@ -86,48 +86,49 @@ class MultiHeadAttention(tf.keras.layers.Layer):
         # transpose dpa matrix such that the heads dimension is behind input dimension
         reshaped_dpa = tf.transpose(dpa, perm=[0, 2, 1, 3])
         # merge heads to single value dimension
-        concatenated_dpa = tf.reshape(reshaped_dpa, reshaped_dpa.shape[:2] + (self.d_model,))
+        concatenated_dpa = tf.reshape(reshaped_dpa, (-1,) + (reshaped_dpa.shape[1],) + (self.d_model,))
         # transform concatenated dpa to vectors of size d_model
-        return self.mha_output_generator_network(concatenated_dpa), attention_weights
+        return self.att_output_generator_network(concatenated_dpa), attention_weights
 
 
 class EncoderLayer(tf.keras.layers.Layer):
-    def __init__(self, d_model, num_heads, d_ff, dropout_rate):
+    def __init__(self, d_model, num_heads, d_ff, dropout_rate, attention):
         super(EncoderLayer, self).__init__()
         # parameters
         self.d_model = d_model
         self.num_heads = num_heads
         self.d_ff = d_ff
         self.dropout_rate = dropout_rate
+        self.attention = attention
         # used layers
-        self.mha = MultiHeadAttention(self.d_model, self.num_heads)
+        self.att = self.attention(self.d_model, self.num_heads)
         self.ffn = feed_forward_network(self.d_model, self.d_ff)
-        self.mha_layer_norm = tf.keras.layers.LayerNormalization(epsilon=1e-6)
+        self.att_layer_norm = tf.keras.layers.LayerNormalization(epsilon=1e-6)
         self.ffn_layer_norm = tf.keras.layers.LayerNormalization(epsilon=1e-6)
-        self.mha_dropout = tf.keras.layers.Dropout(self.dropout_rate)
+        self.att_dropout = tf.keras.layers.Dropout(self.dropout_rate)
         self.ffn_dropout = tf.keras.layers.Dropout(self.dropout_rate)
 
     def call(self, inputs, **kwargs):
         # split inputs tuple to the arguments
         signals, encoder_zero_input_mask = inputs
-        # compute multi head self attention output values
-        mha_output, attention_weights = self.mha((signals, signals, signals, encoder_zero_input_mask))
+        # compute self attention output values
+        att_output, attention_weights = self.att((signals, signals, signals, encoder_zero_input_mask))
         # use a dropout layer to prevent overfitting
-        mha_output = self.mha_dropout(mha_output)
-        # normalize mha output with residual connection
-        mha_layer_norm_output = self.mha_layer_norm(signals + mha_output)
+        att_output = self.att_dropout(att_output)
+        # normalize att output with residual connection
+        att_layer_norm_output = self.att_layer_norm(signals + att_output)
         # compute feed forward network output values
-        ffn_output = self.ffn(mha_layer_norm_output)
+        ffn_output = self.ffn(att_layer_norm_output)
         # use a dropout layer to prevent overfitting
         ffn_output = self.ffn_dropout(ffn_output)
         # normalize ffn output with residual connection
-        ffn_layer_norm_output = self.ffn_layer_norm(mha_layer_norm_output + ffn_output)
+        ffn_layer_norm_output = self.ffn_layer_norm(att_layer_norm_output + ffn_output)
         # the output of the second normalization layer is the output of the encoder layer
         return ffn_layer_norm_output
 
 
 class Encoder(tf.keras.layers.Layer):
-    def __init__(self, d_model, num_heads, d_ff, num_layers, mask_zero_inputs, dropout_rate):
+    def __init__(self, d_model, num_heads, d_ff, num_layers, mask_zero_inputs, dropout_rate, attention):
         super(Encoder, self).__init__()
         # parameters
         self.d_model = d_model
@@ -136,9 +137,10 @@ class Encoder(tf.keras.layers.Layer):
         self.num_layers = num_layers
         self.mask_zero_inputs = mask_zero_inputs
         self.dropout_rate = dropout_rate
+        self.attention = attention
         # used layers
         self.embedding = tf.keras.layers.Dense(self.d_model)
-        self.encoder_layers = [EncoderLayer(self.d_model, self.num_heads, self.d_ff, self.dropout_rate) for _ in range(self.num_layers)]
+        self.encoder_layers = [EncoderLayer(self.d_model, self.num_heads, self.d_ff, self.dropout_rate, self.attention) for _ in range(self.num_layers)]
         self.dropout_layer = tf.keras.layers.Dropout(self.dropout_rate)
 
     def call(self, inputs, **kwargs):
@@ -167,51 +169,52 @@ class Encoder(tf.keras.layers.Layer):
 
 
 class DecoderLayer(tf.keras.layers.Layer):
-    def __init__(self, d_model, num_heads, d_ff, dropout_rate):
+    def __init__(self, d_model, num_heads, d_ff, dropout_rate, attention):
         super(DecoderLayer, self).__init__()
         # parameters
         self.d_model = d_model
         self.num_heads = num_heads
         self.d_ff = d_ff
         self.dropout_rate = dropout_rate
+        self.attention = attention
         # used layers
-        self.self_mha = MultiHeadAttention(self.d_model, self.num_heads)
-        self.enc_dec_mha = MultiHeadAttention(self.d_model, self.num_heads)
+        self.self_att = self.attention(self.d_model, self.num_heads)
+        self.enc_dec_att = self.attention(self.d_model, self.num_heads)
         self.ffn = feed_forward_network(self.d_model, self.d_ff)
-        self.self_mha_layer_norm = tf.keras.layers.LayerNormalization(epsilon=1e-6)
-        self.enc_dec_mha_layer_norm = tf.keras.layers.LayerNormalization(epsilon=1e-6)
+        self.self_att_layer_norm = tf.keras.layers.LayerNormalization(epsilon=1e-6)
+        self.enc_dec_att_layer_norm = tf.keras.layers.LayerNormalization(epsilon=1e-6)
         self.ffn_layer_norm = tf.keras.layers.LayerNormalization(epsilon=1e-6)
-        self.self_mha_dropout = tf.keras.layers.Dropout(self.dropout_rate)
-        self.enc_dec_mha_dropout = tf.keras.layers.Dropout(self.dropout_rate)
+        self.self_att_dropout = tf.keras.layers.Dropout(self.dropout_rate)
+        self.enc_dec_att_dropout = tf.keras.layers.Dropout(self.dropout_rate)
         self.ffn_dropout = tf.keras.layers.Dropout(self.dropout_rate)
 
     def call(self, inputs, **kwargs):
         # split inputs tuple to the arguments
         signals, encoder_output, decoder_zero_input_mask, look_ahead_mask = inputs
-        # compute multi head self attention output values
-        self_mha_output, attention_weights = self.self_mha((signals, signals, signals, look_ahead_mask))
+        # compute self attention output values
+        self_att_output, attention_weights = self.self_att((signals, signals, signals, look_ahead_mask))
         # use a dropout layer to prevent overfitting
-        self_mha_output = self.self_mha_dropout(self_mha_output)
-        # normalize self mha output with residual connection
-        self_mha_layer_norm_output = self.self_mha_layer_norm(signals + self_mha_output)
-        # compute encoder decoder mha output values
-        enc_dec_mha_output, attention_weights = self.enc_dec_mha((self_mha_layer_norm_output, encoder_output, encoder_output, decoder_zero_input_mask))
+        self_att_output = self.self_att_dropout(self_att_output)
+        # normalize self att output with residual connection
+        self_att_layer_norm_output = self.self_att_layer_norm(signals + self_att_output)
+        # compute encoder decoder att output values
+        enc_dec_att_output, attention_weights = self.enc_dec_att((self_att_layer_norm_output, encoder_output, encoder_output, decoder_zero_input_mask))
         # use a dropout layer to prevent overfitting
-        enc_dec_mha_output = self.enc_dec_mha_dropout(enc_dec_mha_output)
-        # normalize encoder decoder mha output with residual connection
-        enc_dec_mha_layer_norm_output = self.enc_dec_mha_layer_norm(self_mha_layer_norm_output + enc_dec_mha_output)
+        enc_dec_att_output = self.enc_dec_att_dropout(enc_dec_att_output)
+        # normalize encoder decoder att output with residual connection
+        enc_dec_att_layer_norm_output = self.enc_dec_att_layer_norm(self_att_layer_norm_output + enc_dec_att_output)
         # compute feed forward network output values
-        ffn_output = self.ffn(enc_dec_mha_layer_norm_output)
+        ffn_output = self.ffn(enc_dec_att_layer_norm_output)
         # use a dropout layer to prevent overfitting
         ffn_output = self.ffn_dropout(ffn_output)
         # normalize ffn output with residual connection
-        ffn_layer_norm_output = self.ffn_layer_norm(enc_dec_mha_layer_norm_output + ffn_output)
+        ffn_layer_norm_output = self.ffn_layer_norm(enc_dec_att_layer_norm_output + ffn_output)
         # the output of the third normalization layer is the output of the decoder layer
         return ffn_layer_norm_output
 
 
 class Decoder(tf.keras.layers.Layer):
-    def __init__(self, d_model, num_heads, d_ff, num_layers, token_amount, token_size, mask_zero_inputs, dropout_rate):
+    def __init__(self, d_model, num_heads, d_ff, num_layers, token_amount, token_size, mask_zero_inputs, dropout_rate, attention):
         super(Decoder, self).__init__()
         # parameters
         self.d_model = d_model
@@ -222,10 +225,11 @@ class Decoder(tf.keras.layers.Layer):
         self.token_size = token_size
         self.mask_zero_inputs = mask_zero_inputs
         self.dropout_rate = dropout_rate
+        self.attention = attention
         # used layers
         self.embedding = tf.keras.layers.Dense(self.d_model)
         self.token_output_layer = tf.keras.layers.Dense(self.token_size)
-        self.decoder_layers = [DecoderLayer(self.d_model, self.num_heads, self.d_ff, self.dropout_rate) for _ in range(self.num_layers)]
+        self.decoder_layers = [DecoderLayer(self.d_model, self.num_heads, self.d_ff, self.dropout_rate, self.attention) for _ in range(self.num_layers)]
         self.dropout_layer = tf.keras.layers.Dropout(self.dropout_rate)
 
     def call(self, inputs, **kwargs):
@@ -237,7 +241,7 @@ class Decoder(tf.keras.layers.Layer):
         else:
             decoder_zero_input_mask = None
         # create a start token
-        tokens = tf.ones((encoder_output.shape[0], 1, self.token_size))
+        tokens = tf.ones_like(encoder_output)[:, :1, :self.token_size]
         # create the right amount of tokens
         for _ in range(self.token_amount):
             # create a look ahead mask such that tokens can only attend to previous positions
@@ -250,7 +254,7 @@ class Decoder(tf.keras.layers.Layer):
             # scale with with factor
             embedded_tokens *= tf.math.sqrt(tf.cast(self.d_model, dtype=tf.float32))
             # build the position matrix
-            positions = tf.repeat(tf.range(embedded_tokens.shape[1])[tf.newaxis, :, tf.newaxis], embedded_tokens.shape[0], axis=0)
+            positions = tf.range(embedded_tokens.shape[1])[tf.newaxis, :, tf.newaxis]
             # add positional information to the embedded tokens
             positional_embedded_tokens = embedded_tokens + positional_encoding(positions, self.d_model)
             # use a dropout layer to prevent overfitting
@@ -271,7 +275,7 @@ class Decoder(tf.keras.layers.Layer):
 
 
 class Transformer(tf.keras.Model):
-    def __init__(self, token_amount, token_size, d_model, num_heads, d_ff, num_layers, dropout_rate, squeeze_output=True, mask_zero_inputs=True):
+    def __init__(self, token_amount, token_size, d_model, num_heads, d_ff, num_layers, dropout_rate, attention=MultiHeadAttention, squeeze_output=True, mask_zero_inputs=True):
         super(Transformer, self).__init__()
         # parameters
         self.token_amount = token_amount
@@ -283,9 +287,10 @@ class Transformer(tf.keras.Model):
         self.squeeze_output = squeeze_output
         self.mask_zero_inputs = mask_zero_inputs
         self.dropout_rate = dropout_rate
+        self.attention = attention
         # used layers
-        self.encoder = Encoder(self.d_model, self.num_heads, self.d_ff, self.num_layers, self.mask_zero_inputs, self.dropout_rate)
-        self.decoder = Decoder(self.d_model, self.num_heads, self.d_ff, self.num_layers, self.token_amount, self.token_size, self.mask_zero_inputs, self.dropout_rate)
+        self.encoder = Encoder(self.d_model, self.num_heads, self.d_ff, self.num_layers, self.mask_zero_inputs, self.dropout_rate, self.attention)
+        self.decoder = Decoder(self.d_model, self.num_heads, self.d_ff, self.num_layers, self.token_amount, self.token_size, self.mask_zero_inputs, self.dropout_rate, self.attention)
 
     def call(self, inputs, training=None, mask=None):
         # build the encoder output

@@ -9,11 +9,12 @@ from tensorflow.keras.losses import MeanSquaredError
 from tensorflow.keras.optimizers import Adam, RMSprop
 
 from models.neural_circuit_policies import NeuralCircuitPolicies
+from models.recurrent_transformer import MultiHeadRecurrentAttention
 from models.transformer import Transformer
 
 
 class ProblemLoader:
-    def __init__(self, model, problem, use_saved_weights, shrink_divisor, sequence_length, batch_size, epochs, learning_rate,
+    def __init__(self, model, problem, use_saved_weights, shrink_divisor, sequence_length, batch_size, epochs, learning_rate, debug,
                  skip_percentage=0.1, test_data_percentage=0.15, validation_data_percentage=0.1):
         self.problem_path = join('problems', problem)
         self.use_saved_weights = use_saved_weights
@@ -25,6 +26,7 @@ class ProblemLoader:
         self.batch_size = batch_size
         self.epochs = epochs
         self.learning_rate = learning_rate
+        self.debug = debug
         self.test_sequences = None
         self.validation_sequences = None
         self.training_sequences = None
@@ -125,9 +127,13 @@ class ProblemLoader:
                 output_length=self.input_length, inter_neurons=16, command_neurons=16, motor_neurons=self.input_length,
                 sensory_fanout=4, inter_fanout=4, recurrent_command_synapses=8, motor_fanin=6)
             optimizer = RMSprop(self.learning_rate)
+        elif self.model == 'recurrent_transformer':
+            self.transform_sequences()
+            model = Transformer(token_amount=1, token_size=self.input_length, d_model=64, num_heads=4, d_ff=128, num_layers=4, dropout_rate=0.1, attention=MultiHeadRecurrentAttention)
+            optimizer = RMSprop(self.learning_rate)
         else:
             raise NotImplementedError()
-        model.compile(optimizer=optimizer, loss=loss, run_eagerly=True)
+        model.compile(optimizer=optimizer, loss=loss, run_eagerly=True if self.debug else False)
         print(f'sample predictions: {model.predict((self.test_sequences[0][:self.batch_size], self.test_sequences[1][:self.batch_size]), batch_size=self.batch_size)}')
         model.summary()
         return model
@@ -156,20 +162,21 @@ class ProblemLoader:
 
 # parse arguments and start program
 parser = ArgumentParser()
-parser.add_argument('--model', default='transformer')
-parser.add_argument('--problem', default='walker')
-parser.add_argument('--mode', default='train')
-parser.add_argument('--use_saved_weights', default=False)
-parser.add_argument('--shrink_divisor', default=8)
-parser.add_argument('--sequence_length', default=64)
-parser.add_argument('--batch_size', default=128)
-parser.add_argument('--epochs', default=256)
-parser.add_argument('--learning_rate', default=1E-3)
+parser.add_argument('--model', default='transformer', type=str)
+parser.add_argument('--problem', default='walker', type=str)
+parser.add_argument('--mode', default='train', type=str)
+parser.add_argument('--use_saved_weights', default=False, type=bool)
+parser.add_argument('--debug', default=False, type=bool)
+parser.add_argument('--shrink_divisor', default=1, type=int)
+parser.add_argument('--sequence_length', default=64, type=int)
+parser.add_argument('--batch_size', default=128, type=int)
+parser.add_argument('--epochs', default=256, type=int)
+parser.add_argument('--learning_rate', default=1E-3, type=float)
 args = parser.parse_args()
 
 # build the problem loader using the arguments
 problem_loader = ProblemLoader(model=args.model, problem=args.problem, use_saved_weights=args.use_saved_weights, shrink_divisor=args.shrink_divisor,
-                               sequence_length=args.sequence_length, batch_size=args.batch_size, epochs=args.epochs, learning_rate=args.learning_rate)
+                               sequence_length=args.sequence_length, batch_size=args.batch_size, epochs=args.epochs, learning_rate=args.learning_rate, debug=args.debug)
 problem_loader.build_datasets()
 if args.mode == 'train':
     problem_loader.train()

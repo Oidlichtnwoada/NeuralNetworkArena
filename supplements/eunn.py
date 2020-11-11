@@ -102,7 +102,7 @@ def generate_index_fft(s):
 
 
 def fft_param(num_units, cplex):
-    phase_init = tf.random_uniform_initializer(-3.14, 3.14)
+    phase_init = tf.compat.v1.random_uniform_initializer(-3.14, 3.14)
     capacity = int(math.log(num_units, 2))
 
     theta = tf.compat.v1.get_variable("theta", [capacity, num_units // 2],
@@ -147,7 +147,7 @@ def fft_param(num_units, cplex):
 def tunable_param(num_units, cplex, capacity):
     capacity_A = int(capacity // 2)
     capacity_B = capacity - capacity_A
-    phase_init = tf.random_uniform_initializer(-3.14, 3.14)
+    phase_init = tf.compat.v1.random_uniform_initializer(-3.14, 3.14)
 
     theta_A = tf.compat.v1.get_variable("theta_A", [capacity_A, num_units // 2],
                                         initializer=phase_init)
@@ -222,7 +222,7 @@ def tunable_param(num_units, cplex, capacity):
 class EUNNCell(rnn_cell_impl.RNNCell):
     """Efficient Unitary Network Cell
 
-    The implementation is based on: 
+    The implementation is based on:
 
     http://arxiv.org/abs/1612.05231.
 
@@ -240,7 +240,7 @@ class EUNNCell(rnn_cell_impl.RNNCell):
           num_units: int, The number of units in the LSTM cell.
           capacity: int, The capacity of the unitary matrix for tunable
             case.
-          fft: bool, default false, whether to use fft style 
+          fft: bool, default false, whether to use fft style
           architecture or tunable style.
           cplex: bool, default true, whether to use cplex number.
         """
@@ -296,7 +296,7 @@ class EUNNCell(rnn_cell_impl.RNNCell):
             inputs_size = inputs.get_shape()[-1]
 
             # inputs to hidden
-            input_matrix_init = tf.random_uniform_initializer(-0.01, 0.01)
+            input_matrix_init = tf.compat.v1.random_uniform_initializer(-0.01, 0.01)
             if self._cplex:
                 U_re = tf.compat.v1.get_variable("U_re", [inputs_size, self._num_units], initializer=input_matrix_init)
                 U_im = tf.compat.v1.get_variable("U_im", [inputs_size, self._num_units], initializer=input_matrix_init)
@@ -309,11 +309,11 @@ class EUNNCell(rnn_cell_impl.RNNCell):
                 inputs = tf.matmul(inputs, U)
 
             # hidden to hidden
-            state = self.loop(tf.cast(state, dtype=tf.complex64))
+            state = self.loop(state)
 
             # activation
             bias = tf.compat.v1.get_variable("modReLUBias", [self._num_units],
-                                             initializer=tf.constant_initializer())
+                                             initializer=tf.compat.v1.constant_initializer())
             output = self._activation((inputs + state), bias, self._cplex)
 
         return output, output
