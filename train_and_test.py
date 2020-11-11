@@ -9,8 +9,8 @@ from tensorflow.keras.losses import MeanSquaredError
 from tensorflow.keras.optimizers import Adam, RMSprop
 
 from models.neural_circuit_policies import NeuralCircuitPolicies
-from models.recurrent_transformer import MultiHeadRecurrentAttentionEUNN
-from models.transformer import Transformer
+from models.recurrent_transformer import MultiHeadRecurrentAttention
+from models.transformer import Transformer, MultiHeadAttention
 
 
 class ProblemLoader:
@@ -120,16 +120,16 @@ class ProblemLoader:
         loss = MeanSquaredError()
         if self.model == 'transformer':
             self.transform_sequences()
-            model = Transformer(token_amount=1, token_size=self.input_length, d_model=64, num_heads=4, d_ff=128, num_layers=4, dropout_rate=0.1)
+            model = Transformer(token_amount=1, token_size=self.input_length, d_model=64, num_heads=4, d_ff=128, num_layers=4, dropout_rate=0.1, attention=MultiHeadAttention)
             optimizer = Adam(self.learning_rate)
         elif self.model == 'neural_circuit_policies':
             model = NeuralCircuitPolicies(
                 output_length=self.input_length, inter_neurons=16, command_neurons=16, motor_neurons=self.input_length,
                 sensory_fanout=4, inter_fanout=4, recurrent_command_synapses=8, motor_fanin=6)
             optimizer = RMSprop(self.learning_rate)
-        elif self.model == 'recurrent_transformer_eunn':
+        elif self.model == 'recurrent_transformer':
             self.transform_sequences()
-            model = Transformer(token_amount=1, token_size=self.input_length, d_model=64, num_heads=4, d_ff=128, num_layers=4, dropout_rate=0.1, attention=MultiHeadRecurrentAttentionEUNN)
+            model = Transformer(token_amount=1, token_size=self.input_length, d_model=64, num_heads=4, d_ff=128, num_layers=4, dropout_rate=0.1, attention=MultiHeadRecurrentAttention)
             optimizer = RMSprop(self.learning_rate)
         else:
             raise NotImplementedError()

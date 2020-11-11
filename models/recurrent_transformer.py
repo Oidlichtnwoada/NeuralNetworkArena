@@ -1,7 +1,6 @@
 import tensorflow as tf
 
 from models.transformer import split_heads
-from supplements.eunn import EUNNCell
 
 
 def recurrent_dot_product_attention(queries, keys, values, d_qkv, recurrent_network_layers, mask):
@@ -29,9 +28,9 @@ def recurrent_dot_product_attention(queries, keys, values, d_qkv, recurrent_netw
     return concatenated_rnn_output, attention_weights
 
 
-class MultiHeadRecurrentAttentionEUNN(tf.keras.layers.Layer):
+class MultiHeadRecurrentAttention(tf.keras.layers.Layer):
     def __init__(self, d_model, num_heads):
-        super(MultiHeadRecurrentAttentionEUNN, self).__init__()
+        super(MultiHeadRecurrentAttention, self).__init__()
         # parameters
         self.d_model = d_model
         self.num_heads = num_heads
@@ -43,7 +42,7 @@ class MultiHeadRecurrentAttentionEUNN(tf.keras.layers.Layer):
         self.key_generator_network = tf.keras.layers.Dense(self.d_model)
         self.value_generator_network = tf.keras.layers.Dense(self.d_model)
         self.mhra_output_generator_network = tf.keras.layers.Dense(self.d_model)
-        self.recurrent_network_layers = [tf.keras.layers.RNN(EUNNCell(self.d_qkv)) for _ in range(self.num_heads)]
+        self.recurrent_network_layers = [tf.keras.layers.RNN(tf.keras.layers.LSTMCell(self.d_qkv)) for _ in range(self.num_heads)]
 
     def call(self, inputs, **kwargs):
         # split inputs tuple to the arguments
