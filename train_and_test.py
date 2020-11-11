@@ -133,7 +133,7 @@ class ProblemLoader:
             optimizer = RMSprop(self.learning_rate)
         else:
             raise NotImplementedError()
-        model.compile(optimizer=optimizer, loss=loss, run_eagerly=True if self.debug else False)
+        model.compile(optimizer=optimizer, loss=loss, run_eagerly=self.debug)
         print(f'sample predictions: {model.predict((self.test_sequences[0][:self.batch_size], self.test_sequences[1][:self.batch_size]), batch_size=self.batch_size)}')
         model.summary()
         return model
