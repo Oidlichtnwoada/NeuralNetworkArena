@@ -17,20 +17,21 @@ def recurrent_dot_product_attention(queries, keys, values, d_qkv, recurrent_netw
     # duplicate all value vectors for each input and weight them accordingly
     weighted_value_vectors = tf.expand_dims(attention_weights, axis=-1) * tf.repeat(tf.expand_dims(values, axis=2), values.shape[2], axis=2)
     # this variable holds the concatenated rnn output at end
-    concatenated_rnn_output = tf.ones((values.shape[0], 0) + values.shape[2:])
+    concatenated_rnn_output = tf.ones_like(values)[:, :0, :, :]
     for head_index, layer in enumerate(recurrent_network_layers):
         # aggregate all weighted value vectors for each input via an rnn for each head instead of a simple summation
-        rnn_input = tf.reshape(weighted_value_vectors[:, head_index, :, :, :], (weighted_value_vectors.shape[0] * weighted_value_vectors.shape[2],) + weighted_value_vectors.shape[-2:])
-        rnn_output = tf.reshape(recurrent_network_layers[head_index](rnn_input), (weighted_value_vectors.shape[0],) + (weighted_value_vectors.shape[2],) + (weighted_value_vectors.shape[4],))
+        shape = (-1,) + (weighted_value_vectors.shape[2],) + (weighted_value_vectors.shape[4],)
+        rnn_input = tf.reshape(weighted_value_vectors[:, head_index, :, :, :], shape)
+        rnn_output = tf.reshape(recurrent_network_layers[head_index](rnn_input), shape)
         # concatenate the real part of the output for this head to the running variable
         concatenated_rnn_output = tf.concat([concatenated_rnn_output, tf.expand_dims(tf.math.real(rnn_output), axis=1)], axis=1)
     # return the concatenated result of all heads
     return concatenated_rnn_output, attention_weights
 
 
-class MultiHeadRecurrentAttention(tf.keras.layers.Layer):
+class MultiHeadRecurrentAttentionEUNN(tf.keras.layers.Layer):
     def __init__(self, d_model, num_heads):
-        super(MultiHeadRecurrentAttention, self).__init__()
+        super(MultiHeadRecurrentAttentionEUNN, self).__init__()
         # parameters
         self.d_model = d_model
         self.num_heads = num_heads

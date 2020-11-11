@@ -241,7 +241,7 @@ class Decoder(tf.keras.layers.Layer):
         else:
             decoder_zero_input_mask = None
         # create a start token
-        tokens = tf.ones_like(encoder_output)[:, :1, :self.token_size]
+        tokens = tf.repeat(tf.ones_like(encoder_output)[:, :1, :1], self.token_size, axis=-1)
         # create the right amount of tokens
         for _ in range(self.token_amount):
             # create a look ahead mask such that tokens can only attend to previous positions

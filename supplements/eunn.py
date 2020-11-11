@@ -102,7 +102,7 @@ def generate_index_fft(s):
 
 
 def fft_param(num_units, cplex):
-    phase_init = tf.compat.v1.random_uniform_initializer(-3.14, 3.14)
+    phase_init = tf.random_uniform_initializer(-3.14, 3.14)
     capacity = int(math.log(num_units, 2))
 
     theta = tf.compat.v1.get_variable("theta", [capacity, num_units // 2],
@@ -147,7 +147,7 @@ def fft_param(num_units, cplex):
 def tunable_param(num_units, cplex, capacity):
     capacity_A = int(capacity // 2)
     capacity_B = capacity - capacity_A
-    phase_init = tf.compat.v1.random_uniform_initializer(-3.14, 3.14)
+    phase_init = tf.random_uniform_initializer(-3.14, 3.14)
 
     theta_A = tf.compat.v1.get_variable("theta_A", [capacity_A, num_units // 2],
                                         initializer=phase_init)
@@ -279,6 +279,9 @@ class EUNNCell(rnn_cell_impl.RNNCell):
     def output_size(self):
         return self._num_units
 
+    def get_initial_state(self, inputs=None, batch_size=None, dtype=None):
+        return tf.zeros((batch_size, self.output_size), dtype=tf.complex64)
+
     def loop(self, h):
         for i in range(self._capacity):
             diag = h * self._v1[i, :]
@@ -296,7 +299,7 @@ class EUNNCell(rnn_cell_impl.RNNCell):
             inputs_size = inputs.get_shape()[-1]
 
             # inputs to hidden
-            input_matrix_init = tf.compat.v1.random_uniform_initializer(-0.01, 0.01)
+            input_matrix_init = tf.random_uniform_initializer(-0.01, 0.01)
             if self._cplex:
                 U_re = tf.compat.v1.get_variable("U_re", [inputs_size, self._num_units], initializer=input_matrix_init)
                 U_im = tf.compat.v1.get_variable("U_im", [inputs_size, self._num_units], initializer=input_matrix_init)
@@ -313,7 +316,7 @@ class EUNNCell(rnn_cell_impl.RNNCell):
 
             # activation
             bias = tf.compat.v1.get_variable("modReLUBias", [self._num_units],
-                                             initializer=tf.compat.v1.constant_initializer())
+                                             initializer=tf.constant_initializer())
             output = self._activation((inputs + state), bias, self._cplex)
 
         return output, output
