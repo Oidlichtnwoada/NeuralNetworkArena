@@ -129,7 +129,7 @@ class ProblemLoader:
             optimizer = RMSprop(self.learning_rate)
         elif self.model == 'recurrent_transformer':
             self.transform_sequences()
-            model = Transformer(token_amount=1, token_size=self.input_length, d_model=64, num_heads=4, d_ff=128, num_layers=4, dropout_rate=0.1, attention=MultiHeadRecurrentAttention)
+            model = Transformer(token_amount=1, token_size=self.input_length, d_model=32, num_heads=4, d_ff=64, num_layers=1, dropout_rate=0.1, attention=MultiHeadRecurrentAttention)
             optimizer = RMSprop(self.learning_rate)
         else:
             raise NotImplementedError()
