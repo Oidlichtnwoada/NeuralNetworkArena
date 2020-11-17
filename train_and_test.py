@@ -134,7 +134,8 @@ class ProblemLoader:
             optimizer = RMSprop(self.learning_rate)
         elif self.model == 'memory_accumulation_transformer':
             self.transform_sequences()
-            model = Transformer(token_amount=1, token_size=self.input_length, d_model=32, num_heads=2, d_ff=64, num_layers=2, dropout_rate=0.1, attention=MemoryAccumulation)
+            model = Transformer(token_amount=1, token_size=self.input_length, d_model=8, num_heads=1, d_ff=16,
+                                num_layers=2, dropout_rate=0.1, attention=MemoryAccumulation)
             optimizer = Adam(self.learning_rate)
         else:
             raise NotImplementedError()

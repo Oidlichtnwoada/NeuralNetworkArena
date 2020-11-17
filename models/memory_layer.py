@@ -66,7 +66,7 @@ class MemoryLayer(tf.keras.layers.Layer):
 class MemoryAccumulation(tf.keras.layers.Layer):
     def __init__(self, dim, heads):
         super().__init__()
-        # create the memory layer that should accumulate information
+        # create the memory layer that accumulates information
         self.memory_layer = MemoryLayer(dim, heads)
 
     def call(self, inputs, **kwargs):
