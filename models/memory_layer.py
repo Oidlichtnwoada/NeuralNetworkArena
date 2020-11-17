@@ -50,23 +50,14 @@ class MemoryLayer(tf.keras.layers.Layer):
         # create a dense layer to merge all heads
         self.dense_layer = tf.keras.layers.Dense(self.dim)
 
+    def compute_accumulated_input(self, inputs, input_index):
+        # the inputs are accumulated such that the last input to the RNN is the input at input_index
+        shifted_inputs = tf.roll(inputs, inputs.shape[1] - input_index - 1, axis=1)
+        # accumulate input via memory cell for each head and concatenate the outputs together
+        accumulated_input = tf.concat([memory_cell(shifted_inputs) for memory_cell in self.memory_layer], axis=-1)
+        # merge outputs from all heads via a dense layer and add a dimension for later concatenation
+        return tf.expand_dims(self.dense_layer(accumulated_input), axis=1)
+
     def call(self, inputs, **kwargs):
-        # save the amount of inputs
-        input_amount = inputs.shape[1]
-        memory_layer_output = None
         # compute an accumulated representation for all inputs
-        for input_index in range(input_amount):
-            accumulated_input = None
-            # the inputs are accumulated such that the last input to the RNN is the input at input_index
-            shifted_inputs = tf.roll(inputs, input_amount - input_index - 1, axis=1)
-            # accumulate input via memory cell for each head and concatenate the outputs together
-            accumulated_input = tf.concat([memory_cell(shifted_inputs) for memory_cell in self.memory_layer], axis=-1)
-            # merge outputs from all heads
-            accumulated_input = tf.expand_dims(self.dense_layer(accumulated_input), axis=1)
-            # concatenate all accumulated inputs together
-            if memory_layer_output is None:
-                memory_layer_output = accumulated_input
-            else:
-                memory_layer_output = tf.concat([memory_layer_output, accumulated_input], axis=1)
-        # the output contains all accumulated inputs
-        return memory_layer_output
+        return tf.concat([self.compute_accumulated_input(inputs, input_index) for input_index in range(inputs.shape[1])], axis=1)
