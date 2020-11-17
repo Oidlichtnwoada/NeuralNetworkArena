@@ -72,5 +72,5 @@ class MemoryAccumulation(tf.keras.layers.Layer):
     def call(self, inputs, **kwargs):
         # split inputs tuple to the arguments
         queries, _, values, _ = inputs
-        # compute an accumulated representation using the memory layer
-        return self.memory_layer((queries, values))
+        # compute an accumulated representation using the memory layer, no attention weights present
+        return self.memory_layer((queries, values)), None
