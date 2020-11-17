@@ -59,14 +59,8 @@ class MemoryLayer(tf.keras.layers.Layer):
             accumulated_input = None
             # the inputs are accumulated such that the last input to the RNN is the input at input_index
             shifted_inputs = tf.roll(inputs, input_amount - input_index - 1, axis=1)
-            for head in range(self.heads):
-                # accumulate input via memory cell at index head
-                head_output = self.memory_layer[head](shifted_inputs)
-                # concatenate output to existing output
-                if accumulated_input is None:
-                    accumulated_input = head_output
-                else:
-                    accumulated_input = tf.concat([accumulated_input, head_output], axis=-1)
+            # accumulate input via memory cell for each head and concatenate the outputs together
+            accumulated_input = tf.concat([memory_cell(shifted_inputs) for memory_cell in self.memory_layer], axis=-1)
             # merge outputs from all heads
             accumulated_input = tf.expand_dims(self.dense_layer(accumulated_input), axis=1)
             # concatenate all accumulated inputs together
