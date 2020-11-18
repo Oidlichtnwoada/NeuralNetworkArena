@@ -10,9 +10,9 @@ class MemoryCellWiring(ncp.wirings.Wiring):
         super().__init__(units=2 * self.dim)
         # the output dimension is half the state dimension of all neuron pairs
         self.set_output_dim(output_dim=self.dim)
-        # create inhibitory recurrent connections to each neuron
+        # create excitatory recurrent connections to each neuron
         for src in range(self.units):
-            self.add_synapse(src, src, polarity=-1)
+            self.add_synapse(src, src, polarity=1)
         # create inhibitory connections between each neuron pair
         for src in range(self.units // 2):
             self.add_synapse(src, src + self.dim, polarity=-1)
