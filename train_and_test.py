@@ -134,7 +134,7 @@ class ProblemLoader:
             optimizer = RMSprop(self.learning_rate)
         elif self.model == 'memory_layer_transformer':
             self.transform_sequences()
-            model = Transformer(token_amount=1, token_size=self.input_length, d_model=16, num_heads=2, d_ff=64,
+            model = Transformer(token_amount=1, token_size=self.input_length, d_model=16, num_heads=2, d_ff=32,
                                 num_layers=2, dropout_rate=0.1, attention=MemoryLayerAttention)
             optimizer = Adam(self.learning_rate)
         else:

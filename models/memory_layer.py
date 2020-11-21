@@ -64,8 +64,8 @@ class MemoryLayerAttention(tf.keras.layers.Layer):
         # save the dimension and the heads of the transformer
         self.dim = dim
         self.heads = heads
-        # create a memory layer out of heads times dim neurons and an output size of dim
-        self.memory_layer = tf.keras.layers.RNN(MemoryLayerCell(self.heads * self.dim, self.dim))
+        # create a memory layer out of heads times dim memory cells and an output size of dim
+        self.memory_layer = tf.keras.layers.RNN(MemoryLayerCell(2 * self.heads * self.dim, self.dim))
 
     def call(self, inputs, **kwargs):
         # split inputs tuple to the arguments
