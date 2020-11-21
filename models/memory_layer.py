@@ -61,20 +61,21 @@ class MemoryLayerCell(tf.keras.layers.Layer):
 class MemoryLayerAttention(tf.keras.layers.Layer):
     def __init__(self, dim, heads):
         super().__init__()
-        # create a memory layer out of heads memory cells with size twice dim because queries and keys are concatenated together
-        self.memory_layer = tf.keras.layers.RNN(MemoryLayerCell(heads * dim, dim))
-
-    def compute_accumulated_representation(self, query, values):
-        # concatenate query at query_index to each value to create the input for memory layers
-        duplicated_query = tf.repeat(query, values.shape[1], axis=1)
-        memory_layer_input = tf.concat([duplicated_query, values], axis=-1)
-        # accumulate information with memory layers for each head and concatenate the outputs together
-        accumulated_inputs = self.memory_layer(memory_layer_input)
-        # merge outputs from all heads to size dim via a dense layer and add a dimension for later concatenation
-        return tf.expand_dims(accumulated_inputs, axis=1)
+        # save the dimension and the heads of the transformer
+        self.dim = dim
+        self.heads = heads
+        # create a memory layer out of heads times dim neurons and an output size of dim
+        self.memory_layer = tf.keras.layers.RNN(MemoryLayerCell(self.heads * self.dim, self.dim))
 
     def call(self, inputs, **kwargs):
         # split inputs tuple to the arguments
         queries, _, values, _ = inputs
-        # compute an accumulated representation for all queries
-        return tf.concat([self.compute_accumulated_representation(queries[:, query_index:query_index + 1, :], values) for query_index in range(queries.shape[1])], axis=1), None
+        # bring queries and values to the same shape
+        duplicated_queries = tf.repeat(tf.expand_dims(queries, 2), values.shape[1], 2)
+        duplicated_values = tf.repeat(tf.expand_dims(values, 1), queries.shape[1], 1)
+        # concatenate queries and values together and reshape it to a single batch dimension
+        memory_layer_input = tf.reshape(tf.concat([duplicated_queries, duplicated_values], -1), (-1, values.shape[1], 2 * self.dim))
+        # accumulate information with memory layer
+        accumulated_inputs = self.memory_layer(memory_layer_input)
+        # reshape the output to the right batch size and the right query dimension
+        return tf.reshape(accumulated_inputs, (-1, queries.shape[1], self.dim)), None
