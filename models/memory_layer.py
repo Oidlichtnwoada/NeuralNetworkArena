@@ -67,13 +67,13 @@ class MemoryLayerAttention(tf.keras.layers.Layer):
         self.dense_layer = tf.keras.layers.Dense(dim)
 
     def compute_accumulated_representation(self, query, values):
-        # concatenate query at query_index to each value to create the input for the memory cells
+        # concatenate query at query_index to each value to create the input for memory layers
         duplicated_query = tf.repeat(query, values.shape[1], axis=1)
-        memory_cell_input = tf.concat([duplicated_query, values], axis=-1)
-        # accumulate information via memory cell for each head and concatenate the outputs together
-        accumulated_input = tf.concat([memory_cell(memory_cell_input) for memory_cell in self.memory_layers], axis=-1)
+        memory_layer_input = tf.concat([duplicated_query, values], axis=-1)
+        # accumulate information with memory layers for each head and concatenate the outputs together
+        accumulated_inputs = tf.concat([memory_layer(memory_layer_input) for memory_layer in self.memory_layers], axis=-1)
         # merge outputs from all heads to size dim via a dense layer and add a dimension for later concatenation
-        return tf.expand_dims(self.dense_layer(accumulated_input), axis=1)
+        return tf.expand_dims(self.dense_layer(accumulated_inputs), axis=1)
 
     def call(self, inputs, **kwargs):
         # split inputs tuple to the arguments
