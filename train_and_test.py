@@ -8,7 +8,7 @@ from tensorflow.keras.callbacks import ModelCheckpoint
 from tensorflow.keras.losses import MeanSquaredError
 from tensorflow.keras.optimizers import Adam, RMSprop
 
-from models.memory_layer_ncp import MemoryAccumulation
+from models.memory_layer import MemoryLayerAttention
 from models.neural_circuit_policies import NeuralCircuitPolicies
 from models.recurrent_transformer import MultiHeadRecurrentAttention
 from models.transformer import Transformer, MultiHeadAttention
@@ -132,10 +132,10 @@ class ProblemLoader:
             self.transform_sequences()
             model = Transformer(token_amount=1, token_size=self.input_length, d_model=32, num_heads=4, d_ff=64, num_layers=1, dropout_rate=0.1, attention=MultiHeadRecurrentAttention)
             optimizer = RMSprop(self.learning_rate)
-        elif self.model == 'memory_accumulation_transformer':
+        elif self.model == 'memory_layer_transformer':
             self.transform_sequences()
             model = Transformer(token_amount=1, token_size=self.input_length, d_model=8, num_heads=1, d_ff=16,
-                                num_layers=2, dropout_rate=0.1, attention=MemoryAccumulation)
+                                num_layers=2, dropout_rate=0.1, attention=MemoryLayerAttention)
             optimizer = Adam(self.learning_rate)
         else:
             raise NotImplementedError()

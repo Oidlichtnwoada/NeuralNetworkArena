@@ -56,3 +56,27 @@ class MemoryLayerCell(tf.keras.layers.Layer):
         memory_layer_outputs = self.output_control(tf.concat([inputs, affine_memory_cell_outputs, next_states[:, 1::2]], -1))
         # return the memory layer outputs and the next states as tuple
         return memory_layer_outputs, (next_states,)
+
+
+class MemoryLayerAttention(tf.keras.layers.Layer):
+    def __init__(self, dim, heads):
+        super().__init__()
+        # create a memory layer out of heads memory cells with size twice dim because queries and keys are concatenated together
+        self.memory_layers = [tf.keras.layers.RNN(MemoryLayerCell(2 * dim, dim)) for _ in range(heads)]
+        # create a dense layer to merge all heads and the concatenated representation to size dim
+        self.dense_layer = tf.keras.layers.Dense(dim)
+
+    def compute_accumulated_representation(self, query, values):
+        # concatenate query at query_index to each value to create the input for the memory cells
+        duplicated_query = tf.repeat(query, values.shape[1], axis=1)
+        memory_cell_input = tf.concat([duplicated_query, values], axis=-1)
+        # accumulate information via memory cell for each head and concatenate the outputs together
+        accumulated_input = tf.concat([memory_cell(memory_cell_input) for memory_cell in self.memory_layers], axis=-1)
+        # merge outputs from all heads to size dim via a dense layer and add a dimension for later concatenation
+        return tf.expand_dims(self.dense_layer(accumulated_input), axis=1)
+
+    def call(self, inputs, **kwargs):
+        # split inputs tuple to the arguments
+        queries, _, values, _ = inputs
+        # compute an accumulated representation for all queries
+        return tf.concat([self.compute_accumulated_representation(queries[:, query_index:query_index + 1, :], values) for query_index in range(queries.shape[1])], axis=1), None
