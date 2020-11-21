@@ -8,7 +8,7 @@ from tensorflow.keras.callbacks import ModelCheckpoint
 from tensorflow.keras.losses import MeanSquaredError
 from tensorflow.keras.optimizers import Adam, RMSprop
 
-from models.memory_layer import MemoryAccumulation
+from models.memory_layer_ncp import MemoryAccumulation
 from models.neural_circuit_policies import NeuralCircuitPolicies
 from models.recurrent_transformer import MultiHeadRecurrentAttention
 from models.transformer import Transformer, MultiHeadAttention
