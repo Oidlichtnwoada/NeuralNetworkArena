@@ -14,13 +14,13 @@ class MemoryLayerCell(tf.keras.layers.Layer):
         # output control - creates the final output of the memory layer
         self.output_control = tf.keras.layers.Dense(self.output_size)
         # create a dictionary with all trainable parameters in this layer
-        self.params = {'input_scaling': self.add_weight(shape=(self.state_size,), initializer=tf.keras.initializers.Constant(1)),
-                       'input_bias': self.add_weight(shape=(self.state_size,), initializer=tf.keras.initializers.Constant(0)),
-                       'output_scaling': self.add_weight(shape=(self.state_size // 2,), initializer=tf.keras.initializers.Constant(1)),
-                       'output_bias': self.add_weight(shape=(self.state_size // 2,), initializer=tf.keras.initializers.Constant(0)),
-                       'max_conductance': self.add_weight(shape=(self.state_size, 2), initializer=tf.keras.initializers.Constant(1), constraint=tf.keras.constraints.NonNeg()),
-                       'med_conductance_potential': self.add_weight(shape=(self.state_size, 2), initializer=tf.keras.initializers.Constant(0)),
-                       'std_conductance': self.add_weight(shape=(self.state_size, 2), initializer=tf.keras.initializers.Constant(1), constraint=tf.keras.constraints.NonNeg())}
+        self.params = {'input_scaling': self.add_weight(name='input_scaling', shape=(self.state_size,), initializer=tf.keras.initializers.Constant(1)),
+                       'input_bias': self.add_weight(name='input_bias', shape=(self.state_size,), initializer=tf.keras.initializers.Constant(0)),
+                       'output_scaling': self.add_weight(name='output_scaling', shape=(self.state_size // 2,), initializer=tf.keras.initializers.Constant(1)),
+                       'output_bias': self.add_weight(name='output_bias', shape=(self.state_size // 2,), initializer=tf.keras.initializers.Constant(0)),
+                       'max_conductance': self.add_weight(name='max_conductance', shape=(self.state_size, 2), initializer=tf.keras.initializers.Constant(1), constraint=tf.keras.constraints.NonNeg()),
+                       'mean_conductance_potential': self.add_weight(name='mean_conductance_potential', shape=(self.state_size, 2), initializer=tf.keras.initializers.Constant(0)),
+                       'std_conductance': self.add_weight(name='std_conductance', shape=(self.state_size, 2), initializer=tf.keras.initializers.Constant(1), constraint=tf.keras.constraints.NonNeg())}
 
     def build(self, input_shape):
         pass
@@ -39,7 +39,7 @@ class MemoryLayerCell(tf.keras.layers.Layer):
         # build the presynaptic potentials for the recurrent excitatory and the reciprocal inhibitory connection
         presynaptic_potentials = tf.reshape(tf.concat([neuron_pair_potentials, tf.roll(neuron_pair_potentials, 1, -1)], -1), (-1, self.state_size, 2))
         # compute the synaptic conductance
-        synaptic_conductance = self.params['max_conductance'] / (1 + tf.math.exp(-self.params['std_conductance'] * (presynaptic_potentials - self.params['med_conductance_potential'])))
+        synaptic_conductance = self.params['max_conductance'] / (1 + tf.math.exp(-self.params['std_conductance'] * (presynaptic_potentials - self.params['mean_conductance_potential'])))
         # compute the voltage difference between resting potential (these are different for excitatory and inhibitory synapses) and the neuron's current potential
         synaptic_potential_difference = tf.concat([tf.ones_like(states[..., tf.newaxis]), -tf.ones_like(states[..., tf.newaxis])], -1) - states[..., tf.newaxis]
         # the synaptic current is the conductance multiplied with the voltage
