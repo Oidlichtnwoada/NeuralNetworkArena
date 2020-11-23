@@ -22,12 +22,15 @@ class MemoryLayerCell(tf.keras.layers.Layer):
                        'mean_conductance_potential': self.add_weight(name='mean_conductance_potential', shape=(self.state_size, 2), initializer=tf.keras.initializers.Constant(0)),
                        'std_conductance': self.add_weight(name='std_conductance', shape=(self.state_size, 2), initializer=tf.keras.initializers.Constant(1), constraint=tf.keras.constraints.NonNeg())}
 
-    def build(self, input_shape):
-        pass
-
     def call(self, inputs, states):
         # states are passed as tuple
         states = states[0]
+        if isinstance(inputs, tuple):
+            # save time intervals if provided for irregularly sampled time series
+            inputs, intervals = inputs
+        else:
+            # generate intervals of only ones for regularly sampled time series if no intervals are provided
+            intervals = tf.ones_like(inputs)[:, :1]
         # build the preliminary memory cell inputs using all available information
         preliminary_memory_cell_inputs = self.input_control(tf.concat([inputs, states], -1))
         # duplicate every entry to get an input for each neuron
@@ -44,8 +47,8 @@ class MemoryLayerCell(tf.keras.layers.Layer):
         synaptic_potential_difference = tf.concat([tf.ones_like(states[..., tf.newaxis]), -tf.ones_like(states[..., tf.newaxis])], -1) - states[..., tf.newaxis]
         # the synaptic current is the conductance multiplied with the voltage
         synaptic_memory_cell_inputs = synaptic_conductance * synaptic_potential_difference
-        # compute the change in potentials of the neurons and for this sum up the synaptic currents for each neuron
-        states_change = affine_memory_cell_inputs + tf.reduce_sum(synaptic_memory_cell_inputs, -1)
+        # compute the change in potentials of the neurons by computing the gradient and multiplying it with the time difference
+        states_change = (affine_memory_cell_inputs + tf.reduce_sum(synaptic_memory_cell_inputs, -1)) * intervals
         # update the current memory state by using a tanh activation function after doing the state update
         next_states = tf.keras.activations.tanh(states + states_change)
         # only the output of the first memory cell is taken
