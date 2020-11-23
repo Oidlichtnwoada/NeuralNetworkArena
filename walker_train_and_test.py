@@ -14,10 +14,10 @@ from models.recurrent_transformer import MultiHeadRecurrentAttention
 from models.transformer import Transformer, MultiHeadAttention
 
 
-class ProblemLoader:
-    def __init__(self, model, problem, use_saved_weights, shrink_divisor, sequence_length, batch_size, epochs, learning_rate, debug,
+class WalkerProblemLoader:
+    def __init__(self, model, use_saved_weights, shrink_divisor, sequence_length, batch_size, epochs, learning_rate, debug,
                  skip_percentage=0.1, test_data_percentage=0.15, validation_data_percentage=0.1):
-        self.problem_path = join('problems', problem)
+        self.problem_path = join('problems', 'walker')
         self.use_saved_weights = use_saved_weights
         self.shrink_divisor = shrink_divisor
         self.sequence_length = sequence_length
@@ -33,7 +33,7 @@ class ProblemLoader:
         self.training_sequences = None
         self.input_length = None
         self.model = model
-        self.weights_directory = f'weights/{problem}/{self.model}/checkpoint'
+        self.weights_directory = join('weights', 'walker', f'{self.model}', 'checkpoint')
 
     def build_datasets(self):
         # return test, training and validation set
@@ -169,7 +169,6 @@ class ProblemLoader:
 # parse arguments and start program
 parser = ArgumentParser()
 parser.add_argument('--model', default='transformer', type=str)
-parser.add_argument('--problem', default='walker', type=str)
 parser.add_argument('--mode', default='train', type=str)
 parser.add_argument('--use_saved_weights', default=False, type=bool)
 parser.add_argument('--debug', default=False, type=bool)
@@ -181,8 +180,8 @@ parser.add_argument('--learning_rate', default=1E-3, type=float)
 args = parser.parse_args()
 
 # build the problem loader using the arguments
-problem_loader = ProblemLoader(model=args.model, problem=args.problem, use_saved_weights=args.use_saved_weights, shrink_divisor=args.shrink_divisor,
-                               sequence_length=args.sequence_length, batch_size=args.batch_size, epochs=args.epochs, learning_rate=args.learning_rate, debug=args.debug)
+problem_loader = WalkerProblemLoader(model=args.model, use_saved_weights=args.use_saved_weights, shrink_divisor=args.shrink_divisor,
+                                     sequence_length=args.sequence_length, batch_size=args.batch_size, epochs=args.epochs, learning_rate=args.learning_rate, debug=args.debug)
 problem_loader.build_datasets()
 if args.mode == 'train':
     problem_loader.train()
