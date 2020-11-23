@@ -111,7 +111,7 @@ parser.add_argument('--category_amount', default=10, type=int)
 parser.add_argument('--sample_amount', default=100_000, type=int)
 parser.add_argument('--batch_size', default=128, type=int)
 parser.add_argument('--epochs', default=256, type=int)
-parser.add_argument('--learning_rate', default=1E-3, type=float)
+parser.add_argument('--learning_rate', default=5E-3, type=float)
 parser.add_argument('--debug', default=False, type=bool)
 args = parser.parse_args()
 
