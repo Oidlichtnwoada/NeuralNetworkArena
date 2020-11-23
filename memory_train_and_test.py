@@ -6,7 +6,7 @@ from numpy import ones, ones_like, sum, mean
 from numpy.random import randint
 from tensorflow.keras import Input, Model
 from tensorflow.keras.callbacks import ModelCheckpoint
-from tensorflow.keras.layers import RNN
+from tensorflow.keras.layers import RNN, Dense, LSTM, TimeDistributed
 from tensorflow.keras.losses import SparseCategoricalCrossentropy
 from tensorflow.keras.optimizers import Adam
 
@@ -67,6 +67,11 @@ class MemoryProblemLoader:
             outputs = RNN(MemoryLayerCell(100, self.category_amount), return_sequences=True)(inputs)
             model = Model(inputs=inputs, outputs=outputs)
             optimizer = Adam(self.learning_rate)
+        elif self.model == 'lstm_layer':
+            inputs = (Input(shape=(self.sample_length, 1)), Input(shape=(self.sample_length, 1)))
+            outputs = TimeDistributed(Dense(self.category_amount))(LSTM(100, return_sequences=True)(inputs[0]))
+            model = Model(inputs=inputs, outputs=outputs)
+            optimizer = Adam(self.learning_rate)
         else:
             raise NotImplementedError()
         model.compile(optimizer=optimizer, loss=loss, run_eagerly=self.debug)
@@ -111,7 +116,7 @@ parser.add_argument('--category_amount', default=10, type=int)
 parser.add_argument('--sample_amount', default=100_000, type=int)
 parser.add_argument('--batch_size', default=128, type=int)
 parser.add_argument('--epochs', default=256, type=int)
-parser.add_argument('--learning_rate', default=5E-3, type=float)
+parser.add_argument('--learning_rate', default=1E-3, type=float)
 parser.add_argument('--debug', default=False, type=bool)
 args = parser.parse_args()
 
