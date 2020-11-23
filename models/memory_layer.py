@@ -18,6 +18,11 @@ class MemoryLayerCell(tf.keras.layers.Layer):
                        'input_bias': self.add_weight(name='input_bias', shape=(self.state_size,), initializer=tf.keras.initializers.Constant(0)),
                        'output_scaling': self.add_weight(name='output_scaling', shape=(self.state_size // 2,), initializer=tf.keras.initializers.Constant(1)),
                        'output_bias': self.add_weight(name='output_bias', shape=(self.state_size // 2,), initializer=tf.keras.initializers.Constant(0)),
+                       'excitatory_potential': self.add_weight(name='capacitance', shape=(self.state_size,),
+                                                               initializer=tf.keras.initializers.Constant(1), constraint=tf.keras.constraints.MinMaxNorm(1, float('inf'))),
+                       'inhibitory_potential': self.add_weight(name='capacitance', shape=(self.state_size,),
+                                                               initializer=tf.keras.initializers.Constant(-1), constraint=tf.keras.constraints.MinMaxNorm(-float('inf'), -1)),
+                       'capacitance': self.add_weight(name='capacitance', shape=(self.state_size,), initializer=tf.keras.initializers.Constant(1), constraint=tf.keras.constraints.NonNeg()),
                        'max_conductance': self.add_weight(name='max_conductance', shape=(self.state_size, 2), initializer=tf.keras.initializers.Constant(1), constraint=tf.keras.constraints.NonNeg()),
                        'mean_conductance_potential': self.add_weight(name='mean_conductance_potential', shape=(self.state_size, 2), initializer=tf.keras.initializers.Constant(0)),
                        'std_conductance': self.add_weight(name='std_conductance', shape=(self.state_size, 2), initializer=tf.keras.initializers.Constant(1), constraint=tf.keras.constraints.NonNeg())}
@@ -44,19 +49,19 @@ class MemoryLayerCell(tf.keras.layers.Layer):
         # compute the synaptic conductance
         synaptic_conductance = self.params['max_conductance'] / (1 + tf.math.exp(-self.params['std_conductance'] * (presynaptic_potentials - self.params['mean_conductance_potential'])))
         # compute the voltage difference between resting potential (these are different for excitatory and inhibitory synapses) and the neuron's current potential
-        synaptic_potential_difference = tf.concat([tf.ones_like(states[..., tf.newaxis]), -tf.ones_like(states[..., tf.newaxis])], -1) - states[..., tf.newaxis]
+        synaptic_potential_difference = tf.concat([self.params['excitatory_potential'][..., tf.newaxis], self.params['inhibitory_potential'][..., tf.newaxis]], -1) - states[..., tf.newaxis]
         # the synaptic current is the conductance multiplied with the voltage
         synaptic_memory_cell_inputs = synaptic_conductance * synaptic_potential_difference
         # compute the change in potentials of the neurons by computing the gradient and multiplying it with the time difference
-        states_change = (affine_memory_cell_inputs + tf.reduce_sum(synaptic_memory_cell_inputs, -1)) * intervals
+        states_change = (affine_memory_cell_inputs + tf.reduce_sum(synaptic_memory_cell_inputs, -1)) / self.params['capacitance'] * intervals
         # update the current memory state by using a tanh activation function after doing the state update
         next_states = tf.keras.activations.tanh(states + states_change)
         # only the output of the first memory cell is taken
         memory_cell_outputs = next_states[:, 0::2]
         # pass the memory cell outputs through an affine transformation
         affine_memory_cell_outputs = memory_cell_outputs * self.params['output_scaling'] + self.params['output_bias']
-        # build the memory layer output using all available information
-        memory_layer_outputs = self.output_control(tf.concat([inputs, affine_memory_cell_outputs, next_states[:, 1::2]], -1))
+        # build the memory layer output using only the outputs of the memory cells
+        memory_layer_outputs = self.output_control(affine_memory_cell_outputs)
         # return the memory layer outputs and the next states as tuple
         return memory_layer_outputs, (next_states,)
 
