@@ -42,7 +42,7 @@ class MemoryLayerCell(tf.keras.layers.Layer):
         memory_cell_inputs = tf.reshape(tf.repeat(preliminary_memory_cell_inputs[..., tf.newaxis], 2, -1), (-1, self.state_size))
         # pass the memory cell inputs through an affine transformation
         affine_memory_cell_inputs = memory_cell_inputs * self.params['input_scaling'] + self.params['input_bias']
-        # build a tensor representing both potentials of two neuron pairs
+        # build a tensor representing both potentials of a neuron pair in the last dimension
         neuron_pair_potentials = tf.reshape(states, (-1, self.state_size // 2, 2))
         # build the presynaptic potentials for the recurrent excitatory and the reciprocal inhibitory connection
         presynaptic_potentials = tf.reshape(tf.concat([neuron_pair_potentials, tf.roll(neuron_pair_potentials, 1, -1)], -1), (-1, self.state_size, 2))
