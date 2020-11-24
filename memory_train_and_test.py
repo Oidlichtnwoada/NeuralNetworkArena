@@ -4,6 +4,7 @@ from os.path import join
 from numpy import concatenate, stack, argmax, squeeze
 from numpy import ones, ones_like, sum, mean
 from numpy.random import randint
+from tensorflow import math
 from tensorflow.keras import Input, Model
 from tensorflow.keras.callbacks import ModelCheckpoint
 from tensorflow.keras.layers import RNN, Dense, LSTM, TimeDistributed
@@ -11,6 +12,7 @@ from tensorflow.keras.losses import SparseCategoricalCrossentropy
 from tensorflow.keras.optimizers import Adam, RMSprop
 
 from models.memory_layer import MemoryLayerCell
+from models.unitary_rnn import EUNNCell
 
 
 class MemoryProblemLoader:
@@ -67,9 +69,14 @@ class MemoryProblemLoader:
             outputs = RNN(MemoryLayerCell(100, self.category_amount), return_sequences=True)(inputs)
             model = Model(inputs=inputs, outputs=outputs)
             optimizer = Adam(self.learning_rate)
-        elif self.model == 'lstm_layer':
+        elif self.model == 'lstm':
             inputs = (Input(shape=(self.sample_length, 1)), Input(shape=(self.sample_length, 1)))
             outputs = TimeDistributed(Dense(self.category_amount))(LSTM(40, return_sequences=True)(inputs[0]))
+            model = Model(inputs=inputs, outputs=outputs)
+            optimizer = RMSprop(self.learning_rate)
+        elif self.model == 'unitary_rnn':
+            inputs = (Input(shape=(self.sample_length, 1)), Input(shape=(self.sample_length, 1)))
+            outputs = TimeDistributed(Dense(self.category_amount))(math.real(RNN(EUNNCell(128, 4), return_sequences=True)(inputs[0])))
             model = Model(inputs=inputs, outputs=outputs)
             optimizer = RMSprop(self.learning_rate)
         else:
