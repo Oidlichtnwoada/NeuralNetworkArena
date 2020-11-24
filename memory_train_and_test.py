@@ -102,7 +102,7 @@ class MemoryProblemLoader:
         # compute percentage of correct labels if argmax of output is taken
         predictions = argmax(model.predict((self.test_sequences[0], self.test_sequences[1]), batch_size=self.batch_size), -1)
         mean_correct_predictions = int(mean(sum((predictions == squeeze(self.test_sequences[2], -1)).astype(int), -1)))
-        print(f'mean correct predictions: {mean_correct_predictions}/{self.sample_length}')
+        print(f'mean correct predictions of memorized sequence: {mean_correct_predictions - self.memory_length - self.sequence_length}/{self.sequence_length}')
 
 
 # parse arguments and start program
