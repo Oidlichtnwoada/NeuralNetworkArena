@@ -1,8 +1,5 @@
-import math
-
 import numpy as np
 import tensorflow as tf
-from tensorflow.python.ops import rnn_cell_impl
 
 
 def modrelu(inputs, bias, cplex=True):
@@ -78,12 +75,12 @@ def generate_index_fft(s):
                 list0.append(np.append(list1[i], list1[i] + 2 ** k))
             return list0
 
-    t = ind_s(int(math.log(s / 2, 2)))
+    t = ind_s(int(tf.math.log(s / 2, 2)))
     ind_exe = []
-    for i in range(int(math.log(s, 2))):
+    for i in range(int(tf.math.log(s, 2))):
         ind_exe.append(tf.constant(t[i]))
     ind_param = []
-    for i in range(int(math.log(s, 2))):
+    for i in range(int(tf.math.log(s, 2))):
         ind = np.array([])
         for j in range(2 ** i):
             ind = np.append(ind, np.array(range(0, s, 2 ** i)) + j).astype(np.int32)
@@ -93,7 +90,7 @@ def generate_index_fft(s):
 
 def fft_param(num_units, cplex):
     phase_init = tf.random_uniform_initializer(-3.14, 3.14)
-    capacity = int(math.log(num_units, 2))
+    capacity = int(tf.math.log(num_units, 2))
     theta = tf.compat.v1.get_variable("theta", [capacity, num_units // 2], initializer=phase_init)
     cos_theta = tf.cos(theta)
     sin_theta = tf.sin(theta)
@@ -174,7 +171,7 @@ def tunable_param(num_units, cplex, capacity):
     return v1, v2, ind_exe, diag
 
 
-class EUNNCell(rnn_cell_impl.RNNCell):
+class EUNNCell(tf.compat.v1.nn.rnn_cell.RNNCell):
     """Efficient Unitary Network Cell
     The implementation is based on:
     http://arxiv.org/abs/1612.05231.
@@ -185,8 +182,7 @@ class EUNNCell(rnn_cell_impl.RNNCell):
                  capacity=2,
                  fft=False,
                  cplex=True,
-                 activation=modrelu,
-                 reuse=None):
+                 activation=modrelu):
         """Initializes the EUNN  cell.
         Args:
           num_units: int, The number of units in the LSTM cell.
@@ -197,7 +193,7 @@ class EUNNCell(rnn_cell_impl.RNNCell):
           cplex: bool, default true, whether to use cplex number.
         """
 
-        super(EUNNCell, self).__init__(_reuse=reuse)
+        super(EUNNCell, self).__init__()
         self._num_units = num_units
         self._activation = activation
         self._capacity = capacity
@@ -206,7 +202,7 @@ class EUNNCell(rnn_cell_impl.RNNCell):
         if self._capacity > self._num_units:
             raise ValueError("Do not set capacity larger than hidden size, it is redundant")
         if self._fft:
-            if math.log(self._num_units, 2) % 1 != 0:
+            if tf.math.log(self._num_units, 2) % 1 != 0:
                 raise ValueError("FFT style only supports power of 2 of hidden size")
         else:
             if self._num_units % 2 != 0:
@@ -214,7 +210,7 @@ class EUNNCell(rnn_cell_impl.RNNCell):
             if self._capacity % 2 != 0:
                 raise ValueError("Tunable style only supports even number of capacity")
         if self._fft:
-            self._capacity = int(math.log(self._num_units, 2))
+            self._capacity = int(tf.math.log(self._num_units, 2))
             self._v1, self._v2, self._ind, self._diag = fft_param(self._num_units, self._cplex)
         else:
             self._v1, self._v2, self._ind, self._diag = tunable_param(self._num_units, self._cplex, self._capacity)
