@@ -8,7 +8,7 @@ from tensorflow.keras import Input, Model
 from tensorflow.keras.callbacks import ModelCheckpoint
 from tensorflow.keras.layers import RNN, Dense, LSTM, TimeDistributed
 from tensorflow.keras.losses import SparseCategoricalCrossentropy
-from tensorflow.keras.optimizers import Adam
+from tensorflow.keras.optimizers import Adam, RMSprop
 
 from models.memory_layer import MemoryLayerCell
 
@@ -69,9 +69,9 @@ class MemoryProblemLoader:
             optimizer = Adam(self.learning_rate)
         elif self.model == 'lstm_layer':
             inputs = (Input(shape=(self.sample_length, 1)), Input(shape=(self.sample_length, 1)))
-            outputs = TimeDistributed(Dense(self.category_amount))(LSTM(100, return_sequences=True)(inputs[0]))
+            outputs = TimeDistributed(Dense(self.category_amount))(LSTM(40, return_sequences=True)(inputs[0]))
             model = Model(inputs=inputs, outputs=outputs)
-            optimizer = Adam(self.learning_rate)
+            optimizer = RMSprop(self.learning_rate)
         else:
             raise NotImplementedError()
         model.compile(optimizer=optimizer, loss=loss, run_eagerly=self.debug)
