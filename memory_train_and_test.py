@@ -98,11 +98,11 @@ class MemoryProblemLoader:
         model = self.get_model()
         model.load_weights(self.weights_directory).expect_partial()
         test_loss = model.evaluate(x=(self.test_sequences[0], self.test_sequences[1]), y=self.test_sequences[2], batch_size=self.batch_size)
-        print(f'test loss: {test_loss}')
+        print(f'test loss: {test_loss:.4f}')
         # compute percentage of correct labels if argmax of output is taken
         predictions = argmax(model.predict((self.test_sequences[0], self.test_sequences[1]), batch_size=self.batch_size), -1)
-        mean_correct_predictions = int(mean(sum((predictions == squeeze(self.test_sequences[2], -1)).astype(int), -1)))
-        print(f'mean correct predictions of memorized sequence: {mean_correct_predictions - self.memory_length - self.sequence_length}/{self.sequence_length}')
+        mean_correct_predictions = mean(sum((predictions == squeeze(self.test_sequences[2], -1)).astype(int), -1))
+        print(f'mean correct predictions of memorized sequence: {mean_correct_predictions - self.memory_length - self.sequence_length:.1f}/{self.sequence_length}')
 
 
 # parse arguments and start program
