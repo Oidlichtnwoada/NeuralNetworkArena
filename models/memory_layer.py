@@ -10,9 +10,13 @@ class MemoryLayerCell(tf.keras.layers.Layer):
         # save the output_size (vector size of the output control output)
         self.output_size = output_size
         # input control - provides one input for each memory cell
-        self.input_control = tf.keras.layers.Dense(self.state_size // 2)
+        self.input_control = tf.keras.models.Sequential([
+            tf.keras.layers.Dense(self.state_size),
+            tf.keras.layers.Dense(self.state_size // 2)])
         # output control - creates the final output of the memory layer
-        self.output_control = tf.keras.layers.Dense(self.output_size)
+        self.output_control = tf.keras.models.Sequential([
+            tf.keras.layers.Dense(2 * self.output_size),
+            tf.keras.layers.Dense(self.output_size)])
         # create a dictionary with all trainable parameters in this layer
         self.params = {'excitatory_potential': self.add_weight(name='capacitance', shape=(self.state_size,),
                                                                initializer=tf.keras.initializers.Constant(1), constraint=tf.keras.constraints.MinMaxNorm(1, float('inf'))),
