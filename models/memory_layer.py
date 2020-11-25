@@ -34,7 +34,7 @@ class MemoryLayerCell(tf.keras.layers.Layer):
             intervals = tf.ones_like(inputs)[:, :1]
         # build the preliminary memory cell inputs using all available information
         preliminary_memory_cell_inputs = self.input_control(tf.concat([inputs, states], -1))
-        # duplicate every entry to get an input for each neuron
+        # duplicate every entry and negate it to get the positive and negative input for each neuron pair
         memory_cell_inputs = tf.reshape(tf.concat([preliminary_memory_cell_inputs[..., tf.newaxis], -preliminary_memory_cell_inputs[..., tf.newaxis]], -1), (-1, self.state_size))
         # build a tensor representing both potentials of a neuron pair in the last dimension
         neuron_pair_potentials = tf.reshape(states, (-1, self.state_size // 2, 2))
