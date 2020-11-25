@@ -14,11 +14,7 @@ class MemoryLayerCell(tf.keras.layers.Layer):
         # output control - creates the final output of the memory layer
         self.output_control = tf.keras.layers.Dense(self.output_size)
         # create a dictionary with all trainable parameters in this layer
-        self.params = {'input_scaling': self.add_weight(name='input_scaling', shape=(self.state_size,), initializer=tf.keras.initializers.Constant(1)),
-                       'input_bias': self.add_weight(name='input_bias', shape=(self.state_size,), initializer=tf.keras.initializers.Constant(0)),
-                       'output_scaling': self.add_weight(name='output_scaling', shape=(self.state_size // 2,), initializer=tf.keras.initializers.Constant(1)),
-                       'output_bias': self.add_weight(name='output_bias', shape=(self.state_size // 2,), initializer=tf.keras.initializers.Constant(0)),
-                       'excitatory_potential': self.add_weight(name='capacitance', shape=(self.state_size,),
+        self.params = {'excitatory_potential': self.add_weight(name='capacitance', shape=(self.state_size,),
                                                                initializer=tf.keras.initializers.Constant(1), constraint=tf.keras.constraints.MinMaxNorm(1, float('inf'))),
                        'inhibitory_potential': self.add_weight(name='capacitance', shape=(self.state_size,),
                                                                initializer=tf.keras.initializers.Constant(-1), constraint=tf.keras.constraints.MinMaxNorm(-float('inf'), -1)),
@@ -39,29 +35,25 @@ class MemoryLayerCell(tf.keras.layers.Layer):
         # build the preliminary memory cell inputs using all available information
         preliminary_memory_cell_inputs = self.input_control(tf.concat([inputs, states], -1))
         # duplicate every entry to get an input for each neuron
-        memory_cell_inputs = tf.reshape(tf.repeat(preliminary_memory_cell_inputs[..., tf.newaxis], 2, -1), (-1, self.state_size))
-        # pass the memory cell inputs through an affine transformation
-        affine_memory_cell_inputs = memory_cell_inputs * self.params['input_scaling'] + self.params['input_bias']
+        memory_cell_inputs = tf.reshape(tf.concat([preliminary_memory_cell_inputs[..., tf.newaxis], -preliminary_memory_cell_inputs[..., tf.newaxis]], -1), (-1, self.state_size))
         # build a tensor representing both potentials of a neuron pair in the last dimension
         neuron_pair_potentials = tf.reshape(states, (-1, self.state_size // 2, 2))
         # build the presynaptic potentials for the recurrent excitatory and the reciprocal inhibitory connection
         presynaptic_potentials = tf.reshape(tf.concat([neuron_pair_potentials, tf.roll(neuron_pair_potentials, 1, -1)], -1), (-1, self.state_size, 2))
         # compute the synaptic conductance
         synaptic_conductance = self.params['max_conductance'] / (1 + tf.math.exp(-self.params['std_conductance'] * (presynaptic_potentials - self.params['mean_conductance_potential'])))
-        # compute the voltage difference between resting potential (these are different for excitatory and inhibitory synapses) and the neuron's current potential
+        # compute the potential difference between resting potential (these are different for excitatory and inhibitory synapses) and the neuron's current potential
         synaptic_potential_difference = tf.concat([self.params['excitatory_potential'][..., tf.newaxis], self.params['inhibitory_potential'][..., tf.newaxis]], -1) - states[..., tf.newaxis]
         # the synaptic current is the conductance multiplied with the voltage
         synaptic_memory_cell_inputs = synaptic_conductance * synaptic_potential_difference
         # compute the change in potentials of the neurons by computing the gradient and multiplying it with the time difference
-        states_change = (affine_memory_cell_inputs + tf.reduce_sum(synaptic_memory_cell_inputs, -1)) / self.params['capacitance'] * intervals
-        # update the current memory state by using a tanh activation function after doing the state update
-        next_states = tf.keras.activations.tanh(states + states_change)
+        states_change = (memory_cell_inputs + tf.reduce_sum(synaptic_memory_cell_inputs, -1)) / self.params['capacitance'] * intervals
+        # update the current memory state by applying the changes to the current state
+        next_states = states + states_change
         # only the output of the first memory cell is taken
         memory_cell_outputs = next_states[:, 0::2]
-        # pass the memory cell outputs through an affine transformation
-        affine_memory_cell_outputs = memory_cell_outputs * self.params['output_scaling'] + self.params['output_bias']
         # build the memory layer output using only the outputs of the memory cells
-        memory_layer_outputs = self.output_control(affine_memory_cell_outputs)
+        memory_layer_outputs = self.output_control(memory_cell_outputs)
         # return the memory layer outputs and the next states as tuple
         return memory_layer_outputs, (next_states,)
 
