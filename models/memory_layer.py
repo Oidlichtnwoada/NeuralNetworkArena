@@ -24,13 +24,17 @@ class MemoryLayerCell(tf.keras.layers.Layer):
             tf.keras.layers.Dense(self.output_size)])
         # create a dictionary with all trainable parameters in this layer
         self.params = {'excitatory_potential': self.add_weight(name='capacitance', shape=(self.state_size,),
-                                                               initializer=tf.keras.initializers.Constant(1), constraint=tf.keras.constraints.MinMaxNorm(1, float('inf'))),
+                                                               initializer=tf.keras.initializers.Constant(5), constraint=tf.keras.constraints.MinMaxNorm(5, float('inf'))),
                        'inhibitory_potential': self.add_weight(name='capacitance', shape=(self.state_size,),
-                                                               initializer=tf.keras.initializers.Constant(-1), constraint=tf.keras.constraints.MinMaxNorm(-float('inf'), -1)),
-                       'capacitance': self.add_weight(name='capacitance', shape=(self.state_size,), initializer=tf.keras.initializers.Constant(1), constraint=tf.keras.constraints.NonNeg()),
-                       'max_conductance': self.add_weight(name='max_conductance', shape=(self.state_size, 2), initializer=tf.keras.initializers.Constant(1), constraint=tf.keras.constraints.NonNeg()),
-                       'mean_conductance_potential': self.add_weight(name='mean_conductance_potential', shape=(self.state_size, 2), initializer=tf.keras.initializers.Constant(0)),
-                       'std_conductance': self.add_weight(name='std_conductance', shape=(self.state_size, 2), initializer=tf.keras.initializers.Constant(1), constraint=tf.keras.constraints.NonNeg())}
+                                                               initializer=tf.keras.initializers.Constant(-5), constraint=tf.keras.constraints.MinMaxNorm(-float('inf'), -5)),
+                       'capacitance': self.add_weight(name='capacitance', shape=(self.state_size,),
+                                                      initializer=tf.keras.initializers.Constant(1), constraint=tf.keras.constraints.NonNeg()),
+                       'max_conductance': self.add_weight(name='max_conductance', shape=(self.state_size, 2),
+                                                          initializer=tf.keras.initializers.Constant(1), constraint=tf.keras.constraints.NonNeg()),
+                       'mean_conductance_potential': self.add_weight(name='mean_conductance_potential', shape=(self.state_size, 2),
+                                                                     initializer=tf.keras.initializers.Constant(0)),
+                       'std_conductance': self.add_weight(name='std_conductance', shape=(self.state_size, 2),
+                                                          initializer=tf.keras.initializers.Constant(1), constraint=tf.keras.constraints.NonNeg())}
 
     def call(self, inputs, states):
         # states are passed as tuple
