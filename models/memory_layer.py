@@ -9,6 +9,9 @@ class MemoryLayerCell(tf.keras.layers.Layer):
         self.state_size = state_size
         # save the output_size (vector size of the output control output)
         self.output_size = output_size
+        # add dropout layers to prevent overfitting
+        self.memory_in_dropout = tf.keras.layers.Dropout(rate=0.1)
+        self.memory_out_dropout = tf.keras.layers.Dropout(rate=0.1)
         # add a normalization layer for the neuron potentials
         self.normalization = tf.keras.layers.LayerNormalization(epsilon=1E-6)
         # input control - provides one input for each memory cell
@@ -40,8 +43,10 @@ class MemoryLayerCell(tf.keras.layers.Layer):
             intervals = tf.ones_like(inputs)[:, :1]
         # build the preliminary memory cell inputs using all available information
         preliminary_memory_cell_inputs = self.input_control(tf.concat([inputs, states], -1))
+        # pass the memory cell inputs through a dropout layer
+        lossy_memory_cell_inputs = self.memory_in_dropout(preliminary_memory_cell_inputs)
         # duplicate every entry and negate it to get the positive and negative input for each neuron pair
-        memory_cell_inputs = tf.reshape(tf.concat([preliminary_memory_cell_inputs[..., tf.newaxis], -preliminary_memory_cell_inputs[..., tf.newaxis]], -1), (-1, self.state_size))
+        memory_cell_inputs = tf.reshape(tf.concat([lossy_memory_cell_inputs[..., tf.newaxis], -lossy_memory_cell_inputs[..., tf.newaxis]], -1), (-1, self.state_size))
         # build a tensor representing both potentials of a neuron pair in the last dimension
         neuron_pair_potentials = tf.reshape(states, (-1, self.state_size // 2, 2))
         # build the presynaptic potentials for the recurrent excitatory and the reciprocal inhibitory connection
@@ -58,8 +63,10 @@ class MemoryLayerCell(tf.keras.layers.Layer):
         next_states = self.normalization(states + states_change)
         # only the output of the first memory cell is taken
         memory_cell_outputs = next_states[:, 0::2]
+        # pass memory cell outputs through dropout layer
+        lossy_memory_cell_outputs = self.memory_out_dropout(memory_cell_outputs)
         # build the memory layer output using only the outputs of the memory cells
-        memory_layer_outputs = self.output_control(memory_cell_outputs)
+        memory_layer_outputs = self.output_control(lossy_memory_cell_outputs)
         # return the memory layer outputs and the next states as tuple
         return memory_layer_outputs, (next_states,)
 
