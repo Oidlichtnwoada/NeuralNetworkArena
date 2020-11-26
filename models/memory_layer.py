@@ -23,10 +23,10 @@ class MemoryLayerCell(tf.keras.layers.Layer):
             tf.keras.layers.Dense(2 * self.output_size),
             tf.keras.layers.Dense(self.output_size)])
         # create a dictionary with all trainable parameters in this layer
-        self.params = {'excitatory_potential': self.add_weight(name='capacitance', shape=(self.state_size,),
-                                                               initializer=tf.keras.initializers.Constant(5), constraint=tf.keras.constraints.MinMaxNorm(5, float('inf'))),
-                       'inhibitory_potential': self.add_weight(name='capacitance', shape=(self.state_size,),
-                                                               initializer=tf.keras.initializers.Constant(-5), constraint=tf.keras.constraints.MinMaxNorm(-float('inf'), -5)),
+        self.params = {'excitatory_potential': self.add_weight(name='excitatory_potential', shape=(self.state_size,),
+                                                               initializer=tf.keras.initializers.Constant(1), constraint=tf.keras.constraints.MinMaxNorm(0, float('inf'))),
+                       'inhibitory_potential': self.add_weight(name='inhibitory_potential', shape=(self.state_size,),
+                                                               initializer=tf.keras.initializers.Constant(-1), constraint=tf.keras.constraints.MinMaxNorm(-float('inf'), 0)),
                        'capacitance': self.add_weight(name='capacitance', shape=(self.state_size,),
                                                       initializer=tf.keras.initializers.Constant(1), constraint=tf.keras.constraints.NonNeg()),
                        'max_conductance': self.add_weight(name='max_conductance', shape=(self.state_size, 2),
