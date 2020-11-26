@@ -52,7 +52,7 @@ class MemoryLayerCell(tf.keras.layers.Layer):
         # build the presynaptic potentials for the recurrent excitatory and the reciprocal inhibitory connection
         presynaptic_potentials = tf.reshape(tf.concat([neuron_pair_potentials, tf.roll(neuron_pair_potentials, 1, -1)], -1), (-1, self.state_size, 2))
         # compute the synaptic conductance
-        synaptic_conductance = self.params['max_conductance'] / (1 + tf.math.exp(-self.params['std_conductance'] * (presynaptic_potentials - self.params['mean_conductance_potential'])))
+        synaptic_conductance = self.params['max_conductance'] * tf.keras.activations.sigmoid(self.params['std_conductance'] * (presynaptic_potentials - self.params['mean_conductance_potential']))
         # compute the potential difference between resting potential (these are different for excitatory and inhibitory synapses) and the neuron's current potential
         synaptic_potential_difference = tf.concat([self.params['excitatory_potential'][..., tf.newaxis], self.params['inhibitory_potential'][..., tf.newaxis]], -1) - states[..., tf.newaxis]
         # the synaptic current is the conductance multiplied with the voltage
