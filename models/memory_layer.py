@@ -9,6 +9,8 @@ class MemoryLayerCell(tf.keras.layers.Layer):
         self.state_size = state_size
         # save the output_size (vector size of the output control output)
         self.output_size = output_size
+        # add a normalization layer for the neuron potentials
+        self.normalization = tf.keras.layers.LayerNormalization(epsilon=1E-6)
         # input control - provides one input for each memory cell
         self.input_control = tf.keras.models.Sequential([
             tf.keras.layers.Dense(self.state_size),
@@ -52,8 +54,8 @@ class MemoryLayerCell(tf.keras.layers.Layer):
         synaptic_memory_cell_inputs = synaptic_conductance * synaptic_potential_difference
         # compute the change in potentials of the neurons by computing the gradient and multiplying it with the time difference
         states_change = (memory_cell_inputs + tf.reduce_sum(synaptic_memory_cell_inputs, -1)) / self.params['capacitance'] * intervals
-        # update the current memory state by applying the changes to the current state
-        next_states = states + states_change
+        # update the current memory state by applying the changes to the current state and normalize the results
+        next_states = self.normalization(states + states_change)
         # only the output of the first memory cell is taken
         memory_cell_outputs = next_states[:, 0::2]
         # build the memory layer output using only the outputs of the memory cells
