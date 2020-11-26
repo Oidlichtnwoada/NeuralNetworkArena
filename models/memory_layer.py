@@ -24,17 +24,17 @@ class MemoryLayerCell(tf.keras.layers.Layer):
             tf.keras.layers.Dense(self.output_size)])
         # create a dictionary with all trainable parameters in this layer
         self.params = {'excitatory_potential': self.add_weight(name='excitatory_potential', shape=(self.state_size,),
-                                                               initializer=tf.keras.initializers.Constant(1), constraint=tf.keras.constraints.MinMaxNorm(0, float('inf'))),
+                                                               initializer=tf.keras.initializers.Constant(1)),
                        'inhibitory_potential': self.add_weight(name='inhibitory_potential', shape=(self.state_size,),
-                                                               initializer=tf.keras.initializers.Constant(-1), constraint=tf.keras.constraints.MinMaxNorm(-float('inf'), 0)),
+                                                               initializer=tf.keras.initializers.Constant(-1)),
                        'capacitance': self.add_weight(name='capacitance', shape=(self.state_size,),
-                                                      initializer=tf.keras.initializers.Constant(1), constraint=tf.keras.constraints.NonNeg()),
+                                                      initializer=tf.keras.initializers.RandomUniform(4E-1, 6E-1), constraint=tf.keras.constraints.NonNeg()),
                        'max_conductance': self.add_weight(name='max_conductance', shape=(self.state_size, 2),
-                                                          initializer=tf.keras.initializers.Constant(1), constraint=tf.keras.constraints.NonNeg()),
+                                                          initializer=tf.keras.initializers.RandomUniform(1E-3, 1), constraint=tf.keras.constraints.NonNeg()),
                        'mean_conductance_potential': self.add_weight(name='mean_conductance_potential', shape=(self.state_size, 2),
-                                                                     initializer=tf.keras.initializers.Constant(0)),
+                                                                     initializer=tf.keras.initializers.RandomUniform(3E-1, 8E-1)),
                        'std_conductance': self.add_weight(name='std_conductance', shape=(self.state_size, 2),
-                                                          initializer=tf.keras.initializers.Constant(1), constraint=tf.keras.constraints.NonNeg())}
+                                                          initializer=tf.keras.initializers.RandomUniform(3, 8), constraint=tf.keras.constraints.NonNeg())}
 
     def call(self, inputs, states):
         # states are passed as tuple
@@ -64,7 +64,7 @@ class MemoryLayerCell(tf.keras.layers.Layer):
         # compute the change in potentials of the neurons by computing the gradient and multiplying it with the time difference
         states_change = (memory_cell_inputs + tf.reduce_sum(synaptic_memory_cell_inputs, -1)) / self.params['capacitance'] * intervals
         # update the current memory state by applying the changes to the current state and normalize the results
-        next_states = self.normalization(states + states_change)
+        next_states = states + states_change
         # only the output of the first memory cell is taken
         memory_cell_outputs = next_states[:, 0::2]
         # pass memory cell outputs through dropout layer
