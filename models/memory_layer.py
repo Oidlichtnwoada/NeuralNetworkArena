@@ -10,8 +10,8 @@ class MemoryLayerCell(tf.keras.layers.Layer):
         # save the output_size (vector size of the output control output)
         self.output_size = output_size
         # add dropout layers to prevent overfitting
-        self.memory_in_dropout = tf.keras.layers.Dropout(rate=0.1)
-        self.memory_out_dropout = tf.keras.layers.Dropout(rate=0.1)
+        self.memory_in_dropout = tf.keras.layers.Dropout(rate=1E-1)
+        self.memory_out_dropout = tf.keras.layers.Dropout(rate=1E-1)
         # add a normalization layer for the neuron potentials
         self.normalization = tf.keras.layers.LayerNormalization(epsilon=1E-6)
         # input control - provides one input for each memory cell
