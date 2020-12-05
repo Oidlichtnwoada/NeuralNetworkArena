@@ -33,6 +33,8 @@ class MemoryProblemLoader:
         self.validation_data_percentage = validation_data_percentage
         self.sample_length = self.memory_length + 2 * self.sequence_length
         self.loss_object = SparseCategoricalCrossentropy(from_logits=True)
+        self.sample_weight = ones((1, self.sample_length,))
+        self.sample_weight[:, self.sample_length - self.sequence_length] /= self.sample_length - self.sequence_length
         self.test_sequences = None
         self.validation_sequences = None
         self.training_sequences = None
@@ -93,9 +95,7 @@ class MemoryProblemLoader:
         return model
 
     def custom_loss(self, y_true, y_pred):
-        sample_weight = ones((1, self.sample_length,))
-        sample_weight[:, self.sample_length - self.sequence_length] /= self.sample_length - self.sequence_length
-        return self.loss_object(y_true, y_pred, sample_weight=sample_weight)
+        return self.loss_object(y_true, y_pred, sample_weight=self.sample_weight)
 
     def train(self):
         # train the model parameters using gradient descent
