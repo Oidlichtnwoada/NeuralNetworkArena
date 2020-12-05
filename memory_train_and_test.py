@@ -12,6 +12,7 @@ from tensorflow.keras.losses import SparseCategoricalCrossentropy
 from tensorflow.keras.optimizers import Adam, RMSprop
 
 from models.memory_layer import MemoryLayerCell
+from models.memory_rnn import RecurrentMemoryCell
 from models.unitary_rnn import EUNNCell
 
 
@@ -31,6 +32,7 @@ class MemoryProblemLoader:
         self.test_data_percentage = test_data_percentage
         self.validation_data_percentage = validation_data_percentage
         self.sample_length = self.memory_length + 2 * self.sequence_length
+        self.loss_object = SparseCategoricalCrossentropy(from_logits=True)
         self.test_sequences = None
         self.validation_sequences = None
         self.training_sequences = None
@@ -63,7 +65,6 @@ class MemoryProblemLoader:
 
     def get_model(self):
         # build the model for the memory task
-        loss = SparseCategoricalCrossentropy(from_logits=True)
         if self.model == 'memory_layer':
             inputs = (Input(shape=(self.sample_length, 1)), Input(shape=(self.sample_length, 1)))
             outputs = RNN(MemoryLayerCell(100, self.category_amount), return_sequences=True)(inputs)
@@ -74,6 +75,11 @@ class MemoryProblemLoader:
             outputs = TimeDistributed(Dense(self.category_amount))(LSTM(40, return_sequences=True)(inputs[0]))
             model = Model(inputs=inputs, outputs=outputs)
             optimizer = RMSprop(self.learning_rate)
+        elif self.model == 'recurrent_memory_cell':
+            inputs = (Input(shape=(self.sample_length, 1)), Input(shape=(self.sample_length, 1)))
+            outputs = RNN(RecurrentMemoryCell(256, self.category_amount), return_sequences=True)(inputs[0])
+            model = Model(inputs=inputs, outputs=outputs)
+            optimizer = Adam(self.learning_rate)
         elif self.model == 'unitary_rnn':
             inputs = (Input(shape=(self.sample_length, 1)), Input(shape=(self.sample_length, 1)))
             outputs = TimeDistributed(Dense(self.category_amount))(math.real(RNN(EUNNCell(128, 4), return_sequences=True)(inputs[0])))
@@ -81,10 +87,15 @@ class MemoryProblemLoader:
             optimizer = RMSprop(self.learning_rate)
         else:
             raise NotImplementedError()
-        model.compile(optimizer=optimizer, loss=loss, run_eagerly=self.debug)
+        model.compile(optimizer=optimizer, loss=self.custom_loss, run_eagerly=self.debug)
         print(f'sample predictions: {model.predict((self.test_sequences[0][:self.batch_size], self.test_sequences[1][:self.batch_size]), batch_size=self.batch_size)}')
         model.summary()
         return model
+
+    def custom_loss(self, y_true, y_pred):
+        sample_weight = ones((1, self.sample_length,))
+        sample_weight[:, self.sample_length - self.sequence_length] /= self.sample_length - self.sequence_length
+        return self.loss_object(y_true, y_pred, sample_weight=sample_weight)
 
     def train(self):
         # train the model parameters using gradient descent

@@ -2,13 +2,15 @@ import tensorflow as tf
 
 
 class MemoryLayerCell(tf.keras.layers.Layer):
-    def __init__(self, state_size, output_size):
+    def __init__(self, state_size, output_size, discretization_steps=1):
         super().__init__()
         # save the state size (number of neurons) - only an even amount is allowed as neuron pairs are used for memory cells
         assert state_size % 2 == 0
         self.state_size = state_size
         # save the output_size (vector size of the output control output)
         self.output_size = output_size
+        # save the discretization steps for ode solving
+        self.discretization_steps = discretization_steps
         # add dropout layers to prevent overfitting
         self.memory_in_dropout = tf.keras.layers.Dropout(rate=1E-1)
         self.memory_out_dropout = tf.keras.layers.Dropout(rate=1E-1)
@@ -16,10 +18,12 @@ class MemoryLayerCell(tf.keras.layers.Layer):
         self.normalization = tf.keras.layers.LayerNormalization(epsilon=1E-6)
         # input control - provides one input for each memory cell
         self.input_control = tf.keras.models.Sequential([
+            tf.keras.layers.Dense(self.state_size * 2),
             tf.keras.layers.Dense(self.state_size),
             tf.keras.layers.Dense(self.state_size // 2)])
         # output control - creates the final output of the memory layer
         self.output_control = tf.keras.models.Sequential([
+            tf.keras.layers.Dense(4 * self.output_size),
             tf.keras.layers.Dense(2 * self.output_size),
             tf.keras.layers.Dense(self.output_size)])
         # create a dictionary with all trainable parameters in this layer
@@ -36,15 +40,7 @@ class MemoryLayerCell(tf.keras.layers.Layer):
                        'std_conductance': self.add_weight(name='std_conductance', shape=(self.state_size, 2),
                                                           initializer=tf.keras.initializers.RandomUniform(3, 8), constraint=tf.keras.constraints.NonNeg())}
 
-    def call(self, inputs, states):
-        # states are passed as tuple
-        states = states[0]
-        if isinstance(inputs, tuple):
-            # save time intervals if provided for irregularly sampled time series
-            inputs, intervals = inputs
-        else:
-            # generate intervals of only ones for regularly sampled time series if no intervals are provided
-            intervals = tf.ones_like(inputs)[:, :1]
+    def states_derivative(self, inputs, states):
         # build the preliminary memory cell inputs using all available information
         preliminary_memory_cell_inputs = self.input_control(tf.concat([inputs, states], -1))
         # pass the memory cell inputs through a dropout layer
@@ -61,10 +57,23 @@ class MemoryLayerCell(tf.keras.layers.Layer):
         synaptic_potential_difference = tf.concat([self.params['excitatory_potential'][..., tf.newaxis], self.params['inhibitory_potential'][..., tf.newaxis]], -1) - states[..., tf.newaxis]
         # the synaptic current is the conductance multiplied with the voltage
         synaptic_memory_cell_inputs = synaptic_conductance * synaptic_potential_difference
-        # compute the change in potentials of the neurons by computing the gradient and multiplying it with the time difference
-        states_change = (memory_cell_inputs + tf.reduce_sum(synaptic_memory_cell_inputs, -1)) / self.params['capacitance'] * intervals
-        # update the current memory state by applying the changes to the current state and normalize the results
-        next_states = self.normalization(states + states_change)
+        # compute the derivative of neuron potentials
+        return (memory_cell_inputs + tf.reduce_sum(synaptic_memory_cell_inputs, -1)) / self.params['capacitance']
+
+    def call(self, inputs, states):
+        # states are passed as tuple
+        states = states[0]
+        if isinstance(inputs, tuple):
+            # save time intervals if provided for irregularly sampled time series
+            inputs, intervals = inputs
+        else:
+            # generate intervals of only ones for regularly sampled time series if no intervals are provided
+            intervals = tf.ones_like(inputs)[:, :1]
+        # compute the next state using multiple discretization steps
+        for step in range(self.discretization_steps):
+            states += self.states_derivative(inputs, states) * intervals / self.discretization_steps
+        # update the current memory state by normalizing the state
+        next_states = self.normalization(states)
         # only the output of the first memory cell is taken
         memory_cell_outputs = next_states[:, 0::2]
         # pass memory cell outputs through dropout layer
