@@ -2,7 +2,7 @@ import tensorflow as tf
 
 
 class RecurrentMemoryCell(tf.keras.layers.Layer):
-    def __init__(self, state_size, output_size, dropout_rate=0):
+    def __init__(self, state_size, output_size):
         super().__init__()
         # save the state size
         self.state_size = state_size

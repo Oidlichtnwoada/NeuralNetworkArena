@@ -67,28 +67,22 @@ class MemoryProblemLoader:
 
     def get_model(self):
         # build the model for the memory task
+        inputs = (Input(shape=(self.sample_length, 1)), Input(shape=(self.sample_length, 1)))
         if self.model == 'memory_layer':
-            inputs = (Input(shape=(self.sample_length, 1)), Input(shape=(self.sample_length, 1)))
             outputs = RNN(MemoryLayerCell(100, self.category_amount), return_sequences=True)(inputs)
-            model = Model(inputs=inputs, outputs=outputs)
             optimizer = Adam(self.learning_rate)
         elif self.model == 'lstm':
-            inputs = (Input(shape=(self.sample_length, 1)), Input(shape=(self.sample_length, 1)))
             outputs = TimeDistributed(Dense(self.category_amount))(LSTM(40, return_sequences=True)(inputs[0]))
-            model = Model(inputs=inputs, outputs=outputs)
             optimizer = RMSprop(self.learning_rate)
         elif self.model == 'recurrent_memory_cell':
-            inputs = (Input(shape=(self.sample_length, 1)), Input(shape=(self.sample_length, 1)))
             outputs = RNN(RecurrentMemoryCell(256, self.category_amount), return_sequences=True)(inputs[0])
-            model = Model(inputs=inputs, outputs=outputs)
             optimizer = Adam(self.learning_rate)
         elif self.model == 'unitary_rnn':
-            inputs = (Input(shape=(self.sample_length, 1)), Input(shape=(self.sample_length, 1)))
             outputs = TimeDistributed(Dense(self.category_amount))(math.real(RNN(EUNNCell(128, 4), return_sequences=True)(inputs[0])))
-            model = Model(inputs=inputs, outputs=outputs)
             optimizer = RMSprop(self.learning_rate)
         else:
             raise NotImplementedError()
+        model = Model(inputs=inputs, outputs=outputs)
         model.compile(optimizer=optimizer, loss=self.custom_loss, run_eagerly=self.debug)
         print(f'sample predictions: {model.predict((self.test_sequences[0][:self.batch_size], self.test_sequences[1][:self.batch_size]), batch_size=self.batch_size)}')
         model.summary()
