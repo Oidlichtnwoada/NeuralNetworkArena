@@ -75,7 +75,7 @@ class MemoryProblemLoader:
             outputs = TimeDistributed(Dense(self.category_amount))(LSTM(40, return_sequences=True)(inputs[0]))
             optimizer = RMSprop(self.learning_rate)
         elif self.model == 'recurrent_memory_cell':
-            outputs = RNN(RecurrentMemoryCell(256, self.category_amount), return_sequences=True)(inputs[0])
+            outputs = RNN(RecurrentMemoryCell(32, 8, self.category_amount, 8, 2, 64), return_sequences=True)(inputs[0])
             optimizer = Adam(self.learning_rate)
         elif self.model == 'unitary_rnn':
             outputs = TimeDistributed(Dense(self.category_amount))(math.real(RNN(EUNNCell(128, 4), return_sequences=True)(inputs[0])))
@@ -122,7 +122,7 @@ parser = ArgumentParser()
 parser.add_argument('--mode', default='train', type=str)
 parser.add_argument('--model', default='memory_layer', type=str)
 parser.add_argument('--use_saved_weights', default=False, type=bool)
-parser.add_argument('--memory_length', default=100, type=int)
+parser.add_argument('--memory_length', default=10, type=int)
 parser.add_argument('--sequence_length', default=10, type=int)
 parser.add_argument('--category_amount', default=10, type=int)
 parser.add_argument('--sample_amount', default=100_000, type=int)

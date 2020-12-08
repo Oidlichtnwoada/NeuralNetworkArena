@@ -172,11 +172,11 @@ class EUNNCell(tf.compat.v1.nn.rnn_cell.RNNCell):
         capacity_A = int(capacity // 2)
         capacity_B = capacity - capacity_A
         phase_init = tf.random_uniform_initializer(-3.14, 3.14)
-        theta_A = self.add_weight("theta_A", [capacity_A, num_units // 2], initializer=phase_init)
+        theta_A = tf.Variable(initial_value=phase_init([capacity_A, num_units // 2]), name="theta_A")
         cos_theta_A = tf.cos(theta_A)
         sin_theta_A = tf.sin(theta_A)
         if cplex:
-            phi_A = self.add_weight("phi_A", [capacity_A, num_units // 2], initializer=phase_init)
+            phi_A = tf.Variable(initial_value=phase_init([capacity_A, num_units // 2]), name="phi_A")
             cos_phi_A = tf.cos(phi_A)
             sin_phi_A = tf.sin(phi_A)
             cos_list_A_re = tf.concat([cos_theta_A, cos_theta_A * cos_phi_A], axis=1)
@@ -188,11 +188,11 @@ class EUNNCell(tf.compat.v1.nn.rnn_cell.RNNCell):
         else:
             cos_list_A = tf.concat([cos_theta_A, cos_theta_A], axis=1)
             sin_list_A = tf.concat([sin_theta_A, -sin_theta_A], axis=1)
-        theta_B = self.add_weight("theta_B", [capacity_B, num_units // 2 - 1], initializer=phase_init)
+        theta_B = tf.Variable(initial_value=phase_init([capacity_B, num_units // 2 - 1]), name="theta_B")
         cos_theta_B = tf.cos(theta_B)
         sin_theta_B = tf.sin(theta_B)
         if cplex:
-            phi_B = self.add_weight("phi_B", [capacity_B, num_units // 2 - 1], initializer=phase_init)
+            phi_B = tf.Variable(initial_value=phase_init([capacity_B, num_units // 2 - 1]), name="phi_B")
             cos_phi_B = tf.cos(phi_B)
             sin_phi_B = tf.sin(phi_B)
             cos_list_B_re = tf.concat([tf.ones([capacity_B, 1]), cos_theta_B, cos_theta_B * cos_phi_B, tf.ones([capacity_B, 1])], axis=1)
@@ -212,7 +212,7 @@ class EUNNCell(tf.compat.v1.nn.rnn_cell.RNNCell):
         v1 = tf.reshape(tf.concat([diag_list_A, diag_list_B], axis=1), [capacity, num_units])
         v2 = tf.reshape(tf.concat([off_list_A, off_list_B], axis=1), [capacity, num_units])
         if cplex:
-            omega = self.add_weight("omega", [num_units], initializer=phase_init)
+            omega = tf.Variable(initial_value=phase_init([num_units]), name="omega")
             D = tf.complex(tf.cos(omega), tf.sin(omega))
         else:
             D = None
