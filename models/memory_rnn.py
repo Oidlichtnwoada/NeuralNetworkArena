@@ -10,32 +10,33 @@ def positional_encoding(positions, embedding_size):
 
 
 class RecurrentMemoryCell(tf.keras.layers.Layer):
-    def __init__(self, memory_rows, memory_columns, output_size, embedding_size, controller_heads, feed_forward_size):
+    def __init__(self, memory_rows, memory_columns, output_size, embedding_size, controller_heads=2, dropout=1E-1):
         super().__init__()
         self.memory_rows = memory_rows
         self.memory_columns = memory_columns
         self.state_size = self.memory_rows * self.memory_columns
         self.output_size = output_size
-        self.output_layer = tf.keras.layers.Dense(self.output_size)
+        self.output_layer = tf.keras.layers.Dense(self.output_size + self.memory_columns + self.memory_rows)
         self.embedding_size = embedding_size
         self.inputs_embedding = tf.keras.layers.Dense(self.embedding_size)
         self.memory_embedding = tf.keras.layers.Dense(self.embedding_size)
+        self.flatten_layer = tf.keras.layers.Flatten()
         self.controller_heads = controller_heads
-        self.controller = tf.keras.layers.MultiHeadAttention(self.controller_heads, self.embedding_size, dropout=1E-1)
+        self.dropout = dropout
+        self.dropout_layer = tf.keras.layers.Dropout(self.dropout)
+        self.controller = tf.keras.layers.MultiHeadAttention(self.controller_heads, self.embedding_size, dropout=self.dropout)
         self.layer_normalization = tf.keras.layers.LayerNormalization(epsilon=1E-6)
-        self.feed_forward_size = feed_forward_size
-        self.feed_forward = tf.keras.Sequential([tf.keras.layers.Dense(self.feed_forward_size, activation='relu'), tf.keras.layers.Dense(self.embedding_size)])
 
     def call(self, inputs, states):
-        expanded_inputs = tf.expand_dims(inputs, axis=1)
         memory = tf.reshape(states[0], (-1, self.memory_rows, self.memory_columns))
-        embedded_inputs = self.inputs_embedding(expanded_inputs)
+        embedded_inputs = self.inputs_embedding(tf.expand_dims(inputs, axis=1))
         embedded_memory = self.memory_embedding(memory)
         embedded_controller_input = tf.concat((embedded_inputs, embedded_memory), axis=1)
         positional_embedded_controller_input = embedded_controller_input + positional_encoding(embedded_controller_input.shape[1], self.embedding_size)
-        partial_controller_output = self.controller(positional_embedded_controller_input, positional_embedded_controller_input)
-        controller_output = self.layer_normalization(positional_embedded_controller_input + partial_controller_output)
-        transformed_controller_output = self.layer_normalization(controller_output + self.feed_forward(controller_output))
-        output = self.output_layer(transformed_controller_output[:, 0, :])
-        memory += transformed_controller_output[:, 1:, :]
-        return output, tf.reshape(memory, (-1, self.state_size))
+        controller_output = self.layer_normalization(positional_embedded_controller_input + self.controller(positional_embedded_controller_input, positional_embedded_controller_input))
+        control_output = self.output_layer(self.flatten_layer(controller_output))
+        output_signals = control_output[:, :self.output_size]
+        memory_control_signals = control_output[:, -self.memory_rows:, tf.newaxis]
+        memory_data_signals = tf.expand_dims(control_output[:, self.output_size:-self.memory_rows], axis=1)
+        memory = tf.keras.activations.sigmoid(memory_control_signals) * memory_data_signals + tf.keras.activations.sigmoid(-memory_control_signals) * memory
+        return output_signals, (tf.reshape(memory, (-1, self.state_size)),)
