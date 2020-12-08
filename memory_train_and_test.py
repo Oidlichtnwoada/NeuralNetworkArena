@@ -12,7 +12,7 @@ from tensorflow.keras.losses import SparseCategoricalCrossentropy
 from tensorflow.keras.optimizers import Adam, RMSprop
 
 from models.memory_layer import MemoryLayerCell
-from models.memory_rnn import RecurrentMemoryCell
+from models.memory_rnn import NTMCell
 from models.unitary_rnn import EUNNCell
 
 
@@ -75,7 +75,7 @@ class MemoryProblemLoader:
             outputs = TimeDistributed(Dense(self.category_amount))(LSTM(40, return_sequences=True)(inputs[0]))
             optimizer = RMSprop(self.learning_rate)
         elif self.model == 'recurrent_memory_cell':
-            outputs = RNN(RecurrentMemoryCell(32, 8, self.category_amount, 8), return_sequences=True)(inputs[0])
+            outputs = RNN(NTMCell(1, 100, 128, 20, 1, 1, output_dim=self.category_amount), return_sequences=True)(inputs[0])
             optimizer = Adam(self.learning_rate)
         elif self.model == 'unitary_rnn':
             outputs = TimeDistributed(Dense(self.category_amount))(math.real(RNN(EUNNCell(128, 4), return_sequences=True)(inputs[0])))
