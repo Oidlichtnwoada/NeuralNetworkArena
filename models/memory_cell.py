@@ -63,14 +63,23 @@ memory_length = 100
 cell_switches = 1
 sample_size = batch_size * 32
 learning_rate = 1E-6
-weights_directory = '../weights/memory_cell'
+learning_rate = 1E-6
+weights_directory = '../weights/memory_cell/checkpoint'
 use_saved_weights = True
 run_eagerly = False
 model_input = np.zeros((sample_size, (cell_switches + 1) * memory_length, 2))
 model_output = np.zeros((sample_size, (cell_switches + 1) * memory_length, 1))
 for i in range(cell_switches + 1):
-    model_input[:, i * memory_length, int(i % 2 == 1)] = memory_symbol
-    model_output[:, i * memory_length:(i + 1) * memory_length, :] = int(i % 2 == 0) * memory_symbol
+    even = int(i % 2 == 0)
+    odd = int(i % 2 == 1)
+    model_input[0::1, i * memory_length, odd] = memory_symbol
+    model_input[0::1, i * memory_length, even] = 0
+    model_output[0::1, i * memory_length:(i + 1) * memory_length, 0] = even * memory_symbol
+    # model_output[0::2, i * memory_length:(i + 1) * memory_length, even] = 0
+    # model_input[1::2, i * memory_length, even] = memory_symbol
+    # model_input[1::2, i * memory_length, odd] = 0
+    # model_output[1::2, i * memory_length:(i + 1) * memory_length, 0] = odd * memory_symbol
+    # model_output[1::2, i * memory_length:(i + 1) * memory_length, odd] = 0
 input_tensor = tf.keras.Input(shape=((cell_switches + 1) * memory_length, 2), batch_size=batch_size)
 output_tensor = tf.keras.layers.RNN(MemoryCell(), return_sequences=True)(input_tensor)
 model = tf.keras.Model(inputs=input_tensor, outputs=output_tensor)
