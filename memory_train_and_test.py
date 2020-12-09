@@ -11,8 +11,8 @@ from tensorflow.keras.layers import RNN, Dense, LSTM, TimeDistributed
 from tensorflow.keras.losses import SparseCategoricalCrossentropy
 from tensorflow.keras.optimizers import Adam, RMSprop
 
+from models.differentiable_neural_computer import DNC
 from models.memory_layer import MemoryLayerCell
-from models.memory_rnn import NTMCell
 from models.unitary_rnn import EUNNCell
 
 
@@ -67,15 +67,15 @@ class MemoryProblemLoader:
 
     def get_model(self):
         # build the model for the memory task
-        inputs = (Input(shape=(self.sample_length, 1)), Input(shape=(self.sample_length, 1)))
+        inputs = (Input(shape=(self.sample_length, 1), batch_size=self.batch_size), Input(shape=(self.sample_length, 1), batch_size=self.batch_size))
         if self.model == 'memory_layer':
             outputs = RNN(MemoryLayerCell(100, self.category_amount), return_sequences=True)(inputs)
             optimizer = Adam(self.learning_rate)
         elif self.model == 'lstm':
             outputs = TimeDistributed(Dense(self.category_amount))(LSTM(40, return_sequences=True)(inputs[0]))
             optimizer = RMSprop(self.learning_rate)
-        elif self.model == 'recurrent_memory_cell':
-            outputs = RNN(NTMCell(1, 100, 128, 20, 1, 1, output_dim=self.category_amount), return_sequences=True)(inputs[0])
+        elif self.model == 'differentiable_neural_computer':
+            outputs = RNN(DNC(self.category_amount, 100, 64, 16, 4), return_sequences=True)(inputs[0])
             optimizer = Adam(self.learning_rate)
         elif self.model == 'unitary_rnn':
             outputs = TimeDistributed(Dense(self.category_amount))(math.real(RNN(EUNNCell(128, 4), return_sequences=True)(inputs[0])))
@@ -108,7 +108,7 @@ class MemoryProblemLoader:
     def test(self):
         # evaluate the loss on the test dataset
         model = self.get_model()
-        model.load_weights(self.weights_directory)
+        model.load_weights(self.weights_directory).expect_partial()
         test_loss = model.evaluate(x=(self.test_sequences[0], self.test_sequences[1]), y=self.test_sequences[2], batch_size=self.batch_size)
         print(f'test loss: {test_loss:.4f}')
         # compute percentage of correct labels if argmax of output is taken
@@ -125,7 +125,7 @@ parser.add_argument('--use_saved_weights', default=False, type=bool)
 parser.add_argument('--memory_length', default=10, type=int)
 parser.add_argument('--sequence_length', default=10, type=int)
 parser.add_argument('--category_amount', default=10, type=int)
-parser.add_argument('--sample_amount', default=100_000, type=int)
+parser.add_argument('--sample_amount', default=128_000, type=int)
 parser.add_argument('--batch_size', default=128, type=int)
 parser.add_argument('--epochs', default=256, type=int)
 parser.add_argument('--learning_rate', default=1E-4, type=float)
