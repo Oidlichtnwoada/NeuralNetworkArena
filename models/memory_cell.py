@@ -58,12 +58,11 @@ class MemoryCell(tf.keras.layers.Layer):
 
 batch_size = 32
 epochs = 64
-memory_symbol = 1
+memory_symbol = 0.5
 memory_length = 100
 cell_switches = 1
 sample_size = batch_size * 32
-learning_rate = 1E-6
-learning_rate = 1E-6
+learning_rate = 1E-7
 weights_directory = '../weights/memory_cell/checkpoint'
 use_saved_weights = True
 run_eagerly = False

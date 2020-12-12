@@ -9,7 +9,7 @@ from tensorflow.keras import Input, Model
 from tensorflow.keras.callbacks import ModelCheckpoint
 from tensorflow.keras.layers import RNN, Dense, LSTM, TimeDistributed
 from tensorflow.keras.losses import SparseCategoricalCrossentropy
-from tensorflow.keras.optimizers import Adam, RMSprop
+from tensorflow.keras.optimizers import Adam
 
 from models.differentiable_neural_computer import DNC
 from models.memory_layer import MemoryLayerCell
@@ -56,6 +56,13 @@ class MemoryProblemLoader:
         # return test, training and validation set
         self.test_sequences, self.validation_sequences, self.training_sequences = self.split_data(self.get_memory_data())
 
+    def reduce_to_batch_size_multiple(self, seq):
+        elements_to_delete = seq.shape[1] % self.batch_size
+        if elements_to_delete > 0:
+            return seq[:, :-elements_to_delete, :]
+        else:
+            return seq
+
     def split_data(self, data):
         # partition data for training, validation and test
         test_sample_amount = int(self.sample_amount * self.test_data_percentage)
@@ -63,23 +70,22 @@ class MemoryProblemLoader:
         test_samples = data[:, :test_sample_amount, :]
         validation_samples = data[:, test_sample_amount:test_sample_amount + validation_sample_amount, :]
         training_samples = data[:, test_sample_amount + validation_sample_amount:, :]
-        return test_samples, validation_samples, training_samples
+        return self.reduce_to_batch_size_multiple(test_samples), \
+               self.reduce_to_batch_size_multiple(validation_samples), \
+               self.reduce_to_batch_size_multiple(training_samples)
 
     def get_model(self):
         # build the model for the memory task
+        optimizer = Adam(self.learning_rate)
         inputs = (Input(shape=(self.sample_length, 1), batch_size=self.batch_size), Input(shape=(self.sample_length, 1), batch_size=self.batch_size))
         if self.model == 'memory_layer':
             outputs = RNN(MemoryLayerCell(100, self.category_amount), return_sequences=True)(inputs)
-            optimizer = Adam(self.learning_rate)
         elif self.model == 'lstm':
             outputs = TimeDistributed(Dense(self.category_amount))(LSTM(40, return_sequences=True)(inputs[0]))
-            optimizer = RMSprop(self.learning_rate)
         elif self.model == 'differentiable_neural_computer':
             outputs = RNN(DNC(self.category_amount, 100, 64, 16, 4), return_sequences=True)(inputs[0])
-            optimizer = Adam(self.learning_rate)
         elif self.model == 'unitary_rnn':
             outputs = TimeDistributed(Dense(self.category_amount))(math.real(RNN(EUNNCell(128, 4), return_sequences=True)(inputs[0])))
-            optimizer = RMSprop(self.learning_rate)
         else:
             raise NotImplementedError()
         model = Model(inputs=inputs, outputs=outputs)

@@ -4,9 +4,10 @@ from os.path import join
 
 from numpy import load, array, zeros
 from numpy.random import random, shuffle
+from tensorflow.keras import Input, Model
 from tensorflow.keras.callbacks import ModelCheckpoint
 from tensorflow.keras.losses import MeanSquaredError
-from tensorflow.keras.optimizers import Adam, RMSprop
+from tensorflow.keras.optimizers import Adam
 
 from models.memory_layer import MemoryLayerAttention
 from models.neural_circuit_policies import NeuralCircuitPolicies
@@ -80,14 +81,21 @@ class WalkerProblemLoader:
         shuffle(sequences)
         return sequences
 
+    def reduce_to_batch_size_multiple(self, seq):
+        elements_to_delete = len(seq) % self.batch_size
+        if elements_to_delete > 0:
+            return seq[:-elements_to_delete]
+        else:
+            return seq
+
     def split_data(self, sequences):
         # partition data for training, validation and test
         sequences_length = len(sequences)
         test_data_length = int(sequences_length * self.test_data_percentage)
         validation_data_length = int(sequences_length * self.validation_data_percentage)
-        test_sequences = sequences[:test_data_length]
-        validation_sequences = sequences[test_data_length:test_data_length + validation_data_length]
-        training_sequences = sequences[test_data_length + validation_data_length:]
+        test_sequences = self.reduce_to_batch_size_multiple(sequences[:test_data_length])
+        validation_sequences = self.reduce_to_batch_size_multiple(sequences[test_data_length:test_data_length + validation_data_length])
+        training_sequences = self.reduce_to_batch_size_multiple(sequences[test_data_length + validation_data_length:])
         processed_sequences = []
         for sequence in [test_sequences, validation_sequences, training_sequences]:
             processed_sequences.append([array([x[0] for x in sequence]),
@@ -119,26 +127,25 @@ class WalkerProblemLoader:
 
     def get_model(self):
         loss = MeanSquaredError()
+        optimizer = Adam(self.learning_rate)
+        inputs = (Input(shape=(self.sequence_length, self.input_length), batch_size=self.batch_size), Input(shape=(self.sequence_length, 1), batch_size=self.batch_size))
         if self.model == 'transformer':
             self.transform_sequences()
-            model = Transformer(token_amount=1, token_size=self.input_length, d_model=64, num_heads=4, d_ff=128, num_layers=4, dropout_rate=0.1, attention=MultiHeadAttention)
-            optimizer = Adam(self.learning_rate)
+            outputs = Transformer(token_amount=1, token_size=self.input_length, d_model=64, num_heads=4, d_ff=128, num_layers=4, dropout_rate=0.1, attention=MultiHeadAttention)(inputs)
         elif self.model == 'neural_circuit_policies':
-            model = NeuralCircuitPolicies(
-                output_length=self.input_length, inter_neurons=16, command_neurons=16, motor_neurons=self.input_length,
-                sensory_fanout=4, inter_fanout=4, recurrent_command_synapses=8, motor_fanin=6)
-            optimizer = RMSprop(self.learning_rate)
+            outputs = NeuralCircuitPolicies(
+                output_length=self.input_length, inter_neurons=32, command_neurons=16, motor_neurons=self.input_length,
+                sensory_fanout=4, inter_fanout=4, recurrent_command_synapses=8, motor_fanin=6)(inputs)
         elif self.model == 'recurrent_transformer':
             self.transform_sequences()
-            model = Transformer(token_amount=1, token_size=self.input_length, d_model=32, num_heads=4, d_ff=64, num_layers=1, dropout_rate=0.1, attention=MultiHeadRecurrentAttention)
-            optimizer = RMSprop(self.learning_rate)
+            outputs = Transformer(token_amount=1, token_size=self.input_length, d_model=32, num_heads=4, d_ff=64, num_layers=1, dropout_rate=0.1, attention=MultiHeadRecurrentAttention)(inputs)
         elif self.model == 'memory_layer_transformer':
             self.transform_sequences()
-            model = Transformer(token_amount=1, token_size=self.input_length, d_model=16, num_heads=2, d_ff=32,
-                                num_layers=2, dropout_rate=0.1, attention=MemoryLayerAttention)
-            optimizer = Adam(self.learning_rate)
+            outputs = Transformer(token_amount=1, token_size=self.input_length, d_model=16, num_heads=2, d_ff=32,
+                                  num_layers=2, dropout_rate=0.1, attention=MemoryLayerAttention)(inputs)
         else:
             raise NotImplementedError()
+        model = Model(inputs=inputs, outputs=outputs)
         model.compile(optimizer=optimizer, loss=loss, run_eagerly=self.debug)
         print(f'sample predictions: {model.predict((self.test_sequences[0][:self.batch_size], self.test_sequences[1][:self.batch_size]), batch_size=self.batch_size)}')
         model.summary()
