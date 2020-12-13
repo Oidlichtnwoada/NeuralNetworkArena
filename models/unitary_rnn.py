@@ -88,7 +88,7 @@ def generate_index_fft(s):
     return ind_exe, ind_param
 
 
-class EUNNCell(tf.compat.v1.nn.rnn_cell.RNNCell):
+class EUNNCell(tf.keras.layers.Layer):
     """Efficient Unitary Network Cell
     The implementation is based on:
     http://arxiv.org/abs/1612.05231.
@@ -248,8 +248,9 @@ class EUNNCell(tf.compat.v1.nn.rnn_cell.RNNCell):
             h = h * self._diag
         return h
 
-    def __call__(self, inputs, state, scope=None):
+    def call(self, inputs, state, scope=None):
         # inputs to hidden
+        state = state[0]
         if self._cplex:
             inputs_re = tf.matmul(inputs, self.U_re)
             inputs_im = tf.matmul(inputs, self.U_im)
@@ -260,4 +261,4 @@ class EUNNCell(tf.compat.v1.nn.rnn_cell.RNNCell):
         state = self.loop(state)
         # activation
         output = self._activation((inputs + state), self.bias, self._cplex)
-        return output, output
+        return output, (output,)

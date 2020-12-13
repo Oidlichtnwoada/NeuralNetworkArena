@@ -227,7 +227,7 @@ For non-recurrent models, the input per time-step was the whole training sequenc
 The model needs to predict the simulation state in the next time-step.
 Mean squared error was used as loss function when training the models.
 Further results of recurrent neural network models doing this benchmark can be found in \cite{LatentODEsIrregularlySampled}.
-\subsubsection{Results}
+The results are presented in the following table:
 \begin{table}[h]
 \begin{tabular}{lll}
 \hline
@@ -235,7 +235,8 @@ Model & Parameter Count & Mean Squared Error \\ \hline
 Transformer & 338257 & 0.793 \\ 
 Recurrent Transformer & 439633 & 0.599 \\ 
 Recurrent Transformer & 29617 & 1.102 \\ 
-2 & 2 & 2 \\ 
+Memory Layer Transformer & 174529 & 7.624 \\ 
+Neural Circuit Policies & 21889 & 2.297 \\
 \end{tabular}
 \end{table}
 \subsection{Memory}
@@ -250,6 +251,17 @@ Each tested model must produce an output vector of size $N$ per time-step to a a
 The loss was weighted such that the loss given by each of the last ten output vectors has the same weight as all previous output vectors combined, as it is easily to optimize to predict only the same class for a long interval.
 Clearly, a model can only solve this task if it is able to store information over a time period in the same size of the memory length.
 The baseline for this benchmark's mean categorical entropy loss per batch can be set to $\frac{10\log(N-2)}{T+20}$, as a memory-less strategy can perfectly predict the first $T+10$ symbols of the required output sequence and then it predicts the remaining $10$ symbols randomly from $0$ to $N-3$ (i.i.d. uniform).
+The results are presented in the following table, where $N$ was $10$, $T$ was $100$ and the baseline therefore was $0.173$:
+\begin{table}[h]
+\begin{tabular}{llll}
+\hline
+Model & Parameter Count & Cross-Entropy Error & Correctly Memorized Symbols \\ \hline
+LSTM & 7130 & 0.157 & 1.1 \\ 
+Memory Layer & 49720 & 0.400 & 0.0 \\
+Differentiable Neural Computer & 81685 & 0.145 & 2.0 \\
+Efficient Unitary Neural Network & 1674 & 0.131 & 3.3 \\
+\end{tabular}
+\end{table}
 \subsection{Cell}
 This is a very small benchmark that tries to find the right parameter ranges and input ranges for the memory cell \ref{Memory Cell}.
 It is directly implemented in the same file as the memory cell itself.

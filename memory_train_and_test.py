@@ -120,7 +120,7 @@ class MemoryProblemLoader:
         # compute percentage of correct labels if argmax of output is taken
         predictions = argmax(model.predict((self.test_sequences[0], self.test_sequences[1]), batch_size=self.batch_size), -1)
         mean_correct_predictions = mean(sum((predictions == squeeze(self.test_sequences[2], -1)).astype(int), -1))
-        print(f'mean correct predictions of memorized sequence: {mean_correct_predictions - self.memory_length - self.sequence_length:.1f}/{self.sequence_length:.1f}')
+        print(f'mean correct predictions of memorized sequence: {max(0, mean_correct_predictions - self.memory_length - self.sequence_length):.1f}/{self.sequence_length:.1f}')
 
 
 # parse arguments and start program
@@ -134,7 +134,7 @@ parser.add_argument('--category_amount', default=10, type=int)
 parser.add_argument('--sample_amount', default=128_000, type=int)
 parser.add_argument('--batch_size', default=128, type=int)
 parser.add_argument('--epochs', default=256, type=int)
-parser.add_argument('--learning_rate', default=1E-4, type=float)
+parser.add_argument('--learning_rate', default=1E-3, type=float)
 parser.add_argument('--debug', default=False, type=bool)
 args = parser.parse_args()
 
