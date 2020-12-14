@@ -117,7 +117,7 @@ class MemoryProblemLoader:
     def test(self):
         # evaluate the loss on the test dataset
         model = self.get_model()
-        model.load_weights(self.weights_directory)
+        model.load_weights(self.weights_directory).expect_partial()
         test_loss = model.evaluate(x=(self.test_sequences[0], self.test_sequences[1]), y=self.test_sequences[2], batch_size=self.batch_size)
         print(f'test loss: {test_loss:.4f}')
         # compute percentage of correct labels if argmax of output is taken

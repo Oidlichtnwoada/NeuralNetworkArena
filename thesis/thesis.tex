@@ -282,8 +282,30 @@ Enhanced Unitary RNN & 101388 & 0.3151 & 1.3 \\
 \end{tabular}
 \end{table}
 \subsection{Cell}
-This is a very small benchmark that tries to find the right parameter ranges and input ranges for the memory cell \ref{Memory Cell}.
+This is a very small benchmark that tries to find the right parameter and input ranges for the memory cell \ref{Memory Cell}.
+This benchmark should make clear if a memory cell is able to switch its state multiple times and keep information over a long period of time.
 It is directly implemented in the same file as the memory cell itself.
+The memory cell in the current test setup has no more recurrent, excitatory synapses. 
+As discussed in our meeting the state of a memory cell is now only changed through four synapses, two per neuron.
+One synapse per neuron delivers the input via a synaptic activation and the other synapse ensures the opposite potentials of both neurons. 
+The synaptic current can be computed by $g_{syn}(V_{pre}) * (E_{pre,post} - V_{post})$.
+I have found out that the LTC equations are not suited at all to build a memory cell, as a $1$ input should deliver a big current and a $0$ input should lead to a big negative current, no matter what the potential of the postsynaptic neuron is. 
+However with the current equations, this is not possible to achieve, since the non-linear synaptic conductance is always positive and therefore the sign of the current cannot be determined by the input. 
+Therefore, the underlying equations must be changed.
+The same argument holds for the mutual inhibitory synapses. The higher potential neuron should send a negative current to the other neuron, whereas the lower potential neuron should send a positive current to the higher potential neuron. 
+These things are not possible with the current setup, and therefore need to be changed.
+The memory cell receives only a single input that will be passed untouched to the first neuron's synaptic activation, but the second neuron will get the negated input to its synaptic activation for the input. 
+The negation is currently implemented using the function $f(x) = 1-x$.
+This input is only passed at the specific time step, when the input current provider needs to save something, otherwise both neurons in the memory cell get no input and should therefore hold their state.
+All memory cells are initialized to all contain zeros.
+As the output of the memory cell is the potential of the first neuron, this means that all first neurons in the memory cells have starting potential $0$ and all second neurons have starting potential $1$.
+The benchmark now feeds sparse inputs as described before to the memory cell, and requires the cell to hold the state from the last non-sparse input. 
+This time horizon is the memory length of the memory cell, the amount of time it can save information.
+The benchmark not only checks the potential of the first neuron, but also the potential of the second neuron to be in the required range.
+Furthermore, the benchmarks alternates the symbol that should be saved first, half of the time it is a $0$, half of the time it is a $1$.
+Moreover, the memory cell state is switched again two times after the first input by providing two additional inputs, which represent the negated current memory cell potential, to check if the cell is able to switch its state.
+This results can be easily viewed when executing the memory cell Python script, they are not interesting since the memory cell does not learn anything.
+
 \chapter{Summary}
 %\todo{Enter your text here.}
 
@@ -299,7 +321,7 @@ It is directly implemented in the same file as the memory cell itself.
 \cleardoublepage % Start list of tables on the next empty right hand page.
 \listoftables % Starred version, i.e., \listoftables*, removes the toc entry.
 
-% Use an optional list of alogrithms.
+% Use an optional list of algorithms.
 %\listofalgorithms
 %\addcontentsline{toc}{chapter}{List of Algorithms}
 
