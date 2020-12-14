@@ -36,14 +36,14 @@ class EnhancedUnitaryRNN(tf.keras.layers.Layer):
         self.imag_input_matrix = self.add_weight('imag_input_matrix', (self.state_size, 2 * input_shape[-1]), tf.float32, tf.keras.initializers.Identity())
 
     def call(self, inputs, states):
-        state_matrix = tf.complex(self.real_state_matrix, self.imag_state_matrix)
-        step_matrix = tf.complex(self.real_step_matrix, self.imag_step_matrix)
+        state_matrix = get_unitary_matrix(tf.complex(self.real_state_matrix, self.imag_state_matrix))
+        step_matrix = get_unitary_matrix(tf.complex(self.real_step_matrix, self.imag_step_matrix))
         input_matrix = tf.complex(self.real_input_matrix, self.imag_input_matrix)
         time_domain_inputs = tf.cast(inputs, tf.complex64)
         frequency_domain_inputs = tf.signal.fft(time_domain_inputs)
         input_parts = tf.matmul(input_matrix, tf.concat((time_domain_inputs, frequency_domain_inputs), -1)[..., tf.newaxis])
-        state_parts = tf.matmul(get_unitary_matrix(state_matrix), states[0][..., tf.newaxis])
+        state_parts = tf.matmul(state_matrix, states[0][..., tf.newaxis])
         preliminary_next_states = modrelu(state_parts + input_parts, self.first_bias)
-        next_states = tf.squeeze(modrelu(tf.matmul(get_unitary_matrix(step_matrix), preliminary_next_states), self.second_bias), -1)
+        next_states = tf.squeeze(modrelu(tf.matmul(step_matrix, preliminary_next_states), self.second_bias), -1)
         output = self.output_layer(tf.concat((tf.math.real(next_states), tf.math.imag(next_states)), -1))
         return output, (next_states,)

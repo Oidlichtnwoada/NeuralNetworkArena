@@ -80,7 +80,7 @@ for i in range(cell_switches + 1):
     # model_output[1::2, i * memory_length:(i + 1) * memory_length, 0] = odd * memory_symbol
     # model_output[1::2, i * memory_length:(i + 1) * memory_length, odd] = 0
 input_tensor = tf.keras.Input(shape=((cell_switches + 1) * memory_length, 2), batch_size=batch_size)
-output_tensor = tf.keras.layers.RNN(MemoryCell(), return_sequences=True)(input_tensor)
+output_tensor = tf.keras.layers.RNN(MemoryCell(), return_sequences=True, return_state=True)(input_tensor)
 model = tf.keras.Model(inputs=input_tensor, outputs=output_tensor)
 model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate), loss=tf.keras.losses.MeanSquaredError(), run_eagerly=run_eagerly)
 if use_saved_weights:
