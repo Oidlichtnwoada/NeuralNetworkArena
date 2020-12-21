@@ -4,12 +4,13 @@ import tensorflow as tf
 
 
 class MemoryCell(tf.keras.layers.Layer):
-    def __init__(self, discretization_steps=8):
+    def __init__(self, discretization_steps=2):
         super().__init__()
         self.discretization_steps = discretization_steps
         self.state_size = 2
         self.output_size = 2
         self.params = {
+            'step_size': self.add_weight(name='step_size', shape=(1,), initializer=tf.keras.initializers.Constant(self.discretization_steps)),
             'capacitance': self.add_weight(name='capacitance', shape=(1,), initializer=tf.keras.initializers.Constant(1)),
             'leakage_conductance': self.add_weight(name='leakage_conductance', shape=(1,), initializer=tf.keras.initializers.Constant(0.02)),
             'resting_potential': self.add_weight(name='resting_potential', shape=(1,), initializer=tf.keras.initializers.Constant(0)),
@@ -40,7 +41,7 @@ class MemoryCell(tf.keras.layers.Layer):
     def leakage_current(self, potential):
         return self.params['leakage_conductance'] * (self.params['resting_potential'] - potential)
 
-    def update_potentials(self, neuron_x_inputs, neuron_x_potentials, neuron_y_inputs, neuron_y_potentials):
+    def state_derivative(self, neuron_x_inputs, neuron_x_potentials, neuron_y_inputs, neuron_y_potentials):
         current_x = self.synaptic_current('input', neuron_x_inputs, neuron_x_potentials)
         current_x += self.synaptic_current('inhibitory', neuron_y_potentials, neuron_x_potentials)
         current_x += self.synaptic_current('recurrent', neuron_x_potentials, neuron_x_potentials)
@@ -57,9 +58,10 @@ class MemoryCell(tf.keras.layers.Layer):
         neuron_x_potentials = states[0][:, :1]
         neuron_y_potentials = states[0][:, 1:]
         for _ in range(self.discretization_steps):
-            neuron_x_potentials_update, neuron_y_potentials_update = self.update_potentials(neuron_x_inputs, neuron_x_potentials, neuron_y_inputs, neuron_y_potentials)
-            neuron_x_potentials += neuron_x_potentials_update
-            neuron_y_potentials += neuron_y_potentials_update
+            neuron_x_potentials_derivative, neuron_y_potentials_derivative = self.state_derivative(neuron_x_inputs, neuron_x_potentials, neuron_y_inputs, neuron_y_potentials)
+            partial_step_size = self.params['step_size'] / self.discretization_steps
+            neuron_x_potentials += neuron_x_potentials_derivative * partial_step_size
+            neuron_y_potentials += neuron_y_potentials_derivative * partial_step_size
         states = tf.concat((neuron_x_potentials, neuron_y_potentials), axis=-1)
         return states, (states,)
 
@@ -72,7 +74,7 @@ memory_length = 128
 cell_switches = 2
 sample_batches = 32
 sample_size = batch_size_value * sample_batches
-learning_rate = 1E-6
+learning_rate = 1E-3
 weights_directory = '../weights/memory_cell/checkpoint'
 use_saved_weights = False
 run_eagerly = False
@@ -90,7 +92,6 @@ for i in range(cell_switches + 1):
     model_input[1::2, i * memory_length, odd] = memory_low_symbol
     model_output[1::2, i * memory_length:(i + 1) * memory_length, 0] = odd * memory_high_symbol
     model_output[1::2, i * memory_length:(i + 1) * memory_length, 1] = even * memory_high_symbol
-
 
 input_tensor = tf.keras.Input(shape=((cell_switches + 1) * memory_length, 2), batch_size=batch_size_value)
 output_tensor = tf.keras.layers.RNN(MemoryCell(), return_sequences=True)(input_tensor)
@@ -119,5 +120,6 @@ plt.title('starting with saving 0')
 plt.show()
 plt.plot(sample_outputs[1, :, 1], label='second neuron state')
 plt.plot(model_output[1, :, 1], label='expected second neuron state')
+plt.legend()
 plt.title('starting with saving 0')
 plt.show()
