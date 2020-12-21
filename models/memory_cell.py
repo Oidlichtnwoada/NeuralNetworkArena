@@ -10,22 +10,22 @@ class MemoryCell(tf.keras.layers.Layer):
         self.state_size = 2
         self.output_size = 2
         self.params = {
-            'step_size': self.add_weight(name='step_size', shape=(1,), initializer=tf.keras.initializers.Constant(self.discretization_steps)),
-            'capacitance': self.add_weight(name='capacitance', shape=(1,), initializer=tf.keras.initializers.Constant(1)),
-            'leakage_conductance': self.add_weight(name='leakage_conductance', shape=(1,), initializer=tf.keras.initializers.Constant(0.02)),
-            'resting_potential': self.add_weight(name='resting_potential', shape=(1,), initializer=tf.keras.initializers.Constant(0)),
-            'recurrent_conductance': self.add_weight(name='recurrent_conductance', shape=(1,), initializer=tf.keras.initializers.Constant(0.02)),
-            'recurrent_mean_conductance_potential': self.add_weight(name='recurrent_mean_conductance_potential', shape=(1,), initializer=tf.keras.initializers.Constant(0.5)),
-            'recurrent_std_conductance_potential': self.add_weight(name='recurrent_std_conductance_potential', shape=(1,), initializer=tf.keras.initializers.Constant(100)),
-            'recurrent_target_potential': self.add_weight(name='recurrent_target_potential', shape=(1,), initializer=tf.keras.initializers.Constant(2)),
-            'inhibitory_conductance': self.add_weight(name='inhibitory_conductance', shape=(1,), initializer=tf.keras.initializers.Constant(0.7)),
-            'inhibitory_mean_conductance_potential': self.add_weight(name='inhibitory_mean_conductance_potential', shape=(1,), initializer=tf.keras.initializers.Constant(0.5)),
-            'inhibitory_std_conductance_potential': self.add_weight(name='inhibitory_std_conductance_potential', shape=(1,), initializer=tf.keras.initializers.Constant(100)),
-            'inhibitory_target_potential': self.add_weight(name='inhibitory_target_potential', shape=(1,), initializer=tf.keras.initializers.Constant(0)),
-            'input_conductance': self.add_weight(name='input_conductance', shape=(1,), initializer=tf.keras.initializers.Constant(1.4)),
-            'input_mean_conductance_potential': self.add_weight(name='input_mean_conductance_potential', shape=(1,), initializer=tf.keras.initializers.Constant(0.5)),
-            'input_std_conductance_potential': self.add_weight(name='input_std_conductance_potential', shape=(1,), initializer=tf.keras.initializers.Constant(100)),
-            'input_target_potential': self.add_weight(name='input_target_potential', shape=(1,), initializer=tf.keras.initializers.Constant(2)),
+            'step_size': self.add_weight(name='step_size', shape=(1,), initializer=tf.keras.initializers.Constant(1.5573331)),
+            'capacitance': self.add_weight(name='capacitance', shape=(1,), initializer=tf.keras.initializers.Constant(1), trainable=False),
+            'leakage_conductance': self.add_weight(name='leakage_conductance', shape=(1,), initializer=tf.keras.initializers.Constant(0.4505964)),
+            'resting_potential': self.add_weight(name='resting_potential', shape=(1,), initializer=tf.keras.initializers.Constant(0), trainable=False),
+            'recurrent_conductance': self.add_weight(name='recurrent_conductance', shape=(1,), initializer=tf.keras.initializers.Constant(1.0334609)),
+            'recurrent_mean_conductance_potential': self.add_weight(name='recurrent_mean_conductance_potential', shape=(1,), initializer=tf.keras.initializers.Constant(0.07879465)),
+            'recurrent_std_conductance_potential': self.add_weight(name='recurrent_std_conductance_potential', shape=(1,), initializer=tf.keras.initializers.Constant(100), trainable=False),
+            'recurrent_target_potential': self.add_weight(name='recurrent_target_potential', shape=(1,), initializer=tf.keras.initializers.Constant(1.4378392)),
+            'inhibitory_conductance': self.add_weight(name='inhibitory_conductance', shape=(1,), initializer=tf.keras.initializers.Constant(1.3365093)),
+            'inhibitory_mean_conductance_potential': self.add_weight(name='inhibitory_mean_conductance_potential', shape=(1,), initializer=tf.keras.initializers.Constant(0.06618887)),
+            'inhibitory_std_conductance_potential': self.add_weight(name='inhibitory_std_conductance_potential', shape=(1,), initializer=tf.keras.initializers.Constant(100), trainable=False),
+            'inhibitory_target_potential': self.add_weight(name='inhibitory_target_potential', shape=(1,), initializer=tf.keras.initializers.Constant(0), trainable=False),
+            'input_conductance': self.add_weight(name='input_conductance', shape=(1,), initializer=tf.keras.initializers.Constant(0.07915332)),
+            'input_mean_conductance_potential': self.add_weight(name='input_mean_conductance_potential', shape=(1,), initializer=tf.keras.initializers.Constant(0.5), trainable=False),
+            'input_std_conductance_potential': self.add_weight(name='input_std_conductance_potential', shape=(1,), initializer=tf.keras.initializers.Constant(100), trainable=False),
+            'input_target_potential': self.add_weight(name='input_target_potential', shape=(1,), initializer=tf.keras.initializers.Constant(1.5931877)),
         }
 
     @staticmethod
@@ -57,9 +57,9 @@ class MemoryCell(tf.keras.layers.Layer):
         neuron_y_inputs = inputs[:, 1:]
         neuron_x_potentials = states[0][:, :1]
         neuron_y_potentials = states[0][:, 1:]
+        partial_step_size = self.params['step_size'] / self.discretization_steps
         for _ in range(self.discretization_steps):
             neuron_x_potentials_derivative, neuron_y_potentials_derivative = self.state_derivative(neuron_x_inputs, neuron_x_potentials, neuron_y_inputs, neuron_y_potentials)
-            partial_step_size = self.params['step_size'] / self.discretization_steps
             neuron_x_potentials += neuron_x_potentials_derivative * partial_step_size
             neuron_y_potentials += neuron_y_potentials_derivative * partial_step_size
         states = tf.concat((neuron_x_potentials, neuron_y_potentials), axis=-1)
