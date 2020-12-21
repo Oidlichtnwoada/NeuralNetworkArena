@@ -4,86 +4,81 @@ import tensorflow as tf
 
 
 class MemoryCell(tf.keras.layers.Layer):
-    def __init__(self, use_recurrent_connections=True):
+    def __init__(self, discretization_steps=8):
         super().__init__()
+        self.discretization_steps = discretization_steps
         self.state_size = 2
         self.output_size = 2
-        self.use_recurrent_connections = use_recurrent_connections
         self.params = {
-            'capacitance_x': self.add_weight(name='capacitance_x', shape=(1,), initializer=tf.keras.initializers.Constant(1)),
-            'capacitance_y': self.add_weight(name='capacitance_y', shape=(1,), initializer=tf.keras.initializers.Constant(1)),
-            'conductance_ax': self.add_weight(name='conductance_ax', shape=(1,), initializer=tf.keras.initializers.Constant(1E-3)),
-            'mean_ax': self.add_weight(name='mean_ax', shape=(1,), initializer=tf.keras.initializers.Constant(3E-1)),
-            'std_ax': self.add_weight(name='std_ax', shape=(1,), initializer=tf.keras.initializers.Constant(3)),
-            'pot_ax': self.add_weight(name='pot_ax', shape=(1,), initializer=tf.keras.initializers.Constant(1)),
-            'conductance_by': self.add_weight(name='conductance_by', shape=(1,), initializer=tf.keras.initializers.Constant(1E-3)),
-            'mean_by': self.add_weight(name='mean_by', shape=(1,), initializer=tf.keras.initializers.Constant(3E-1)),
-            'std_by': self.add_weight(name='std_by', shape=(1,), initializer=tf.keras.initializers.Constant(3)),
-            'pot_by': self.add_weight(name='pot_by', shape=(1,), initializer=tf.keras.initializers.Constant(1)),
-            'conductance_xy': self.add_weight(name='conductance_xy', shape=(1,), initializer=tf.keras.initializers.Constant(1E-3)),
-            'mean_xy': self.add_weight(name='mean_xy', shape=(1,), initializer=tf.keras.initializers.Constant(3E-1)),
-            'std_xy': self.add_weight(name='std_xy', shape=(1,), initializer=tf.keras.initializers.Constant(3)),
-            'pot_xy': self.add_weight(name='pot_xy', shape=(1,), initializer=tf.keras.initializers.Constant(1)),
-            'conductance_yx': self.add_weight(name='conductance_yx', shape=(1,), initializer=tf.keras.initializers.Constant(1E-3)),
-            'mean_yx': self.add_weight(name='mean_yx', shape=(1,), initializer=tf.keras.initializers.Constant(3E-1)),
-            'std_yx': self.add_weight(name='std_yx', shape=(1,), initializer=tf.keras.initializers.Constant(3)),
-            'pot_yx': self.add_weight(name='pot_yx', shape=(1,), initializer=tf.keras.initializers.Constant(1))}
-        if self.use_recurrent_connections:
-            additional_parameters = {
-                'conductance_xx': self.add_weight(name='conductance_xx', shape=(1,), initializer=tf.keras.initializers.Constant(1E-3)),
-                'mean_xx': self.add_weight(name='mean_xx', shape=(1,), initializer=tf.keras.initializers.Constant(3E-1)),
-                'std_xx': self.add_weight(name='std_xx', shape=(1,), initializer=tf.keras.initializers.Constant(3)),
-                'pot_xx': self.add_weight(name='pot_xx', shape=(1,), initializer=tf.keras.initializers.Constant(1)),
-                'conductance_yy': self.add_weight(name='conductance_yy', shape=(1,), initializer=tf.keras.initializers.Constant(1E-3)),
-                'mean_yy': self.add_weight(name='mean_yy', shape=(1,), initializer=tf.keras.initializers.Constant(3E-1)),
-                'std_yy': self.add_weight(name='std_yy', shape=(1,), initializer=tf.keras.initializers.Constant(3)),
-                'pot_yy': self.add_weight(name='pot_yy', shape=(1,), initializer=tf.keras.initializers.Constant(1))}
-            self.params = {**self.params, **additional_parameters}
+            'capacitance': self.add_weight(name='capacitance', shape=(1,), initializer=tf.keras.initializers.Constant(1)),
+            'leakage_conductance': self.add_weight(name='leakage_conductance', shape=(1,), initializer=tf.keras.initializers.Constant(0.02)),
+            'resting_potential': self.add_weight(name='resting_potential', shape=(1,), initializer=tf.keras.initializers.Constant(0)),
+            'recurrent_conductance': self.add_weight(name='recurrent_conductance', shape=(1,), initializer=tf.keras.initializers.Constant(0.02)),
+            'recurrent_mean_conductance_potential': self.add_weight(name='recurrent_mean_conductance_potential', shape=(1,), initializer=tf.keras.initializers.Constant(0.5)),
+            'recurrent_std_conductance_potential': self.add_weight(name='recurrent_std_conductance_potential', shape=(1,), initializer=tf.keras.initializers.Constant(100)),
+            'recurrent_target_potential': self.add_weight(name='recurrent_target_potential', shape=(1,), initializer=tf.keras.initializers.Constant(2)),
+            'inhibitory_conductance': self.add_weight(name='inhibitory_conductance', shape=(1,), initializer=tf.keras.initializers.Constant(0.7)),
+            'inhibitory_mean_conductance_potential': self.add_weight(name='inhibitory_mean_conductance_potential', shape=(1,), initializer=tf.keras.initializers.Constant(0.5)),
+            'inhibitory_std_conductance_potential': self.add_weight(name='inhibitory_std_conductance_potential', shape=(1,), initializer=tf.keras.initializers.Constant(100)),
+            'inhibitory_target_potential': self.add_weight(name='inhibitory_target_potential', shape=(1,), initializer=tf.keras.initializers.Constant(0)),
+            'input_conductance': self.add_weight(name='input_conductance', shape=(1,), initializer=tf.keras.initializers.Constant(1.4)),
+            'input_mean_conductance_potential': self.add_weight(name='input_mean_conductance_potential', shape=(1,), initializer=tf.keras.initializers.Constant(0.5)),
+            'input_std_conductance_potential': self.add_weight(name='input_std_conductance_potential', shape=(1,), initializer=tf.keras.initializers.Constant(100)),
+            'input_target_potential': self.add_weight(name='input_target_potential', shape=(1,), initializer=tf.keras.initializers.Constant(2)),
+        }
 
     @staticmethod
-    def get_initial_state(**kwargs):
+    def get_initial_state(inputs=None, batch_size=None, dtype=None):
         return tf.concat((tf.zeros((batch_size, 1)), tf.ones((batch_size, 1))), -1)
 
-    def synaptic_current(self, direction, presynaptic, postsynaptic):
-        conductance = self.params[f'conductance_{direction}'] * tf.math.sigmoid(self.params[f'std_{direction}'] * (presynaptic - self.params[f'mean_{direction}']))
-        potential_difference = self.params[f'pot_{direction}'] - postsynaptic
+    def synaptic_current(self, synapse_type, presynaptic, postsynaptic):
+        conductance = self.params[f'{synapse_type}_conductance'] * \
+                      tf.math.sigmoid(self.params[f'{synapse_type}_std_conductance_potential'] * (presynaptic - self.params[f'{synapse_type}_mean_conductance_potential']))
+        potential_difference = self.params[f'{synapse_type}_target_potential'] - postsynaptic
         return conductance * potential_difference
 
+    def leakage_current(self, potential):
+        return self.params['leakage_conductance'] * (self.params['resting_potential'] - potential)
+
+    def update_potentials(self, neuron_x_inputs, neuron_x_potentials, neuron_y_inputs, neuron_y_potentials):
+        current_x = self.synaptic_current('input', neuron_x_inputs, neuron_x_potentials)
+        current_x += self.synaptic_current('inhibitory', neuron_y_potentials, neuron_x_potentials)
+        current_x += self.synaptic_current('recurrent', neuron_x_potentials, neuron_x_potentials)
+        current_x += self.leakage_current(neuron_x_potentials)
+        current_y = self.synaptic_current('input', neuron_y_inputs, neuron_y_potentials)
+        current_y += self.synaptic_current('inhibitory', neuron_x_potentials, neuron_y_potentials)
+        current_y += self.synaptic_current('recurrent', neuron_y_potentials, neuron_y_potentials)
+        current_y += self.leakage_current(neuron_y_potentials)
+        return current_x / self.params['capacitance'], current_y / self.params['capacitance']
+
     def call(self, inputs, states):
+        neuron_x_inputs = inputs[:, :1]
+        neuron_y_inputs = inputs[:, 1:]
         neuron_x_potentials = states[0][:, :1]
         neuron_y_potentials = states[0][:, 1:]
-        neuron_x_inputs_a = inputs[:, :1]
-        neuron_y_inputs_b = inputs[:, 1:]
-        synaptic_current_x = self.synaptic_current('ax', neuron_x_inputs_a, neuron_x_potentials)
-        synaptic_current_x += self.synaptic_current('yx', neuron_y_potentials, neuron_x_potentials)
-        synaptic_current_y = self.synaptic_current('by', neuron_y_inputs_b, neuron_y_potentials)
-        synaptic_current_y += self.synaptic_current('xy', neuron_x_potentials, neuron_y_potentials)
-        if self.use_recurrent_connections:
-            synaptic_current_x += self.synaptic_current('xx', neuron_x_potentials, neuron_x_potentials)
-            synaptic_current_y += self.synaptic_current('yy', neuron_y_potentials, neuron_y_potentials)
-        neuron_x_potentials += synaptic_current_x / self.params['capacitance_x']
-        neuron_y_potentials += synaptic_current_y / self.params['capacitance_y']
+        for _ in range(self.discretization_steps):
+            neuron_x_potentials_update, neuron_y_potentials_update = self.update_potentials(neuron_x_inputs, neuron_x_potentials, neuron_y_inputs, neuron_y_potentials)
+            neuron_x_potentials += neuron_x_potentials_update
+            neuron_y_potentials += neuron_y_potentials_update
         states = tf.concat((neuron_x_potentials, neuron_y_potentials), axis=-1)
         return states, (states,)
 
 
-batch_size = 32
-epochs = 8
+batch_size_value = 32
+epochs = 16
 memory_high_symbol = 1
 memory_low_symbol = 0
 memory_length = 128
 cell_switches = 2
 sample_batches = 32
-sample_size = batch_size * sample_batches
-learning_rate = 1E-3
+sample_size = batch_size_value * sample_batches
+learning_rate = 1E-6
 weights_directory = '../weights/memory_cell/checkpoint'
 use_saved_weights = False
 run_eagerly = False
-ignore_second_neuron_potential = False
 
-loss_object = tf.keras.losses.MeanSquaredError()
-model_input = np.ones((sample_size, (cell_switches + 1) * memory_length, 2)) * memory_low_symbol
-model_output = np.ones((sample_size, (cell_switches + 1) * memory_length, 2)) * memory_low_symbol
+model_input = np.zeros((sample_size, (cell_switches + 1) * memory_length, 2))
+model_output = np.zeros((sample_size, (cell_switches + 1) * memory_length, 2))
 for i in range(cell_switches + 1):
     even = int(i % 2 == 0)
     odd = int(i % 2 == 1)
@@ -97,20 +92,13 @@ for i in range(cell_switches + 1):
     model_output[1::2, i * memory_length:(i + 1) * memory_length, 1] = even * memory_high_symbol
 
 
-def custom_loss(y_true, y_pred):
-    if ignore_second_neuron_potential:
-        y_true = y_true[..., :1]
-        y_pred = y_pred[..., :1]
-    return loss_object(y_true, y_pred)
-
-
-input_tensor = tf.keras.Input(shape=((cell_switches + 1) * memory_length, 2), batch_size=batch_size)
-output_tensor = tf.keras.layers.RNN(MemoryCell(use_recurrent_connections=False), return_sequences=True)(input_tensor)
+input_tensor = tf.keras.Input(shape=((cell_switches + 1) * memory_length, 2), batch_size=batch_size_value)
+output_tensor = tf.keras.layers.RNN(MemoryCell(), return_sequences=True)(input_tensor)
 model = tf.keras.Model(inputs=input_tensor, outputs=output_tensor)
-model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate), loss=custom_loss, run_eagerly=run_eagerly)
+model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate), loss=tf.keras.losses.MeanSquaredError(), run_eagerly=run_eagerly)
 if use_saved_weights:
     model.load_weights(weights_directory).expect_partial()
-model.fit(x=model_input, y=model_output, batch_size=batch_size, epochs=epochs, validation_data=(model_input[:batch_size], model_output[:batch_size]),
+model.fit(x=model_input, y=model_output, batch_size=batch_size_value, epochs=epochs, validation_data=(model_input[:batch_size_value], model_output[:batch_size_value]),
           callbacks=[tf.keras.callbacks.ModelCheckpoint(weights_directory, save_best_only=True, save_weights_only=True)])
 
 sample_outputs = model(model_input[:32])
