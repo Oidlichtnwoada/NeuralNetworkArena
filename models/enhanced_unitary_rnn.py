@@ -9,11 +9,11 @@ def modrelu(x, bias):
     return tf.cast(tf.keras.activations.relu(tf.math.abs(x) + bias), tf.complex64) * (x / tf.cast(tf.math.abs(x), tf.complex64))
 
 
-class EnhancedUnitaryRNN(tf.keras.layers.Layer):
+class EnhancedUnitaryRNN(tf.keras.layers.AbstractRNNCell):
     def __init__(self, state_size, output_size):
         super().__init__()
-        self.state_size = state_size
-        self.output_size = output_size
+        self.state_size_value = state_size
+        self.output_size_value = output_size
         self.real_state_matrix = self.add_weight('real_state_matrix', (self.state_size, self.state_size), tf.float32, tf.keras.initializers.Identity())
         self.imag_state_matrix = self.add_weight('imag_state_matrix', (self.state_size, self.state_size), tf.float32, tf.keras.initializers.Constant())
         self.real_step_matrix = self.add_weight('real_step_matrix', (self.state_size, self.state_size), tf.float32, tf.keras.initializers.Identity())
@@ -25,6 +25,14 @@ class EnhancedUnitaryRNN(tf.keras.layers.Layer):
         self.imag_initial_state = None
         self.real_input_matrix = None
         self.imag_input_matrix = None
+
+    @property
+    def state_size(self):
+        return self.state_size_value
+
+    @property
+    def output_size(self):
+        return self.output_size_value
 
     def get_initial_state(self, inputs=None, batch_size=None, dtype=None):
         return tf.complex(self.real_initial_state, self.imag_initial_state)
