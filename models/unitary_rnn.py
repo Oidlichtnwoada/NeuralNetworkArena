@@ -88,7 +88,7 @@ def generate_index_fft(s):
     return ind_exe, ind_param
 
 
-class EUNNCell(tf.keras.layers.Layer):
+class EUNNCell(tf.keras.layers.AbstractRNNCell):
     """Efficient Unitary Network Cell
     The implementation is based on:
     http://arxiv.org/abs/1612.05231.
@@ -168,7 +168,8 @@ class EUNNCell(tf.keras.layers.Layer):
         diag = D
         return v1, v2, ind_exe, diag
 
-    def tunable_param(self, num_units, cplex, capacity):
+    @staticmethod
+    def tunable_param(num_units, cplex, capacity):
         capacity_A = int(capacity // 2)
         capacity_B = capacity - capacity_A
         phase_init = tf.random_uniform_initializer(-3.14, 3.14)
