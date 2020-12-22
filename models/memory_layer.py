@@ -1,7 +1,7 @@
 import tensorflow as tf
 
 
-class MemoryLayerCell(tf.keras.layers.Layer):
+class MemoryLayerCell(tf.keras.layers.AbstractRNNCell):
     def __init__(self, memory_rows=16, memory_columns=16, memory_precision=16, output_size=None, discretization_steps=2, trainable_memory_parameters=False):
         super().__init__()
         self.memory_rows = memory_rows
@@ -9,14 +9,15 @@ class MemoryLayerCell(tf.keras.layers.Layer):
         self.memory_size = self.memory_rows * self.memory_columns
         self.memory_precision = memory_precision
         self.memory_cell_amount = self.memory_size * self.memory_precision
-        self.state_size = 2 * self.memory_cell_amount
+        self.state_size_value = 2 * self.memory_cell_amount
         if output_size is None:
-            self.output_size = self.memory_size
+            self.output_size_value = self.memory_size
         else:
-            self.output_size = output_size
+            self.output_size_value = output_size
         self.discretization_steps = discretization_steps
         self.trainable_memory_parameters = trainable_memory_parameters
-        self.input_control = tf.keras.layers.Dense(self.state_size)
+        self.flatten_layer = tf.keras.layers.Flatten()
+        self.input_control = tf.keras.layers.Dense(self.memory_cell_amount)
         self.output_control = tf.keras.layers.Dense(self.output_size)
         self.params = {
             'step_size': self.add_weight(name='step_size', shape=(self.memory_cell_amount,),
@@ -66,25 +67,38 @@ class MemoryLayerCell(tf.keras.layers.Layer):
         self.std_conductance_potentials = tf.expand_dims(tf.stack((
             self.params['input_std_conductance_potential'], self.params['recurrent_std_conductance_potential'],
             self.params['inhibitory_std_conductance_potential'], tf.ones((self.memory_cell_amount,))), -1), -2)
+        self.powers_of_two = [2 ** i for i in range(self.memory_precision)]
+
+    @property
+    def state_size(self):
+        return self.state_size_value
+
+    @property
+    def output_size(self):
+        return self.output_size_value
 
     def get_initial_state(self, inputs=None, batch_size=None, dtype=None):
         return tf.reshape(tf.concat((tf.zeros((batch_size, self.memory_cell_amount, 1)), tf.ones((batch_size, self.memory_cell_amount, 1))), -1), (-1, self.state_size))
 
+    def dense_memory_representation(self, potentials):
+        return tf.reduce_sum(tf.reshape(potentials, (-1, self.memory_rows, self.memory_columns, self.memory_precision, 2))[..., 0] * self.powers_of_two, -1)
+
     def state_change(self, neuron_inputs, neuron_potentials):
-        reshaped_neuron_inputs = tf.reshape(neuron_inputs, (-1, self.memory_cell_amount, 2, 1))
-        reshaped_neuron_potentials = tf.reshape(neuron_potentials, (-1, self.memory_cell_amount, 2, 1))
-        complementary_neuron_potentials = tf.roll(reshaped_neuron_potentials, 1, -2)
-        presynaptic_potentials = tf.concat((
+        reshaped_neuron_inputs = tf.reshape(neuron_inputs, (-1, self.memory_cell_amount, 2))
+        reshaped_neuron_potentials = tf.reshape(neuron_potentials, (-1, self.memory_cell_amount, 2))
+        complementary_neuron_potentials = tf.roll(reshaped_neuron_potentials, 1, -1)
+        presynaptic_potentials = tf.stack((
             reshaped_neuron_inputs, reshaped_neuron_potentials,
             complementary_neuron_potentials, tf.ones_like(reshaped_neuron_inputs) * float('inf')), -1)
         synaptic_currents = self.conductances * tf.sigmoid(self.std_conductance_potentials * (presynaptic_potentials - self.mean_conductance_potentials)) * (
-                self.target_potentials - reshaped_neuron_potentials)
+                self.target_potentials - reshaped_neuron_potentials[..., tf.newaxis])
         state_change = tf.reshape(tf.reduce_sum(synaptic_currents / self.capacitances * self.partial_step_size, -1), (-1, self.state_size))
         return state_change
 
     def call(self, inputs, states):
         neuron_potentials = states[0]
-        neuron_inputs = self.input_control(tf.concat((inputs, neuron_potentials), -1))
+        preliminary_inputs = self.input_control(tf.concat((inputs, self.flatten_layer(self.dense_memory_representation(neuron_potentials))), -1))
+        neuron_inputs = tf.concat((preliminary_inputs, 1 - preliminary_inputs), -1)
         for _ in range(self.discretization_steps):
             neuron_potentials += self.state_change(neuron_inputs, neuron_potentials)
         memory_layer_outputs = self.output_control(neuron_potentials)
