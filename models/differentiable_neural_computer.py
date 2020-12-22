@@ -14,7 +14,9 @@ Conventions:
 """
 
 from collections import OrderedDict
+from collections import namedtuple
 
+import tensorflow as tf
 from tensorflow.python.util import nest
 
 # -*- coding: utf-8 -*-
@@ -25,9 +27,6 @@ Conventions:
     N - number of slots in memory
     R - number of read heads
 """
-
-from collections import namedtuple
-import tensorflow as tf
 
 EPSILON = 1e-6
 
@@ -56,10 +55,10 @@ class ContentAddressing:
         """
         memory_normalised = tf.math.l2_normalize(memory_matrix, 2, epsilon=EPSILON)
         keys_normalised = tf.math.l2_normalize(keys, 1, epsilon=EPSILON)
-        similiarity = tf.matmul(memory_normalised, keys_normalised)
+        similarity = tf.matmul(memory_normalised, keys_normalised)
         strengths = tf.expand_dims(sharpness_op(strengths), 1)
 
-        return tf.math.softmax(similiarity * strengths, 1)
+        return tf.math.softmax(similarity * strengths, 1)
 
 
 class TemporalLinkAddressing:
@@ -139,7 +138,7 @@ class TemporalLinkAddressing:
         return forward_weighting, backward_weighting
 
 
-class AllocationAdressing:
+class AllocationAddressing:
     """
     Access memory content by considering which memory slots can be allocated to.
     This is used to provide a differentiable form of dynamic memory allocation
@@ -217,7 +216,7 @@ class AllocationAdressing:
         usage_sorted = 1 - emptiness_sorted
         allocation_sorted = emptiness_sorted * tf.math.cumprod(usage_sorted, axis=1, exclusive=True)
 
-        return AllocationAdressing.batch_unsort(allocation_sorted, free_list)
+        return AllocationAddressing.batch_unsort(allocation_sorted, free_list)
 
 
 class Memory:
@@ -348,13 +347,13 @@ class Memory:
 
         with tf.name_scope("calculate_weighting"):
             with tf.name_scope("allocation_addressing"):
-                usage_vector = AllocationAdressing.update_usage_vector(
+                usage_vector = AllocationAddressing.update_usage_vector(
                     i.free_gates,
                     m.read_weightings,
                     m.write_weighting,
                     m.usage_vector
                 )
-                allocation_weighting = AllocationAdressing.weighting(usage_vector)
+                allocation_weighting = AllocationAddressing.weighting(usage_vector)
             with tf.name_scope("content_addressing"):
                 lookup_weighting = ContentAddressing.weighting(
                     m.memory_matrix,
@@ -408,7 +407,7 @@ class Memory:
         )
 
 
-class DNC(tf.keras.layers.Layer):
+class DNC(tf.keras.layers.AbstractRNNCell):
     """DNC recurrent module that connects together the controller and memory.
 
     Performs a write and read operation against memory given 1) the previous state
@@ -556,5 +555,4 @@ class DNC(tf.keras.layers.Layer):
             'clip': self._clip,
             'output_size': self._output_size,
         }
-        base_config = super().get_config()
-        return dict(list(base_config.items()) + list(config.items()))
+        return config
