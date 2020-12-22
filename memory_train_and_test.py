@@ -80,7 +80,7 @@ class MemoryProblemLoader:
         optimizer = Adam(self.learning_rate)
         inputs = (Input(shape=(self.sample_length, 1), batch_size=self.batch_size), Input(shape=(self.sample_length, 1), batch_size=self.batch_size))
         if self.model == 'memory_layer':
-            outputs = RNN(MemoryLayerCell(100, self.category_amount), return_sequences=True)(inputs)
+            outputs = RNN(MemoryLayerCell(output_size=self.category_amount), return_sequences=True)(inputs[0])
         elif self.model == 'lstm':
             outputs = TimeDistributed(Dense(self.category_amount))(LSTM(40, return_sequences=True)(inputs[0]))
         elif self.model == 'differentiable_neural_computer':

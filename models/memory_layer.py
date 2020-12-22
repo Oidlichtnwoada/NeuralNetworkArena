@@ -2,86 +2,93 @@ import tensorflow as tf
 
 
 class MemoryLayerCell(tf.keras.layers.Layer):
-    def __init__(self, state_size, output_size, discretization_steps=1):
+    def __init__(self, memory_rows=16, memory_columns=16, memory_precision=16, output_size=None, discretization_steps=2, trainable_memory_parameters=False):
         super().__init__()
-        # save the state size (number of neurons) - only an even amount is allowed as neuron pairs are used for memory cells
-        assert state_size % 2 == 0
-        self.state_size = state_size
-        # save the output_size (vector size of the output control output)
-        self.output_size = output_size
-        # save the discretization steps for ode solving
+        self.memory_rows = memory_rows
+        self.memory_columns = memory_columns
+        self.memory_size = self.memory_rows * self.memory_columns
+        self.memory_precision = memory_precision
+        self.memory_cell_amount = self.memory_size * self.memory_precision
+        self.state_size = 2 * self.memory_cell_amount
+        if output_size is None:
+            self.output_size = self.memory_size
+        else:
+            self.output_size = output_size
         self.discretization_steps = discretization_steps
-        # add dropout layers to prevent overfitting
-        self.memory_in_dropout = tf.keras.layers.Dropout(rate=1E-1)
-        self.memory_out_dropout = tf.keras.layers.Dropout(rate=1E-1)
-        # add a normalization layer for the neuron potentials
-        self.normalization = tf.keras.layers.LayerNormalization(epsilon=1E-6)
-        # input control - provides one input for each memory cell
-        self.input_control = tf.keras.models.Sequential([
-            tf.keras.layers.Dense(self.state_size * 2),
-            tf.keras.layers.Dense(self.state_size),
-            tf.keras.layers.Dense(self.state_size // 2)])
-        # output control - creates the final output of the memory layer
-        self.output_control = tf.keras.models.Sequential([
-            tf.keras.layers.Dense(4 * self.output_size),
-            tf.keras.layers.Dense(2 * self.output_size),
-            tf.keras.layers.Dense(self.output_size)])
-        # create a dictionary with all trainable parameters in this layer
-        self.params = {'excitatory_potential': self.add_weight(name='excitatory_potential', shape=(self.state_size,),
-                                                               initializer=tf.keras.initializers.Constant(1)),
-                       'inhibitory_potential': self.add_weight(name='inhibitory_potential', shape=(self.state_size,),
-                                                               initializer=tf.keras.initializers.Constant(-1)),
-                       'capacitance': self.add_weight(name='capacitance', shape=(self.state_size,),
-                                                      initializer=tf.keras.initializers.RandomUniform(4E-1, 6E-1), constraint=tf.keras.constraints.NonNeg()),
-                       'max_conductance': self.add_weight(name='max_conductance', shape=(self.state_size, 2),
-                                                          initializer=tf.keras.initializers.RandomUniform(1E-3, 1), constraint=tf.keras.constraints.NonNeg()),
-                       'mean_conductance_potential': self.add_weight(name='mean_conductance_potential', shape=(self.state_size, 2),
-                                                                     initializer=tf.keras.initializers.RandomUniform(3E-1, 8E-1)),
-                       'std_conductance': self.add_weight(name='std_conductance', shape=(self.state_size, 2),
-                                                          initializer=tf.keras.initializers.RandomUniform(3, 8), constraint=tf.keras.constraints.NonNeg())}
+        self.trainable_memory_parameters = trainable_memory_parameters
+        self.input_control = tf.keras.layers.Dense(self.state_size)
+        self.output_control = tf.keras.layers.Dense(self.output_size)
+        self.params = {
+            'step_size': self.add_weight(name='step_size', shape=(self.memory_cell_amount,),
+                                         initializer=tf.keras.initializers.Constant(1.5573331), trainable=self.trainable_memory_parameters),
+            'capacitance': self.add_weight(name='capacitance', shape=(self.memory_cell_amount,),
+                                           initializer=tf.keras.initializers.Constant(1), trainable=False),
+            'leakage_conductance': self.add_weight(name='leakage_conductance', shape=(self.memory_cell_amount,),
+                                                   initializer=tf.keras.initializers.Constant(0.4505964), trainable=self.trainable_memory_parameters),
+            'resting_potential': self.add_weight(name='resting_potential', shape=(self.memory_cell_amount,),
+                                                 initializer=tf.keras.initializers.Constant(0), trainable=False),
+            'recurrent_conductance': self.add_weight(name='recurrent_conductance', shape=(self.memory_cell_amount,),
+                                                     initializer=tf.keras.initializers.Constant(1.0334609), trainable=self.trainable_memory_parameters),
+            'recurrent_mean_conductance_potential': self.add_weight(name='recurrent_mean_conductance_potential', shape=(self.memory_cell_amount,),
+                                                                    initializer=tf.keras.initializers.Constant(0.07879465), trainable=self.trainable_memory_parameters),
+            'recurrent_std_conductance_potential': self.add_weight(name='recurrent_std_conductance_potential', shape=(self.memory_cell_amount,),
+                                                                   initializer=tf.keras.initializers.Constant(100), trainable=False),
+            'recurrent_target_potential': self.add_weight(name='recurrent_target_potential', shape=(self.memory_cell_amount,),
+                                                          initializer=tf.keras.initializers.Constant(1.4378392), trainable=self.trainable_memory_parameters),
+            'inhibitory_conductance': self.add_weight(name='inhibitory_conductance', shape=(self.memory_cell_amount,),
+                                                      initializer=tf.keras.initializers.Constant(1.3365093), trainable=self.trainable_memory_parameters),
+            'inhibitory_mean_conductance_potential': self.add_weight(name='inhibitory_mean_conductance_potential', shape=(self.memory_cell_amount,),
+                                                                     initializer=tf.keras.initializers.Constant(0.06618887), trainable=self.trainable_memory_parameters),
+            'inhibitory_std_conductance_potential': self.add_weight(name='inhibitory_std_conductance_potential', shape=(self.memory_cell_amount,),
+                                                                    initializer=tf.keras.initializers.Constant(100), trainable=False),
+            'inhibitory_target_potential': self.add_weight(name='inhibitory_target_potential', shape=(self.memory_cell_amount,),
+                                                           initializer=tf.keras.initializers.Constant(0), trainable=False),
+            'input_conductance': self.add_weight(name='input_conductance', shape=(self.memory_cell_amount,),
+                                                 initializer=tf.keras.initializers.Constant(0.07915332), trainable=self.trainable_memory_parameters),
+            'input_mean_conductance_potential': self.add_weight(name='input_mean_conductance_potential', shape=(self.memory_cell_amount,),
+                                                                initializer=tf.keras.initializers.Constant(0.5), trainable=False),
+            'input_std_conductance_potential': self.add_weight(name='input_std_conductance_potential', shape=(self.memory_cell_amount,),
+                                                               initializer=tf.keras.initializers.Constant(100), trainable=False),
+            'input_target_potential': self.add_weight(name='input_target_potential', shape=(self.memory_cell_amount,),
+                                                      initializer=tf.keras.initializers.Constant(1.5931877), trainable=self.trainable_memory_parameters),
+        }
+        self.capacitances = self.params['capacitance'][..., tf.newaxis, tf.newaxis]
+        self.partial_step_size = self.params['step_size'][..., tf.newaxis, tf.newaxis] / self.discretization_steps
+        self.conductances = tf.expand_dims(tf.stack((
+            self.params['input_conductance'], self.params['recurrent_conductance'],
+            self.params['inhibitory_conductance'], self.params['leakage_conductance']), -1), -2)
+        self.target_potentials = tf.expand_dims(tf.stack((
+            self.params['input_target_potential'], self.params['recurrent_target_potential'],
+            self.params['inhibitory_target_potential'], self.params['resting_potential']), -1), -2)
+        self.mean_conductance_potentials = tf.expand_dims(tf.stack((
+            self.params['input_mean_conductance_potential'], self.params['recurrent_mean_conductance_potential'],
+            self.params['inhibitory_mean_conductance_potential'], tf.zeros((self.memory_cell_amount,))), -1), -2)
+        self.std_conductance_potentials = tf.expand_dims(tf.stack((
+            self.params['input_std_conductance_potential'], self.params['recurrent_std_conductance_potential'],
+            self.params['inhibitory_std_conductance_potential'], tf.ones((self.memory_cell_amount,))), -1), -2)
 
-    def states_derivative(self, inputs, states):
-        # build the preliminary memory cell inputs using all available information
-        preliminary_memory_cell_inputs = self.input_control(tf.concat([inputs, states], -1))
-        # pass the memory cell inputs through a dropout layer
-        lossy_memory_cell_inputs = self.memory_in_dropout(preliminary_memory_cell_inputs)
-        # duplicate every entry and negate it to get the positive and negative input for each neuron pair
-        memory_cell_inputs = tf.reshape(tf.concat([lossy_memory_cell_inputs[..., tf.newaxis], -lossy_memory_cell_inputs[..., tf.newaxis]], -1), (-1, self.state_size))
-        # build a tensor representing both potentials of a neuron pair in the last dimension
-        neuron_pair_potentials = tf.reshape(states, (-1, self.state_size // 2, 2))
-        # build the presynaptic potentials for the recurrent excitatory and the reciprocal inhibitory connection
-        presynaptic_potentials = tf.reshape(tf.concat([neuron_pair_potentials, tf.roll(neuron_pair_potentials, 1, -1)], -1), (-1, self.state_size, 2))
-        # compute the synaptic conductance
-        synaptic_conductance = self.params['max_conductance'] * tf.keras.activations.sigmoid(self.params['std_conductance'] * (presynaptic_potentials - self.params['mean_conductance_potential']))
-        # compute the potential difference between resting potential (these are different for excitatory and inhibitory synapses) and the neuron's current potential
-        synaptic_potential_difference = tf.concat([self.params['excitatory_potential'][..., tf.newaxis], self.params['inhibitory_potential'][..., tf.newaxis]], -1) - states[..., tf.newaxis]
-        # the synaptic current is the conductance multiplied with the voltage
-        synaptic_memory_cell_inputs = synaptic_conductance * synaptic_potential_difference
-        # compute the derivative of neuron potentials
-        return (memory_cell_inputs + tf.reduce_sum(synaptic_memory_cell_inputs, -1)) / self.params['capacitance']
+    def get_initial_state(self, inputs=None, batch_size=None, dtype=None):
+        return tf.reshape(tf.concat((tf.zeros((batch_size, self.memory_cell_amount, 1)), tf.ones((batch_size, self.memory_cell_amount, 1))), -1), (-1, self.state_size))
+
+    def state_change(self, neuron_inputs, neuron_potentials):
+        reshaped_neuron_inputs = tf.reshape(neuron_inputs, (-1, self.memory_cell_amount, 2, 1))
+        reshaped_neuron_potentials = tf.reshape(neuron_potentials, (-1, self.memory_cell_amount, 2, 1))
+        complementary_neuron_potentials = tf.roll(reshaped_neuron_potentials, 1, -2)
+        presynaptic_potentials = tf.concat((
+            reshaped_neuron_inputs, reshaped_neuron_potentials,
+            complementary_neuron_potentials, tf.ones_like(reshaped_neuron_inputs) * float('inf')), -1)
+        synaptic_currents = self.conductances * tf.sigmoid(self.std_conductance_potentials * (presynaptic_potentials - self.mean_conductance_potentials)) * (
+                self.target_potentials - reshaped_neuron_potentials)
+        state_change = tf.reshape(tf.reduce_sum(synaptic_currents / self.capacitances * self.partial_step_size, -1), (-1, self.state_size))
+        return state_change
 
     def call(self, inputs, states):
-        # states are passed as tuple
-        states = states[0]
-        if isinstance(inputs, tuple):
-            # save time intervals if provided for irregularly sampled time series
-            inputs, intervals = inputs
-        else:
-            # generate intervals of only ones for regularly sampled time series if no intervals are provided
-            intervals = tf.ones_like(inputs)[:, :1]
-        # compute the next state using multiple discretization steps
-        for step in range(self.discretization_steps):
-            states += self.states_derivative(inputs, states) * intervals / self.discretization_steps
-        # update the current memory state by normalizing the state
-        next_states = self.normalization(states)
-        # only the output of the first memory cell is taken
-        memory_cell_outputs = next_states[:, 0::2]
-        # pass memory cell outputs through dropout layer
-        lossy_memory_cell_outputs = self.memory_out_dropout(memory_cell_outputs)
-        # build the memory layer output using only the outputs of the memory cells
-        memory_layer_outputs = self.output_control(lossy_memory_cell_outputs)
-        # return the memory layer outputs and the next states as tuple
-        return memory_layer_outputs, (next_states,)
+        neuron_potentials = states[0]
+        neuron_inputs = self.input_control(tf.concat((inputs, neuron_potentials), -1))
+        for _ in range(self.discretization_steps):
+            neuron_potentials += self.state_change(neuron_inputs, neuron_potentials)
+        memory_layer_outputs = self.output_control(neuron_potentials)
+        return memory_layer_outputs, (neuron_potentials,)
 
 
 class MemoryLayerAttention(tf.keras.layers.Layer):
