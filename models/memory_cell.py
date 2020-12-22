@@ -3,12 +3,10 @@ import numpy as np
 import tensorflow as tf
 
 
-class MemoryCell(tf.keras.layers.Layer):
+class MemoryCell(tf.keras.layers.AbstractRNNCell):
     def __init__(self, discretization_steps=2):
         super().__init__()
         self.discretization_steps = discretization_steps
-        self.state_size = 2
-        self.output_size = 2
         self.params = {
             'step_size': self.add_weight(name='step_size', shape=(1,), initializer=tf.keras.initializers.Constant(1.5573331)),
             'capacitance': self.add_weight(name='capacitance', shape=(1,), initializer=tf.keras.initializers.Constant(1), trainable=False),
@@ -28,8 +26,15 @@ class MemoryCell(tf.keras.layers.Layer):
             'input_target_potential': self.add_weight(name='input_target_potential', shape=(1,), initializer=tf.keras.initializers.Constant(1.5931877)),
         }
 
-    @staticmethod
-    def get_initial_state(inputs=None, batch_size=None, dtype=None):
+    @property
+    def state_size(self):
+        return 2
+
+    @property
+    def output_size(self):
+        return 2
+
+    def get_initial_state(self, inputs=None, batch_size=None, dtype=None):
         return tf.concat((tf.zeros((batch_size, 1)), tf.ones((batch_size, 1))), -1)
 
     def synaptic_current(self, synapse_type, presynaptic, postsynaptic):
