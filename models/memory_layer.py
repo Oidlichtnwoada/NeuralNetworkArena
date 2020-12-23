@@ -4,8 +4,8 @@ from models.transformer import positional_encoding
 
 
 class MemoryLayerCell(tf.keras.layers.AbstractRNNCell):
-    def __init__(self, memory_rows=16, memory_columns=16, memory_precision=16, output_size=None, discretization_steps=2,
-                 embedding_size=64, read_heads=2, write_heads=2, trainable_memory_parameters=False):
+    def __init__(self, memory_rows=16, memory_columns=8, memory_precision=4, output_size=None, controller_units=128, discretization_steps=2,
+                 embedding_size=8, read_heads=2, write_heads=1, trainable_memory_parameters=False):
         super().__init__()
         self.memory_rows = memory_rows
         self.memory_columns = memory_columns
@@ -17,6 +17,7 @@ class MemoryLayerCell(tf.keras.layers.AbstractRNNCell):
             self.output_size_value = self.memory_size
         else:
             self.output_size_value = output_size
+        self.controller_units = controller_units
         self.discretization_steps = discretization_steps
         self.embedding_size = embedding_size
         self.input_embedding = tf.keras.layers.Dense(self.embedding_size)
@@ -24,9 +25,10 @@ class MemoryLayerCell(tf.keras.layers.AbstractRNNCell):
         self.read_heads = read_heads
         self.read_attention = tf.keras.layers.MultiHeadAttention(self.read_heads, self.embedding_size)
         self.write_heads = write_heads
-        self.lstm_units = self.output_size + self.write_heads * self.memory_rows + self.write_heads * self.memory_columns
-        self.state_size_value = self.memory_neurons_amount + 2 * self.lstm_units
-        self.controller = tf.keras.layers.LSTMCell(self.lstm_units)
+        self.dense_layer_output_size = self.output_size + self.write_heads * self.memory_rows + self.write_heads * self.memory_columns * self.memory_precision
+        self.output_layer = tf.keras.layers.Dense(self.dense_layer_output_size)
+        self.state_size_value = self.memory_neurons_amount + 2 * self.controller_units
+        self.controller = tf.keras.layers.LSTMCell(self.controller_units)
         self.trainable_memory_parameters = trainable_memory_parameters
         self.params = {
             'step_size': self.add_weight(name='step_size', shape=(self.memory_cell_amount,),
@@ -111,12 +113,24 @@ class MemoryLayerCell(tf.keras.layers.AbstractRNNCell):
         embedded_inputs = self.input_embedding(tf.expand_dims(inputs, -2))
         augmented_inputs = tf.concat((embedded_inputs, embedded_memory_row_contents), -2) + self.positional_encoding
         read_attention_output = self.read_attention(augmented_inputs, augmented_inputs)[:, 0, :]
-        controller_output, controller_state = self.controller(read_attention_output, (controller_state[:, :self.lstm_units], controller_state[:, self.lstm_units:]))
-        memory_layer_outputs = controller_output[:, :self.output_size]
+        controller_output, controller_state = self.controller(read_attention_output, (controller_state[:, :self.controller_units], controller_state[:, self.controller_units:]))
+        interface_vector = self.output_layer(controller_output)
+        memory_layer_outputs = interface_vector[:, :self.output_size]
+        write_vector = interface_vector[:, self.output_size:]
+        control_signals = write_vector[:, :self.write_heads * self.memory_rows]
+        data_signals = write_vector[:, self.write_heads * self.memory_rows:]
         neuron_inputs = tf.zeros((128, self.memory_neurons_amount))
+        for i in range(self.write_heads):
+            control_signal = tf.reshape(control_signals[:, i * self.memory_rows:(i + 1) * self.memory_rows],
+                                        (-1, self.memory_rows, 1, 1, 1))
+            data_signal = tf.reshape(data_signals[:, i * self.memory_columns * self.memory_precision:(i + 1) * self.memory_columns * self.memory_precision],
+                                     (-1, 1, self.memory_columns, self.memory_precision, 1))
+            complementary_data_signal = 1 - data_signal
+            complete_data_signal = tf.concat((data_signal, complementary_data_signal), -1)
+            neuron_inputs += tf.reshape(tf.sigmoid(control_signal) * complete_data_signal, (-1, self.memory_neurons_amount))
         for _ in range(self.discretization_steps):
             neuron_potentials += self.state_change(neuron_inputs, neuron_potentials)
-        return memory_layer_outputs, tf.concat((neuron_potentials, controller_state[0], controller_state[1]), -1)
+        return memory_layer_outputs, (tf.concat((neuron_potentials, controller_state[0], controller_state[1]), -1),)
 
 
 class MemoryLayerAttention(tf.keras.layers.Layer):
