@@ -119,7 +119,7 @@ class MemoryLayerCell(tf.keras.layers.AbstractRNNCell):
         write_vector = interface_vector[:, self.output_size:]
         control_signals = write_vector[:, :self.write_heads * self.memory_rows]
         data_signals = write_vector[:, self.write_heads * self.memory_rows:]
-        neuron_inputs = tf.zeros((128, self.memory_neurons_amount))
+        neuron_inputs = tf.zeros((1, self.memory_neurons_amount))
         for i in range(self.write_heads):
             control_signal = tf.reshape(control_signals[:, i * self.memory_rows:(i + 1) * self.memory_rows],
                                         (-1, self.memory_rows, 1, 1, 1))
