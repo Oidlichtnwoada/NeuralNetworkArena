@@ -1,13 +1,8 @@
-from argparse import ArgumentParser
-from os import listdir
-from os.path import join
+import argparse
+import os
 
-from numpy import load, array, zeros
-from numpy.random import random, shuffle
-from tensorflow.keras import Input, Model
-from tensorflow.keras.callbacks import ModelCheckpoint, EarlyStopping
-from tensorflow.keras.losses import MeanSquaredError
-from tensorflow.keras.optimizers import Adam
+import numpy as np
+import tensorflow as tf
 
 from models.memory_layer import MemoryLayerAttention
 from models.neural_circuit_policies import NeuralCircuitPolicies
@@ -18,7 +13,7 @@ from models.transformer import Transformer, MultiHeadAttention
 class WalkerProblemLoader:
     def __init__(self, model, use_saved_weights, shrink_divisor, sequence_length, batch_size, epochs, learning_rate, debug,
                  skip_percentage=0.1, test_data_percentage=0.15, validation_data_percentage=0.1):
-        self.problem_path = join('problems', 'walker')
+        self.problem_path = os.path.join('problems', 'walker')
         self.use_saved_weights = use_saved_weights
         self.shrink_divisor = shrink_divisor
         self.sequence_length = sequence_length
@@ -34,7 +29,7 @@ class WalkerProblemLoader:
         self.training_sequences = None
         self.input_length = None
         self.model = model
-        self.weights_directory = join('weights', 'walker', f'{self.model}', 'checkpoint')
+        self.weights_directory = os.path.join('weights', 'walker', f'{self.model}', 'checkpoint')
 
     def build_datasets(self):
         # return test, training and validation set
@@ -46,8 +41,8 @@ class WalkerProblemLoader:
     def load_datasets(self):
         # load datasets from files
         datasets = []
-        for dataset_filename in [x for x in listdir(self.problem_path) if x.endswith('.npy')]:
-            dataset = load(join(self.problem_path, dataset_filename))
+        for dataset_filename in [x for x in os.listdir(self.problem_path) if x.endswith('.npy')]:
+            dataset = np.load(os.path.join(self.problem_path, dataset_filename))
             if self.input_length is None:
                 self.input_length = dataset.shape[1]
             datasets.append([dataset[:-1, :].tolist(), dataset[1:, :].tolist()])
@@ -61,7 +56,7 @@ class WalkerProblemLoader:
             interval = 0
             for index in range(len(input_dataset)):
                 interval += 1
-                if random() > self.skip_percentage:
+                if np.random.random() > self.skip_percentage:
                     lossy_input_dataset.append(input_dataset[index])
                     lossy_time_dataset.append([interval])
                     lossy_output_dataset.append(output_dataset[index])
@@ -78,7 +73,7 @@ class WalkerProblemLoader:
                 sequences.append([input_dataset[start_index: end_index],
                                   time_dataset[start_index: end_index],
                                   output_dataset[start_index: end_index]])
-        shuffle(sequences)
+        np.random.shuffle(sequences)
         return sequences
 
     def reduce_to_batch_size_multiple(self, seq):
@@ -98,9 +93,9 @@ class WalkerProblemLoader:
         training_sequences = self.reduce_to_batch_size_multiple(sequences[test_data_length + validation_data_length:])
         processed_sequences = []
         for sequence in [test_sequences, validation_sequences, training_sequences]:
-            processed_sequences.append([array([x[0] for x in sequence]),
-                                        array([x[1] for x in sequence]),
-                                        array([x[2] for x in sequence])])
+            processed_sequences.append([np.array([x[0] for x in sequence]),
+                                        np.array([x[1] for x in sequence]),
+                                        np.array([x[2] for x in sequence])])
         return processed_sequences
 
     def transform_sequences(self):
@@ -112,23 +107,23 @@ class WalkerProblemLoader:
                 for memory_length in range(1, self.sequence_length + 1):
                     # zero pad information from future events
                     input_sequence = input_sequences[0][sequence_index].copy()
-                    input_sequence[memory_length:] = zeros(input_sequence[memory_length:].shape)
+                    input_sequence[memory_length:] = np.zeros(input_sequence[memory_length:].shape)
                     output_sequences[0].append(input_sequence)
                     # zero pad time intervals from future events
                     time_intervals = input_sequences[1][sequence_index].copy()
-                    time_intervals[memory_length:] = zeros(time_intervals[memory_length:].shape)
+                    time_intervals[memory_length:] = np.zeros(time_intervals[memory_length:].shape)
                     output_sequences[1].append(time_intervals)
                     # only use the next state of the last non-zero state in the input data as expected output data
                     output_sequences[2].append(input_sequences[2][sequence_index][memory_length - 1].copy())
             # convert sequences to numpy arrays
-            output_sequences[0], output_sequences[1], output_sequences[2] = array(output_sequences[0]), array(output_sequences[1]), array(output_sequences[2])
+            output_sequences[0], output_sequences[1], output_sequences[2] = np.array(output_sequences[0]), np.array(output_sequences[1]), np.array(output_sequences[2])
         # update the instance properties
         self.test_sequences, self.validation_sequences, self.training_sequences = test_sequences, validation_sequences, training_sequences
 
     def get_model(self):
-        loss = MeanSquaredError()
-        optimizer = Adam(self.learning_rate)
-        inputs = (Input(shape=(self.sequence_length, self.input_length), batch_size=self.batch_size), Input(shape=(self.sequence_length, 1), batch_size=self.batch_size))
+        loss = tf.keras.losses.MeanSquaredError()
+        optimizer = tf.keras.optimizers.Adam(self.learning_rate)
+        inputs = (tf.keras.Input(shape=(self.sequence_length, self.input_length), batch_size=self.batch_size), tf.keras.Input(shape=(self.sequence_length, 1), batch_size=self.batch_size))
         if self.model == 'transformer':
             self.transform_sequences()
             outputs = Transformer(token_amount=1, token_size=self.input_length, d_model=64, num_heads=4, d_ff=128, num_layers=4, dropout_rate=0.1, attention=MultiHeadAttention)(inputs)
@@ -145,7 +140,7 @@ class WalkerProblemLoader:
                                   num_layers=2, dropout_rate=0.1, attention=MemoryLayerAttention)(inputs)
         else:
             raise NotImplementedError()
-        model = Model(inputs=inputs, outputs=outputs)
+        model = tf.keras.Model(inputs=inputs, outputs=outputs)
         model.compile(optimizer=optimizer, loss=loss, run_eagerly=self.debug)
         print(f'sample predictions: {model.predict((self.test_sequences[0][:self.batch_size], self.test_sequences[1][:self.batch_size]), batch_size=self.batch_size)}')
         model.summary()
@@ -162,8 +157,8 @@ class WalkerProblemLoader:
             batch_size=self.batch_size,
             epochs=self.epochs,
             validation_data=((self.validation_sequences[0], self.validation_sequences[1]), self.validation_sequences[2]),
-            callbacks=[ModelCheckpoint(self.weights_directory, save_best_only=True, save_weights_only=True),
-                       EarlyStopping(monitor='val_loss', patience=3)]
+            callbacks=[tf.keras.callbacks.ModelCheckpoint(self.weights_directory, save_best_only=True),
+                       tf.keras.callbacks.EarlyStopping(patience=2)]
         )
 
     def test(self):
@@ -175,7 +170,7 @@ class WalkerProblemLoader:
 
 
 # parse arguments and start program
-parser = ArgumentParser()
+parser = argparse.ArgumentParser()
 parser.add_argument('--model', default='transformer', type=str)
 parser.add_argument('--mode', default='train', type=str)
 parser.add_argument('--use_saved_weights', default=False, type=bool)

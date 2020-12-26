@@ -1,9 +1,6 @@
-from argparse import ArgumentParser
-from os.path import join
-
-from numpy import concatenate, stack, argmax, squeeze
-from numpy import ones, ones_like, sum, mean
-from numpy.random import randint
+import os
+import argparse
+import numpy as np
 from tensorflow import math
 from tensorflow.keras import Input, Model
 from tensorflow.keras.callbacks import ModelCheckpoint, EarlyStopping
@@ -34,24 +31,24 @@ class MemoryProblemLoader:
         self.validation_data_percentage = validation_data_percentage
         self.sample_length = self.memory_length + 2 * self.sequence_length
         self.loss_object = SparseCategoricalCrossentropy(from_logits=True)
-        self.sample_weight = ones((1, self.sample_length,))
+        self.sample_weight = np.ones((1, self.sample_length,))
         self.sample_weight[:, self.sample_length - self.sequence_length] /= self.sample_length - self.sequence_length
         self.test_sequences = None
         self.validation_sequences = None
         self.training_sequences = None
-        self.weights_directory = join('weights', 'memory', f'{self.model}', 'checkpoint')
+        self.weights_directory = os.path.join('weights', 'memory', f'{self.model}', 'checkpoint')
 
     def get_memory_data(self):
         # build the data for the memory problem
-        memory_sequence = randint(low=0, high=self.category_amount - 2, size=(self.sample_amount, self.sequence_length, 1))
-        first_blank_sequence = (self.category_amount - 2) * ones((self.sample_amount, self.memory_length - 1, 1))
-        marker_sequence = (self.category_amount - 1) * ones((self.sample_amount, 1, 1))
-        second_blank_sequence = (self.category_amount - 2) * ones((self.sample_amount, self.sequence_length, 1))
-        input_sequence = concatenate((memory_sequence, first_blank_sequence, marker_sequence, second_blank_sequence), 1)
-        time_sequence = ones_like(input_sequence)
-        third_blank_sequence = (self.category_amount - 2) * ones((self.sample_amount, self.memory_length + self.sequence_length, 1))
-        output_sequence = concatenate((third_blank_sequence, memory_sequence), 1)
-        return stack((input_sequence, time_sequence, output_sequence))
+        memory_sequence = np.random.randint(low=0, high=self.category_amount - 2, size=(self.sample_amount, self.sequence_length, 1))
+        first_blank_sequence = (self.category_amount - 2) * np.ones((self.sample_amount, self.memory_length - 1, 1))
+        marker_sequence = (self.category_amount - 1) * np.ones((self.sample_amount, 1, 1))
+        second_blank_sequence = (self.category_amount - 2) * np.ones((self.sample_amount, self.sequence_length, 1))
+        input_sequence = np.concatenate((memory_sequence, first_blank_sequence, marker_sequence, second_blank_sequence), 1)
+        time_sequence = np.ones_like(input_sequence)
+        third_blank_sequence = (self.category_amount - 2) * np.ones((self.sample_amount, self.memory_length + self.sequence_length, 1))
+        output_sequence = np.concatenate((third_blank_sequence, memory_sequence), 1)
+        return np.stack((input_sequence, time_sequence, output_sequence))
 
     def build_datasets(self):
         # return test, training and validation set
@@ -111,8 +108,8 @@ class MemoryProblemLoader:
             batch_size=self.batch_size,
             epochs=self.epochs,
             validation_data=((self.validation_sequences[0], self.validation_sequences[1]), self.validation_sequences[2]),
-            callbacks=[ModelCheckpoint(self.weights_directory, save_best_only=True, save_weights_only=True),
-                       EarlyStopping(monitor='val_loss', patience=3)]
+            callbacks=[ModelCheckpoint(self.weights_directory, save_best_only=True),
+                       EarlyStopping(patience=2)]
         )
 
     def test(self):
@@ -122,13 +119,13 @@ class MemoryProblemLoader:
         test_loss = model.evaluate(x=(self.test_sequences[0], self.test_sequences[1]), y=self.test_sequences[2], batch_size=self.batch_size)
         print(f'test loss: {test_loss:.4f}')
         # compute percentage of correct labels if argmax of output is taken
-        predictions = argmax(model.predict((self.test_sequences[0], self.test_sequences[1]), batch_size=self.batch_size), -1)
-        mean_correct_predictions = mean(sum((predictions == squeeze(self.test_sequences[2], -1)).astype(int), -1))
+        predictions = np.argmax(model.predict((self.test_sequences[0], self.test_sequences[1]), batch_size=self.batch_size), -1)
+        mean_correct_predictions = np.mean(sum((predictions == np.squeeze(self.test_sequences[2], -1)).astype(int), -1))
         print(f'mean correct predictions of memorized sequence: {max(0, mean_correct_predictions - self.memory_length - self.sequence_length):.1f}/{self.sequence_length:.1f}')
 
 
 # parse arguments and start program
-parser = ArgumentParser()
+parser = argparse.ArgumentParser()
 parser.add_argument('--mode', default='train', type=str)
 parser.add_argument('--model', default='memory_layer', type=str)
 parser.add_argument('--use_saved_weights', default=False, type=bool)
