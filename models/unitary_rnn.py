@@ -263,3 +263,14 @@ class EUNNCell(tf.keras.layers.AbstractRNNCell):
         # activation
         output = self._activation((inputs + state), self.bias, self._cplex)
         return output, (output,)
+
+    def get_config(self):
+        config = super().get_config().copy()
+        config.update({
+            'num_units': self._num_units,
+            'capacity': self._capacity,
+            'fft': self._fft,
+            'cplex': self._cplex,
+            'activation': self._activation
+        })
+        return config

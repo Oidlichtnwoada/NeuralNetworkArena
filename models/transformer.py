@@ -304,4 +304,17 @@ class Transformer(tf.keras.Model):
             return decoder_output
 
     def get_config(self):
-        pass
+        config = super().get_config().copy()
+        config.update({
+            'token_amount': self.token_amount,
+            'token_size': self.token_size,
+            'd_model': self.d_model,
+            'num_heads': self.num_heads,
+            'd_ff': self.d_ff,
+            'num_layers': self.num_layers,
+            'dropout_rate': self.dropout_rate,
+            'attention': self.attention,
+            'squeeze_output': self.squeeze_output,
+            'mask_zero_inputs': self.mask_zero_inputs
+        })
+        return config

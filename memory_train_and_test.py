@@ -1,150 +1,53 @@
-import os
-import argparse
 import numpy as np
-from tensorflow import math
-from tensorflow.keras import Input, Model
-from tensorflow.keras.callbacks import ModelCheckpoint, EarlyStopping
-from tensorflow.keras.layers import RNN, Dense, LSTM, TimeDistributed
-from tensorflow.keras.losses import SparseCategoricalCrossentropy
-from tensorflow.keras.optimizers import Adam
+import tensorflow as tf
 
+from benchmark import Benchmark
 from models.differentiable_neural_computer import DNC
 from models.enhanced_unitary_rnn import EnhancedUnitaryRNN
 from models.memory_layer import MemoryLayerCell
 from models.unitary_rnn import EUNNCell
 
 
-class MemoryProblemLoader:
-    def __init__(self, model, use_saved_weights, memory_length, sequence_length, category_amount, sample_amount, batch_size, epochs, learning_rate, debug,
-                 test_data_percentage=0.15, validation_data_percentage=0.1):
-        self.model = model
-        self.use_saved_weights = use_saved_weights
-        self.memory_length = memory_length
-        self.sequence_length = sequence_length
-        self.category_amount = category_amount
-        self.sample_amount = sample_amount
-        self.batch_size = batch_size
-        self.epochs = epochs
-        self.learning_rate = learning_rate
-        self.debug = debug
-        self.test_data_percentage = test_data_percentage
-        self.validation_data_percentage = validation_data_percentage
-        self.sample_length = self.memory_length + 2 * self.sequence_length
-        self.loss_object = SparseCategoricalCrossentropy(from_logits=True)
-        self.sample_weight = np.ones((1, self.sample_length,))
-        self.sample_weight[:, self.sample_length - self.sequence_length] /= self.sample_length - self.sequence_length
-        self.test_sequences = None
-        self.validation_sequences = None
-        self.training_sequences = None
-        self.weights_directory = os.path.join('weights', 'memory', f'{self.model}', 'checkpoint')
+class MemoryBenchmark(Benchmark):
+    def __init__(self):
+        super().__init__('memory', True,
+                         (('--model', 'memory_layer', str),
+                          ('--memory_length', 100, int),
+                          ('--sequence_length', 10, int),
+                          ('--category_amount', 10, int),
+                          ('--sample_amount', 128_000, int),
+                          ('--loss_name', 'SparseCategoricalCrossentropy', str),
+                          ('--loss_config', {'from_logits': True}, dict),
+                          ('--metric_name', 'SparseCategoricalAccuracy', str)))
+        self.add_model_output('memory_layer',
+                              tf.keras.layers.RNN(MemoryLayerCell(output_size=self.args.category_amount), return_sequences=True)(self.inputs[0]), True)
+        self.add_model_output('lstm',
+                              tf.keras.layers.TimeDistributed(tf.keras.layers.Dense(self.args.category_amount))(
+                                  tf.keras.layers.LSTM(40, return_sequences=True)(self.inputs[0])), True)
+        self.add_model_output('differentiable_neural_computer',
+                              tf.keras.layers.RNN(DNC(self.args.category_amount, 100, 64, 16, 4), return_sequences=True)(self.inputs[0]), True)
+        self.add_model_output('unitary_rnn',
+                              tf.keras.layers.TimeDistributed(tf.keras.layers.Dense(self.args.category_amount))(
+                                  tf.math.real(tf.keras.layers.RNN(EUNNCell(128, 4), return_sequences=True)(self.inputs[0]))), True)
+        self.add_model_output('enhanced_unitary_rnn',
+                              tf.keras.layers.RNN(EnhancedUnitaryRNN(128, self.args.category_amount), return_sequences=True)(self.inputs[0]), True)
+        self.train_and_test()
 
-    def get_memory_data(self):
-        # build the data for the memory problem
-        memory_sequence = np.random.randint(low=0, high=self.category_amount - 2, size=(self.sample_amount, self.sequence_length, 1))
-        first_blank_sequence = (self.category_amount - 2) * np.ones((self.sample_amount, self.memory_length - 1, 1))
-        marker_sequence = (self.category_amount - 1) * np.ones((self.sample_amount, 1, 1))
-        second_blank_sequence = (self.category_amount - 2) * np.ones((self.sample_amount, self.sequence_length, 1))
+    def get_data(self):
+        memory_length = self.args.memory_length
+        sequence_length = self.args.sequence_length
+        category_amount = self.args.category_amount
+        sample_amount = self.args.sample_amount
+        memory_sequence = np.random.randint(low=0, high=category_amount - 2, size=(sample_amount, sequence_length, 1))
+        first_blank_sequence = (category_amount - 2) * np.ones((sample_amount, memory_length - 1, 1))
+        marker_sequence = (category_amount - 1) * np.ones((sample_amount, 1, 1))
+        second_blank_sequence = (category_amount - 2) * np.ones((sample_amount, sequence_length, 1))
         input_sequence = np.concatenate((memory_sequence, first_blank_sequence, marker_sequence, second_blank_sequence), 1)
         time_sequence = np.ones_like(input_sequence)
-        third_blank_sequence = (self.category_amount - 2) * np.ones((self.sample_amount, self.memory_length + self.sequence_length, 1))
+        third_blank_sequence = (category_amount - 2) * np.ones((sample_amount, memory_length + sequence_length, 1))
         output_sequence = np.concatenate((third_blank_sequence, memory_sequence), 1)
-        return np.stack((input_sequence, time_sequence, output_sequence))
+        return np.stack((input_sequence, time_sequence)), np.stack((output_sequence,))
 
-    def build_datasets(self):
-        # return test, training and validation set
-        self.test_sequences, self.validation_sequences, self.training_sequences = self.split_data(self.get_memory_data())
-
-    def reduce_to_batch_size_multiple(self, seq):
-        elements_to_delete = seq.shape[1] % self.batch_size
-        if elements_to_delete > 0:
-            return seq[:, :-elements_to_delete, :]
-        else:
-            return seq
-
-    def split_data(self, data):
-        # partition data for training, validation and test
-        test_sample_amount = int(self.sample_amount * self.test_data_percentage)
-        validation_sample_amount = int(self.sample_amount * self.validation_data_percentage)
-        test_samples = data[:, :test_sample_amount, :]
-        validation_samples = data[:, test_sample_amount:test_sample_amount + validation_sample_amount, :]
-        training_samples = data[:, test_sample_amount + validation_sample_amount:, :]
-        return self.reduce_to_batch_size_multiple(test_samples), \
-               self.reduce_to_batch_size_multiple(validation_samples), \
-               self.reduce_to_batch_size_multiple(training_samples)
-
-    def get_model(self):
-        # build the model for the memory task
-        optimizer = Adam(self.learning_rate)
-        inputs = (Input(shape=(self.sample_length, 1), batch_size=self.batch_size), Input(shape=(self.sample_length, 1), batch_size=self.batch_size))
-        if self.model == 'memory_layer':
-            outputs = RNN(MemoryLayerCell(output_size=self.category_amount), return_sequences=True)(inputs[0])
-        elif self.model == 'lstm':
-            outputs = TimeDistributed(Dense(self.category_amount))(LSTM(40, return_sequences=True)(inputs[0]))
-        elif self.model == 'differentiable_neural_computer':
-            outputs = RNN(DNC(self.category_amount, 100, 64, 16, 4), return_sequences=True)(inputs[0])
-        elif self.model == 'unitary_rnn':
-            outputs = TimeDistributed(Dense(self.category_amount))(math.real(RNN(EUNNCell(128, 4), return_sequences=True)(inputs[0])))
-        elif self.model == 'enhanced_unitary_rnn':
-            outputs = RNN(EnhancedUnitaryRNN(128, self.category_amount), return_sequences=True)(inputs[0])
-        else:
-            raise NotImplementedError()
-        model = Model(inputs=inputs, outputs=outputs)
-        model.compile(optimizer=optimizer, loss=self.custom_loss, run_eagerly=self.debug)
-        print(f'sample predictions: {model.predict((self.test_sequences[0][:self.batch_size], self.test_sequences[1][:self.batch_size]), batch_size=self.batch_size)}')
-        model.summary()
-        return model
-
-    def custom_loss(self, y_true, y_pred):
-        return self.loss_object(y_true, y_pred, sample_weight=self.sample_weight)
-
-    def train(self):
-        # train the model parameters using gradient descent
-        model = self.get_model()
-        if self.use_saved_weights:
-            model.load_weights(self.weights_directory).expect_partial()
-        model.fit(
-            x=(self.training_sequences[0], self.training_sequences[1]),
-            y=self.training_sequences[2],
-            batch_size=self.batch_size,
-            epochs=self.epochs,
-            validation_data=((self.validation_sequences[0], self.validation_sequences[1]), self.validation_sequences[2]),
-            callbacks=[ModelCheckpoint(self.weights_directory, save_best_only=True),
-                       EarlyStopping(patience=2)]
-        )
-
-    def test(self):
-        # evaluate the loss on the test dataset
-        model = self.get_model()
-        model.load_weights(self.weights_directory).expect_partial()
-        test_loss = model.evaluate(x=(self.test_sequences[0], self.test_sequences[1]), y=self.test_sequences[2], batch_size=self.batch_size)
-        print(f'test loss: {test_loss:.4f}')
-        # compute percentage of correct labels if argmax of output is taken
-        predictions = np.argmax(model.predict((self.test_sequences[0], self.test_sequences[1]), batch_size=self.batch_size), -1)
-        mean_correct_predictions = np.mean(sum((predictions == np.squeeze(self.test_sequences[2], -1)).astype(int), -1))
-        print(f'mean correct predictions of memorized sequence: {max(0, mean_correct_predictions - self.memory_length - self.sequence_length):.1f}/{self.sequence_length:.1f}')
-
-
-# parse arguments and start program
-parser = argparse.ArgumentParser()
-parser.add_argument('--mode', default='train', type=str)
-parser.add_argument('--model', default='memory_layer', type=str)
-parser.add_argument('--use_saved_weights', default=False, type=bool)
-parser.add_argument('--memory_length', default=100, type=int)
-parser.add_argument('--sequence_length', default=10, type=int)
-parser.add_argument('--category_amount', default=10, type=int)
-parser.add_argument('--sample_amount', default=128_000, type=int)
-parser.add_argument('--batch_size', default=128, type=int)
-parser.add_argument('--epochs', default=256, type=int)
-parser.add_argument('--learning_rate', default=1E-3, type=float)
-parser.add_argument('--debug', default=False, type=bool)
-args = parser.parse_args()
 
 # build the problem loader using the arguments
-problem_loader = MemoryProblemLoader(model=args.model, use_saved_weights=args.use_saved_weights, memory_length=args.memory_length, sequence_length=args.sequence_length,
-                                     category_amount=args.category_amount, sample_amount=args.sample_amount, batch_size=args.batch_size,
-                                     epochs=args.epochs, learning_rate=args.learning_rate, debug=args.debug)
-problem_loader.build_datasets()
-if args.mode == 'train':
-    problem_loader.train()
-elif args.mode == 'test':
-    problem_loader.test()
+MemoryBenchmark()

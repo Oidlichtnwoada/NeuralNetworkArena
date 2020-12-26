@@ -27,4 +27,15 @@ class NeuralCircuitPolicies(tf.keras.Model):
         return self.dense_layer(rnn_output)
 
     def get_config(self):
-        pass
+        config = super().get_config().copy()
+        config.update({
+            'output_length': self.output_length,
+            'inter_neurons': self.inter_neurons,
+            'command_neurons': self.command_neurons,
+            'motor_neurons': self.motor_neurons,
+            'sensory_fanout': self.sensory_fanout,
+            'inter_fanout': self.inter_fanout,
+            'recurrent_command_synapses': self.recurrent_command_synapses,
+            'motor_fanin': self.motor_fanin
+        })
+        return config

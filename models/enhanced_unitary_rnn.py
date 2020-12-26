@@ -55,3 +55,11 @@ class EnhancedUnitaryRNN(tf.keras.layers.AbstractRNNCell):
         next_states = tf.squeeze(modrelu(tf.matmul(step_matrix, preliminary_next_states), self.second_bias), -1)
         output = self.output_layer(tf.concat((tf.math.real(next_states), tf.math.imag(next_states)), -1))
         return output, (next_states,)
+
+    def get_config(self):
+        config = super().get_config().copy()
+        config.update({
+            'state_size': self.state_size,
+            'output_size': self.output_size,
+        })
+        return config

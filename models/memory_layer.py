@@ -50,6 +50,18 @@ class MemoryLayerCell(tf.keras.layers.AbstractRNNCell):
         memory_state = tf.sigmoid(-control_signals) * memory_state + tf.sigmoid(control_signals) * data_signals
         return memory_layer_outputs, (memory_state,)
 
+    def get_config(self):
+        config = super().get_config().copy()
+        config.update({
+            'memory_rows': self.memory_rows,
+            'memory_columns': self.memory_columns,
+            'output_size': self.output_size,
+            'embedding_size': self.embedding_size,
+            'heads': self.heads,
+            'feed_forward_size': self.feed_forward_size
+        })
+        return config
+
 
 class MemoryLayerAttention(tf.keras.layers.Layer):
     def __init__(self, dim, heads):

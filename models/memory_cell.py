@@ -70,6 +70,13 @@ class MemoryCell(tf.keras.layers.AbstractRNNCell):
         states = tf.concat((neuron_x_potentials, neuron_y_potentials), axis=-1)
         return states, (states,)
 
+    def get_config(self):
+        config = super().get_config().copy()
+        config.update({
+            'discretization_steps': self.discretization_steps
+        })
+        return config
+
 
 batch_size_value = 32
 epochs = 16
