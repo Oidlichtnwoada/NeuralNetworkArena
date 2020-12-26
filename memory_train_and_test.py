@@ -6,7 +6,7 @@ from numpy import ones, ones_like, sum, mean
 from numpy.random import randint
 from tensorflow import math
 from tensorflow.keras import Input, Model
-from tensorflow.keras.callbacks import ModelCheckpoint
+from tensorflow.keras.callbacks import ModelCheckpoint, EarlyStopping
 from tensorflow.keras.layers import RNN, Dense, LSTM, TimeDistributed
 from tensorflow.keras.losses import SparseCategoricalCrossentropy
 from tensorflow.keras.optimizers import Adam
@@ -111,7 +111,8 @@ class MemoryProblemLoader:
             batch_size=self.batch_size,
             epochs=self.epochs,
             validation_data=((self.validation_sequences[0], self.validation_sequences[1]), self.validation_sequences[2]),
-            callbacks=[ModelCheckpoint(self.weights_directory, save_best_only=True, save_weights_only=True)]
+            callbacks=[ModelCheckpoint(self.weights_directory, save_best_only=True, save_weights_only=True),
+                       EarlyStopping(monitor='val_loss', patience=3)]
         )
 
     def test(self):
