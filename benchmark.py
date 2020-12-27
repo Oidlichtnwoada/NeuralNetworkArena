@@ -2,6 +2,7 @@ import os
 from abc import ABC, abstractmethod
 from argparse import ArgumentParser
 from collections.abc import Sized, Iterable
+from math import prod
 
 import numpy as np
 import tensorflow as tf
@@ -39,7 +40,7 @@ class Benchmark(ABC):
         elements_to_remove = data_samples % self.args.batch_size
         if elements_to_remove != 0:
             data = data[:, :-elements_to_remove]
-        return tuple((np.array(x) for x in data))
+        return tuple((self.get_numpy_array(x) for x in data))
 
     def add_model_output(self, name, model_output, iterative_model):
         self.models[name] = (model_output, iterative_model)
@@ -86,9 +87,19 @@ class Benchmark(ABC):
             callbacks=(tf.keras.callbacks.TensorBoard(log_dir=model_tensorboard_location, histogram_freq=1)))
 
     @staticmethod
-    def get_recursive_shape(x):
-        if isinstance(x, Iterable) and isinstance(x, Sized):
-            return (len(x),) + Benchmark.get_recursive_shape(x[0])
+    def get_numpy_array(array):
+        array = np.array(array)
+        numpy_shape = array.shape
+        actual_shape = Benchmark.get_recursive_shape(array)
+        if numpy_shape != actual_shape:
+            array = np.array(list(np.reshape(array, (prod(numpy_shape),))))
+            array = np.reshape(array, actual_shape)
+        return array
+
+    @staticmethod
+    def get_recursive_shape(array):
+        if isinstance(array, Iterable) and isinstance(array, Sized):
+            return (len(array),) + Benchmark.get_recursive_shape(array[0])
         else:
             return ()
 
