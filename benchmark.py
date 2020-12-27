@@ -9,9 +9,10 @@ import tensorflow as tf
 
 
 class Benchmark(ABC):
-    def __init__(self, name, iterative_data, parser_configs):
+    def __init__(self, name, iterative_data, models, parser_configs):
         self.name = name
         self.iterative_data = iterative_data
+        self.models = models
         self.args = self.get_args(parser_configs)
         self.project_directory = os.getcwd()
         self.saved_model_directory = os.path.join(self.project_directory, self.args.saved_model_folder_name, self.name)
@@ -33,7 +34,7 @@ class Benchmark(ABC):
         self.test_output_data = self.postprocess_data(self.output_data[:, :self.test_samples])
         self.validation_output_data = self.postprocess_data(self.output_data[:, self.test_samples:-self.training_samples])
         self.training_output_data = self.postprocess_data(self.output_data[:, -self.training_samples:])
-        self.models = {}
+        self.train_and_test()
 
     def postprocess_data(self, data):
         data_samples = data.shape[1]
@@ -41,9 +42,6 @@ class Benchmark(ABC):
         if elements_to_remove != 0:
             data = data[:, :-elements_to_remove]
         return tuple((self.get_numpy_array(x) for x in data))
-
-    def add_model_output(self, name, model_output, iterative_model):
-        self.models[name] = (model_output, iterative_model)
 
     def check_directories(self):
         for model_name in self.models:
@@ -59,7 +57,7 @@ class Benchmark(ABC):
         if self.args.use_saved_model:
             model = tf.keras.models.load_model(model_save_location)
         else:
-            model = tf.keras.Model(inputs=self.inputs, outputs=self.models[model_name][0])
+            model = tf.keras.Model(inputs=self.inputs, outputs=self.get_model_output(self.args.model))
             optimizer = tf.keras.optimizers.get({'class_name': self.args.optimizer_name,
                                                  'config': {'learning_rate': self.args.learning_rate}})
             loss = tf.keras.losses.get({'class_name': self.args.loss_name,
@@ -127,4 +125,8 @@ class Benchmark(ABC):
 
     @abstractmethod
     def get_data(self):
+        raise NotImplementedError
+
+    @abstractmethod
+    def get_model_output(self, model):
         raise NotImplementedError

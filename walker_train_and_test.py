@@ -12,6 +12,10 @@ from models.transformer import Transformer, MultiHeadAttention
 class WalkerBenchmark(Benchmark):
     def __init__(self):
         super().__init__('walker', True,
+                         {'transformer': True,
+                          'memory_layer_transformer': True,
+                          'recurrent_transformer': True,
+                          'neural_circuit_policies': True},
                          (('--model', 'transformer', str),
                           ('--shrink_divisor', 1, int),
                           ('--skip_percentage', 0.1, float),
@@ -19,16 +23,6 @@ class WalkerBenchmark(Benchmark):
                           ('--loss_name', 'MeanSquaredError', str),
                           ('--loss_config', {}, dict),
                           ('--metric_name', 'MeanSquaredError', str)))
-        self.add_model_output('transformer', Transformer(token_amount=1, token_size=self.inputs[0].shape[2], d_model=64, num_heads=4, d_ff=128,
-                                                         num_layers=4, dropout_rate=0.1, attention=MultiHeadAttention)(self.inputs), False)
-        self.add_model_output('memory_layer_transformer', Transformer(token_amount=1, token_size=self.inputs[0].shape[2], d_model=16, num_heads=2, d_ff=32,
-                                                                      num_layers=2, dropout_rate=0.1, attention=MemoryLayerAttention)(self.inputs), False)
-        self.add_model_output('recurrent_transformer', Transformer(token_amount=1, token_size=self.inputs[0].shape[2], d_model=32, num_heads=4, d_ff=64,
-                                                                   num_layers=1, dropout_rate=0.1, attention=MultiHeadRecurrentAttention)(self.inputs), False)
-        self.add_model_output('neural_circuit_policies', NeuralCircuitPolicies(
-            output_length=self.inputs[0].shape[2], inter_neurons=32, command_neurons=16, motor_neurons=self.inputs[0].shape[2],
-            sensory_fanout=4, inter_fanout=4, recurrent_command_synapses=8, motor_fanin=6)(self.inputs), True)
-        self.train_and_test()
 
     def get_data(self):
         datasets = []
@@ -56,6 +50,21 @@ class WalkerBenchmark(Benchmark):
                                   output_dataset[start_index: end_index]])
         reshaped_sequences = np.swapaxes(sequences, 0, 1)
         return reshaped_sequences[:2], reshaped_sequences[2:]
+
+    def get_model_output(self, model):
+        if model == 'transformer':
+            return Transformer(token_amount=1, token_size=self.inputs[0].shape[2], d_model=64, num_heads=4, d_ff=128,
+                               num_layers=4, dropout_rate=0.1, attention=MultiHeadAttention)(self.inputs)
+        elif model == 'memory_layer_transformer':
+            return Transformer(token_amount=1, token_size=self.inputs[0].shape[2], d_model=16, num_heads=2, d_ff=32,
+                               num_layers=2, dropout_rate=0.1, attention=MemoryLayerAttention)(self.inputs)
+        elif model == 'recurrent_transformer':
+            return Transformer(token_amount=1, token_size=self.inputs[0].shape[2], d_model=32, num_heads=4, d_ff=64,
+                               num_layers=1, dropout_rate=0.1, attention=MultiHeadRecurrentAttention)(self.inputs)
+        elif model == 'neural_circuit_policies':
+            return NeuralCircuitPolicies(
+                output_length=self.inputs[0].shape[2], inter_neurons=32, command_neurons=16, motor_neurons=self.inputs[0].shape[2],
+                sensory_fanout=4, inter_fanout=4, recurrent_command_synapses=8, motor_fanin=6)(self.inputs)
 
     def transform_sequences(self):
         # transform rnn training sequences to transformer training sequences
