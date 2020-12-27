@@ -12,13 +12,11 @@ from models.transformer import Transformer, MultiHeadAttention
 class WalkerBenchmark(Benchmark):
     def __init__(self):
         super().__init__('walker', True,
-                         {'transformer': True,
-                          'memory_layer_transformer': True,
-                          'recurrent_transformer': True,
+                         {'transformer': False,
+                          'memory_layer_transformer': False,
+                          'recurrent_transformer': False,
                           'neural_circuit_policies': True},
-                         (('--model', 'transformer', str),
-                          ('--shrink_divisor', 1, int),
-                          ('--skip_percentage', 0.1, float),
+                         (('--skip_percentage', 0.1, float),
                           ('--sequence_length', 64, int),
                           ('--loss_name', 'MeanSquaredError', str),
                           ('--loss_config', {}, dict),
@@ -65,28 +63,6 @@ class WalkerBenchmark(Benchmark):
             return NeuralCircuitPolicies(
                 output_length=self.inputs[0].shape[2], inter_neurons=32, command_neurons=16, motor_neurons=self.inputs[0].shape[2],
                 sensory_fanout=4, inter_fanout=4, recurrent_command_synapses=8, motor_fanin=6)(self.inputs)
-
-    def transform_sequences(self):
-        # transform rnn training sequences to transformer training sequences
-        test_sequences, validation_sequences, training_sequences = [[], [], []], [[], [], []], [[], [], []]
-        for input_sequences, output_sequences in [(self.test_sequences, test_sequences), (self.validation_sequences, validation_sequences), (self.training_sequences, training_sequences)]:
-            # create a transformer training sample for each memory length and sequence (shrink to fit in RAM)
-            for sequence_index in range(len(input_sequences[0]) // self.shrink_divisor):
-                for memory_length in range(1, self.sequence_length + 1):
-                    # zero pad information from future events
-                    input_sequence = input_sequences[0][sequence_index].copy()
-                    input_sequence[memory_length:] = np.zeros(input_sequence[memory_length:].shape)
-                    output_sequences[0].append(input_sequence)
-                    # zero pad time intervals from future events
-                    time_intervals = input_sequences[1][sequence_index].copy()
-                    time_intervals[memory_length:] = np.zeros(time_intervals[memory_length:].shape)
-                    output_sequences[1].append(time_intervals)
-                    # only use the next state of the last non-zero state in the input data as expected output data
-                    output_sequences[2].append(input_sequences[2][sequence_index][memory_length - 1].copy())
-            # convert sequences to numpy arrays
-            output_sequences[0], output_sequences[1], output_sequences[2] = np.array(output_sequences[0]), np.array(output_sequences[1]), np.array(output_sequences[2])
-        # update the instance properties
-        self.test_sequences, self.validation_sequences, self.training_sequences = test_sequences, validation_sequences, training_sequences
 
 
 WalkerBenchmark()

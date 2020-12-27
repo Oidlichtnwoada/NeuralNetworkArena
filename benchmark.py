@@ -2,7 +2,6 @@ import os
 from abc import ABC, abstractmethod
 from argparse import ArgumentParser
 from collections.abc import Sized, Iterable
-from math import prod
 
 import numpy as np
 import tensorflow as tf
@@ -18,13 +17,14 @@ class Benchmark(ABC):
         self.saved_model_directory = os.path.join(self.project_directory, self.args.saved_model_folder_name, self.name)
         self.tensorboard_directory = os.path.join(self.project_directory, self.args.tensorboard_folder_name, self.name)
         self.supplementary_data_directory = os.path.join(self.project_directory, self.args.supplementary_data_folder_name, self.name)
-        self.input_data, self.output_data = map(np.array, self.get_data())
-        self.inputs = tuple((tf.keras.Input(shape=self.get_recursive_shape(x)[1:], batch_size=self.args.batch_size) for x in self.input_data))
+        self.input_data, self.output_data = tuple((np.array(x) for x in self.get_data()))
+        self.data_samples = self.input_data.shape[1]
+        assert self.data_samples == self.output_data.shape[1]
         self.random_integer = np.random.randint(2 ** 30)
         np.random.default_rng(self.random_integer).shuffle(self.input_data, 1)
         np.random.default_rng(self.random_integer).shuffle(self.output_data, 1)
-        self.data_samples = self.input_data.shape[1]
-        assert self.data_samples == self.output_data.shape[1]
+        self.preprocess_data()
+        self.inputs = tuple((tf.keras.Input(shape=self.get_recursive_shape(x)[1:], batch_size=self.args.batch_size) for x in self.input_data))
         self.test_samples = int(self.data_samples * self.args.test_data_percentage)
         self.validation_samples = int(self.data_samples * self.args.validation_data_percentage)
         self.training_samples = self.data_samples - self.test_samples - self.validation_samples
@@ -35,6 +35,40 @@ class Benchmark(ABC):
         self.validation_output_data = self.postprocess_data(self.output_data[:, self.test_samples:-self.training_samples])
         self.training_output_data = self.postprocess_data(self.output_data[:, -self.training_samples:])
         self.train_and_test()
+
+    def preprocess_data(self):
+        if self.iterative_data and not self.models[self.args.model]:
+            sequence_length = self.input_data.shape[2]
+            samples = self.data_samples // self.args.shrink_divisor
+            input_shapes = tuple((list(self.get_recursive_shape(x)) for x in self.input_data))
+            output_shapes = tuple((list(self.get_recursive_shape(x[:, 0])) for x in self.output_data))
+            for shape in input_shapes + output_shapes:
+                shape[0] = sequence_length * samples
+            input_data_tuple = tuple((np.zeros(x) for x in input_shapes))
+            output_data_tuple = tuple((np.zeros(x) for x in output_shapes))
+            for sample_index in range(samples):
+                for subsequence_length in range(1, sequence_length + 1):
+                    for input_index, input_data in enumerate(input_data_tuple):
+                        input_data[sample_index * sequence_length + subsequence_length - 1, :subsequence_length] = \
+                            self.get_numpy_array(self.input_data[input_index, sample_index, :subsequence_length])
+                    for output_index, output_data in enumerate(output_data_tuple):
+                        output_data[sample_index * sequence_length + subsequence_length - 1] = \
+                            self.get_numpy_array(self.output_data[output_index, sample_index, subsequence_length - 1])
+            del self.input_data, self.output_data
+            input_data_list = []
+            for input_data in input_data_tuple:
+                input_data_list.append(input_data.tolist())
+            self.input_data = np.array(input_data_list)
+            del input_data_tuple, input_data_list
+            output_data_list = []
+            for output_data in output_data_tuple:
+                output_data_list.append(output_data.tolist())
+            self.output_data = np.array(output_data_list)
+            del output_data_tuple, output_data_list
+        elif not self.iterative_data and self.models[self.args.model]:
+            raise NotImplementedError
+        else:
+            assert self.iterative_data == self.models[self.args.model]
 
     def postprocess_data(self, data):
         data_samples = data.shape[1]
@@ -90,8 +124,8 @@ class Benchmark(ABC):
         numpy_shape = array.shape
         actual_shape = Benchmark.get_recursive_shape(array)
         if numpy_shape != actual_shape:
-            array = np.array(list(np.reshape(array, (prod(numpy_shape),))))
-            array = np.reshape(array, actual_shape)
+            array = np.array(array.tolist())
+        assert array.shape == actual_shape
         return array
 
     @staticmethod
@@ -101,9 +135,9 @@ class Benchmark(ABC):
         else:
             return ()
 
-    @staticmethod
-    def get_args(parser_configs):
+    def get_args(self, parser_configs):
         parser = ArgumentParser()
+        parser.add_argument('--model', default=list(self.models)[0], type=str)
         parser.add_argument('--epochs', default=256, type=int)
         parser.add_argument('--batch_size', default=256, type=int)
         parser.add_argument('--optimizer_name', default='adam', type=str)
@@ -118,6 +152,7 @@ class Benchmark(ABC):
         parser.add_argument('--saved_model_folder_name', default='saved_models', type=str)
         parser.add_argument('--tensorboard_folder_name', default='tensorboard', type=str)
         parser.add_argument('--supplementary_data_folder_name', default='supplementary_data', type=str)
+        parser.add_argument('--shrink_divisor', default=8, type=int)
         for parser_config in parser_configs:
             argument_name, default, cls = parser_config
             parser.add_argument(argument_name, default=default, type=cls)
