@@ -1,6 +1,7 @@
 import os
 from abc import ABC, abstractmethod
 from argparse import ArgumentParser
+from collections.abc import Sized, Iterable
 
 import numpy as np
 import tensorflow as tf
@@ -10,14 +11,13 @@ class Benchmark(ABC):
     def __init__(self, name, iterative_data, parser_configs):
         self.name = name
         self.iterative_data = iterative_data
-        self.project_directory = os.getcwd()
-        self.saved_model_folder_name = 'saved_models'
-        self.saved_model_directory = os.path.join(self.project_directory, self.saved_model_folder_name, self.name)
-        self.tensorboard_folder_name = 'tensorboard'
-        self.tensorboard_directory = os.path.join(self.project_directory, self.tensorboard_folder_name, self.name)
         self.args = self.get_args(parser_configs)
+        self.project_directory = os.getcwd()
+        self.saved_model_directory = os.path.join(self.project_directory, self.args.saved_model_folder_name, self.name)
+        self.tensorboard_directory = os.path.join(self.project_directory, self.args.tensorboard_folder_name, self.name)
+        self.supplementary_data_directory = os.path.join(self.project_directory, self.args.supplementary_data_folder_name, self.name)
         self.input_data, self.output_data = map(np.array, self.get_data())
-        self.inputs = tuple((tf.keras.Input(shape=x.shape[1:], batch_size=self.args.batch_size) for x in self.input_data))
+        self.inputs = tuple((tf.keras.Input(shape=self.get_recursive_shape(x)[1:], batch_size=self.args.batch_size) for x in self.input_data))
         self.random_integer = np.random.randint(2 ** 30)
         np.random.default_rng(self.random_integer).shuffle(self.input_data, 1)
         np.random.default_rng(self.random_integer).shuffle(self.output_data, 1)
@@ -26,21 +26,20 @@ class Benchmark(ABC):
         self.test_samples = int(self.data_samples * self.args.test_data_percentage)
         self.validation_samples = int(self.data_samples * self.args.validation_data_percentage)
         self.training_samples = self.data_samples - self.test_samples - self.validation_samples
-        self.test_input_data = self.reduce_to_batch_size_multiple(self.input_data[:, :self.test_samples])
-        self.validation_input_data = self.reduce_to_batch_size_multiple(self.input_data[:, self.test_samples:-self.training_samples])
-        self.training_input_data = self.reduce_to_batch_size_multiple(self.input_data[:, -self.training_samples:])
-        self.test_output_data = self.reduce_to_batch_size_multiple(self.output_data[:, :self.test_samples])
-        self.validation_output_data = self.reduce_to_batch_size_multiple(self.output_data[:, self.test_samples:-self.training_samples])
-        self.training_output_data = self.reduce_to_batch_size_multiple(self.output_data[:, -self.training_samples:])
+        self.test_input_data = self.postprocess_data(self.input_data[:, :self.test_samples])
+        self.validation_input_data = self.postprocess_data(self.input_data[:, self.test_samples:-self.training_samples])
+        self.training_input_data = self.postprocess_data(self.input_data[:, -self.training_samples:])
+        self.test_output_data = self.postprocess_data(self.output_data[:, :self.test_samples])
+        self.validation_output_data = self.postprocess_data(self.output_data[:, self.test_samples:-self.training_samples])
+        self.training_output_data = self.postprocess_data(self.output_data[:, -self.training_samples:])
         self.models = {}
 
-    def reduce_to_batch_size_multiple(self, data):
+    def postprocess_data(self, data):
         data_samples = data.shape[1]
         elements_to_remove = data_samples % self.args.batch_size
-        if elements_to_remove == 0:
-            return data
-        else:
-            return data[:, :-elements_to_remove]
+        if elements_to_remove != 0:
+            data = data[:, :-elements_to_remove]
+        return tuple((np.array(x) for x in data))
 
     def add_model_output(self, name, model_output, iterative_model):
         self.models[name] = (model_output, iterative_model)
@@ -69,11 +68,11 @@ class Benchmark(ABC):
         model.summary()
         if not self.args.skip_training:
             model.fit(
-                x=tuple((x for x in self.training_input_data)),
-                y=tuple((x for x in self.training_output_data)),
+                x=self.training_input_data,
+                y=self.training_output_data,
                 batch_size=self.args.batch_size,
                 epochs=self.args.epochs,
-                validation_data=(tuple((x for x in self.validation_input_data)), tuple((x for x in self.validation_output_data))),
+                validation_data=(self.validation_input_data, self.validation_output_data),
                 callbacks=(tf.keras.callbacks.ModelCheckpoint(model_save_location, save_best_only=True),
                            tf.keras.callbacks.EarlyStopping(patience=self.args.no_improvement_abort_patience),
                            tf.keras.callbacks.TerminateOnNaN(),
@@ -81,10 +80,17 @@ class Benchmark(ABC):
                            tf.keras.callbacks.TensorBoard(log_dir=model_tensorboard_location, histogram_freq=1))
             )
         model.evaluate(
-            x=tuple((x for x in self.test_input_data)),
-            y=tuple((x for x in self.test_output_data)),
+            x=self.test_input_data,
+            y=self.test_output_data,
             batch_size=self.args.batch_size,
             callbacks=(tf.keras.callbacks.TensorBoard(log_dir=model_tensorboard_location, histogram_freq=1)))
+
+    @staticmethod
+    def get_recursive_shape(x):
+        if isinstance(x, Iterable) and isinstance(x, Sized):
+            return (len(x),) + Benchmark.get_recursive_shape(x[0])
+        else:
+            return ()
 
     @staticmethod
     def get_args(parser_configs):
@@ -100,6 +106,9 @@ class Benchmark(ABC):
         parser.add_argument('--test_data_percentage', default=0.1, type=float)
         parser.add_argument('--no_improvement_lr_patience', default=2, type=int)
         parser.add_argument('--no_improvement_abort_patience', default=4, type=int)
+        parser.add_argument('--saved_model_folder_name', default='saved_models', type=str)
+        parser.add_argument('--tensorboard_folder_name', default='tensorboard', type=str)
+        parser.add_argument('--supplementary_data_folder_name', default='supplementary_data', type=str)
         for parser_config in parser_configs:
             argument_name, default, cls = parser_config
             parser.add_argument(argument_name, default=default, type=cls)

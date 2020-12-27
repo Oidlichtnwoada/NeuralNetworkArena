@@ -70,7 +70,7 @@ class MemoryLayerAttention(tf.keras.layers.Layer):
         self.dim = dim
         self.heads = heads
         # create a memory layer out of heads times dim memory cells and an output size of dim
-        self.memory_layer = tf.keras.layers.RNN(MemoryLayerCell(2 * self.heads * self.dim, self.dim))
+        self.memory_layer = tf.keras.layers.RNN(MemoryLayerCell(memory_rows=self.heads, memory_columns=self.dim, output_size=self.dim))
 
     def call(self, inputs, **kwargs):
         # split inputs tuple to the arguments

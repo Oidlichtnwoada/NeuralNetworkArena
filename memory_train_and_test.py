@@ -49,5 +49,4 @@ class MemoryBenchmark(Benchmark):
         return np.stack((input_sequence, time_sequence)), np.stack((output_sequence,))
 
 
-# build the problem loader using the arguments
 MemoryBenchmark()
