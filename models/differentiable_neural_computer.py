@@ -407,6 +407,7 @@ class Memory:
         )
 
 
+@tf.keras.utils.register_keras_serializable()
 class DNC(tf.keras.layers.AbstractRNNCell):
     """DNC recurrent module that connects together the controller and memory.
 

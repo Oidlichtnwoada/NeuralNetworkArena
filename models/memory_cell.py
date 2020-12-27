@@ -3,6 +3,7 @@ import numpy as np
 import tensorflow as tf
 
 
+@tf.keras.utils.register_keras_serializable()
 class MemoryCell(tf.keras.layers.AbstractRNNCell):
     def __init__(self, discretization_steps=2):
         super().__init__()

@@ -3,10 +3,11 @@ import tensorflow as tf
 from models.transformer import positional_encoding, feed_forward_network
 
 
+@tf.keras.utils.register_keras_serializable()
 class MemoryLayerCell(tf.keras.layers.AbstractRNNCell):
     def __init__(self, memory_rows=32, memory_columns=8, output_size=1,
-                 embedding_size=32, heads=4, feed_forward_size=128):
-        super().__init__()
+                 embedding_size=32, heads=4, feed_forward_size=128, **kwargs):
+        super().__init__(**kwargs)
         self.memory_rows = memory_rows
         self.memory_columns = memory_columns
         self.output_size_value = output_size

@@ -88,6 +88,7 @@ def generate_index_fft(s):
     return ind_exe, ind_param
 
 
+@tf.keras.utils.register_keras_serializable()
 class EUNNCell(tf.keras.layers.AbstractRNNCell):
     """Efficient Unitary Network Cell
     The implementation is based on:
@@ -99,7 +100,7 @@ class EUNNCell(tf.keras.layers.AbstractRNNCell):
                  capacity=2,
                  fft=False,
                  cplex=True,
-                 activation=modrelu):
+                 **kwargs):
         """Initializes the EUNN  cell.
         Args:
           num_units: int, The number of units in the LSTM cell.
@@ -110,9 +111,9 @@ class EUNNCell(tf.keras.layers.AbstractRNNCell):
           cplex: bool, default true, whether to use cplex number.
         """
 
-        super(EUNNCell, self).__init__()
+        super().__init__(**kwargs)
         self._num_units = num_units
-        self._activation = activation
+        self._activation = modrelu
         self._capacity = capacity
         self._fft = fft
         self._cplex = cplex
@@ -270,7 +271,6 @@ class EUNNCell(tf.keras.layers.AbstractRNNCell):
             'num_units': self._num_units,
             'capacity': self._capacity,
             'fft': self._fft,
-            'cplex': self._cplex,
-            'activation': self._activation
+            'cplex': self._cplex
         })
         return config

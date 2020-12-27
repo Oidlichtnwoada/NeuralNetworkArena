@@ -72,6 +72,7 @@ class Benchmark(ABC):
 
     def postprocess_data(self, data):
         data_samples = data.shape[1]
+        assert data_samples >= self.args.batch_size
         elements_to_remove = data_samples % self.args.batch_size
         if elements_to_remove != 0:
             data = data[:, :-elements_to_remove]
@@ -139,7 +140,7 @@ class Benchmark(ABC):
         parser = ArgumentParser()
         parser.add_argument('--model', default=list(self.models)[0], type=str)
         parser.add_argument('--epochs', default=256, type=int)
-        parser.add_argument('--batch_size', default=256, type=int)
+        parser.add_argument('--batch_size', default=32, type=int)
         parser.add_argument('--optimizer_name', default='adam', type=str)
         parser.add_argument('--learning_rate', default=0.001, type=float)
         parser.add_argument('--use_saved_model', default=False, type=bool)

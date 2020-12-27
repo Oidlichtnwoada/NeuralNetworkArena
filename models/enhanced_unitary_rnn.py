@@ -9,9 +9,10 @@ def modrelu(x, bias):
     return tf.cast(tf.keras.activations.relu(tf.math.abs(x) + bias), tf.complex64) * (x / tf.cast(tf.math.abs(x), tf.complex64))
 
 
+@tf.keras.utils.register_keras_serializable()
 class EnhancedUnitaryRNN(tf.keras.layers.AbstractRNNCell):
-    def __init__(self, state_size, output_size):
-        super().__init__()
+    def __init__(self, state_size, output_size, **kwargs):
+        super().__init__(**kwargs)
         self.state_size_value = state_size
         self.output_size_value = output_size
         self.real_state_matrix = self.add_weight('real_state_matrix', (self.state_size, self.state_size), tf.float32, tf.keras.initializers.Identity())
