@@ -113,7 +113,7 @@ class Benchmark(ABC):
                            tf.keras.callbacks.EarlyStopping(patience=self.args.no_improvement_abort_patience),
                            tf.keras.callbacks.TerminateOnNaN(),
                            tf.keras.callbacks.ReduceLROnPlateau(patience=self.args.no_improvement_lr_patience),
-                           tf.keras.callbacks.TensorBoard(log_dir=model_tensorboard_location, histogram_freq=1)))
+                           tf.keras.callbacks.TensorBoard(log_dir=model_tensorboard_location)))
         model.evaluate(
             x=self.test_input_data,
             y=self.test_output_data,
