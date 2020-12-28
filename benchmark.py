@@ -1,4 +1,5 @@
 import os
+import shutil
 from abc import ABC, abstractmethod
 from argparse import ArgumentParser
 from collections.abc import Sized, Iterable
@@ -79,6 +80,7 @@ class Benchmark(ABC):
         return tuple((self.get_numpy_array(x) for x in data))
 
     def check_directories(self):
+        shutil.rmtree(os.path.join(self.tensorboard_directory, self.args.model), ignore_errors=True)
         for model_name in self.models:
             os.makedirs(os.path.join(self.saved_model_directory, model_name), exist_ok=True)
             os.makedirs(os.path.join(self.tensorboard_directory, model_name), exist_ok=True)
@@ -116,7 +118,7 @@ class Benchmark(ABC):
             x=self.test_input_data,
             y=self.test_output_data,
             batch_size=self.args.batch_size,
-            callbacks=(tf.keras.callbacks.TensorBoard(log_dir=model_tensorboard_location, histogram_freq=1)))
+            callbacks=(tf.keras.callbacks.TensorBoard(log_dir=model_tensorboard_location)))
 
     @staticmethod
     def get_numpy_array(array):
