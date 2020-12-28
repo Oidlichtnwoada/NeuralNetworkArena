@@ -15,11 +15,11 @@ def recurrent_dot_product_attention(queries, keys, values, d_qkv, recurrent_netw
     attention_weights = tf.nn.softmax(scaled_attention_logits)
     # duplicate all value vectors for each input and weight them accordingly
     weighted_value_vectors = tf.expand_dims(attention_weights, axis=-1) * tf.repeat(tf.expand_dims(values, axis=2), values.shape[2], axis=2)
+    shape = (-1, weighted_value_vectors.shape[3], weighted_value_vectors.shape[4])
     # this variable holds the concatenated rnn output at end
     concatenated_rnn_output = tf.ones_like(values)[:, :0, :, :]
     for head_index, layer in enumerate(recurrent_network_layers):
         # aggregate all weighted value vectors for each input via an rnn for each head instead of a simple summation
-        shape = (-1,) + (weighted_value_vectors.shape[2],) + (weighted_value_vectors.shape[4],)
         rnn_input = tf.reshape(weighted_value_vectors[:, head_index, :, :, :], shape)
         rnn_output = tf.reshape(recurrent_network_layers[head_index](rnn_input), shape)
         # concatenate the real part of the output for this head to the running variable
