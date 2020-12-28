@@ -18,12 +18,12 @@ class Benchmark(ABC):
         self.tensorboard_directory = os.path.join(self.project_directory, self.args.tensorboard_folder_name, self.name)
         self.supplementary_data_directory = os.path.join(self.project_directory, self.args.supplementary_data_folder_name, self.name)
         self.input_data, self.output_data = tuple((np.array(x) for x in self.get_data()))
-        self.data_samples = self.input_data.shape[1]
-        assert self.data_samples == self.output_data.shape[1]
         self.random_integer = np.random.randint(2 ** 30)
         np.random.default_rng(self.random_integer).shuffle(self.input_data, 1)
         np.random.default_rng(self.random_integer).shuffle(self.output_data, 1)
         self.preprocess_data()
+        self.data_samples = self.input_data.shape[1]
+        assert self.data_samples == self.output_data.shape[1]
         self.inputs = tuple((tf.keras.Input(shape=self.get_recursive_shape(x)[1:], batch_size=self.args.batch_size) for x in self.input_data))
         self.test_samples = int(self.data_samples * self.args.test_data_percentage)
         self.validation_samples = int(self.data_samples * self.args.validation_data_percentage)
@@ -39,7 +39,7 @@ class Benchmark(ABC):
     def preprocess_data(self):
         if self.iterative_data and not self.models[self.args.model]:
             sequence_length = self.input_data.shape[2]
-            samples = self.data_samples // self.args.shrink_divisor
+            samples = self.input_data.shape[1] // self.args.shrink_divisor
             input_shapes = tuple((list(self.get_recursive_shape(x)) for x in self.input_data))
             output_shapes = tuple((list(self.get_recursive_shape(x[:, 0])) for x in self.output_data))
             for shape in input_shapes + output_shapes:
@@ -111,8 +111,7 @@ class Benchmark(ABC):
                            tf.keras.callbacks.EarlyStopping(patience=self.args.no_improvement_abort_patience),
                            tf.keras.callbacks.TerminateOnNaN(),
                            tf.keras.callbacks.ReduceLROnPlateau(patience=self.args.no_improvement_lr_patience),
-                           tf.keras.callbacks.TensorBoard(log_dir=model_tensorboard_location, histogram_freq=1))
-            )
+                           tf.keras.callbacks.TensorBoard(log_dir=model_tensorboard_location, histogram_freq=1)))
         model.evaluate(
             x=self.test_input_data,
             y=self.test_output_data,
