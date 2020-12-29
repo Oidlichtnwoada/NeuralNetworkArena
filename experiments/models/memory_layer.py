@@ -1,6 +1,6 @@
 import tensorflow as tf
 
-from src.models.transformer import positional_encoding, feed_forward_network
+from experiments.models.transformer import positional_encoding, feed_forward_network
 
 
 @tf.keras.utils.register_keras_serializable()

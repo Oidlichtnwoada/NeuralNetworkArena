@@ -1,6 +1,6 @@
 import tensorflow as tf
 
-from src.models.transformer import split_heads
+from experiments.models.transformer import split_heads
 
 
 def recurrent_dot_product_attention(queries, keys, values, d_qkv, recurrent_network_layers, mask):

@@ -7,7 +7,7 @@ from collections.abc import Sized, Iterable
 import numpy as np
 import tensorflow as tf
 
-from src.models.model_factory import get_model_output_by_name, get_model_descriptions
+from experiments.models.model_factory import get_model_output_by_name, get_model_descriptions
 
 
 class Benchmark(ABC):
