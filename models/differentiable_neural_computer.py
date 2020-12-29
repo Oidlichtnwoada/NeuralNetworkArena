@@ -106,6 +106,8 @@ class TemporalLinkAddressing:
             Tensor [B, N, N]: temporal link matrix to use at next time step
         """
         batch_size = prev_link_matrix.shape[0]
+        if batch_size is None:
+            return prev_link_matrix
         words_num = prev_link_matrix.shape[1]
 
         write_weighting_i = tf.expand_dims(write_weighting, 2)  # [b x N x 1 ] duplicate columns
@@ -188,6 +190,8 @@ class AllocationAddressing:
         """Permute each batch in a batch first tensor according to tensor
         of indices.
         """
+        if indices.shape[0] is None:
+            return tensor
         unpacked = tf.unstack(indices)
         indices_inverted = tf.stack(
             [tf.math.invert_permutation(permutation) for permutation in unpacked]
@@ -444,7 +448,7 @@ class DNC(tf.keras.layers.AbstractRNNCell):
 
     def __init__(self, output_size, controller_units=256, memory_size=256,
                  word_size=64, num_read_heads=4, **kwargs):
-        super().__init__(name='DNC', **kwargs)
+        super().__init__(**kwargs)
 
         self._output_size = output_size
         self._N = memory_size
@@ -543,17 +547,12 @@ class DNC(tf.keras.layers.AbstractRNNCell):
         return self._output_size
 
     def get_config(self):
-        config = {
-            'controller': {
-                'class_name': self._controller.__class__.__name__,
-                'config': self._controller.get_config()
-            },
-            'memory': {
-                'read_heads_num': self._R,
-                'word_size': self._W,
-                'words_num': self._N,
-            },
-            'clip': self._clip,
-            'output_size': self._output_size,
-        }
+        config = super().get_config().copy()
+        config.update({
+            'output_size': self.output_size,
+            'controller_units': self._controller.units,
+            'memory_size': self._N,
+            'word_size': self._W,
+            'num_read_heads': self._R
+        })
         return config
