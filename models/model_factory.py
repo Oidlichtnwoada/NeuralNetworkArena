@@ -9,6 +9,18 @@ from models.transformer import Transformer, MultiHeadAttention
 from models.unitary_rnn import EUNNCell
 
 
+def get_model_descriptions():
+    return {'memory_layer': True,
+            'lstm': True,
+            'differentiable_neural_computer': True,
+            'unitary_rnn': True,
+            'enhanced_unitary_rnn': True,
+            'transformer': False,
+            'memory_layer_transformer': False,
+            'recurrent_transformer': False,
+            'neural_circuit_policies': True}
+
+
 def get_differentiable_neural_computer_output(output_size, input_tensor):
     return tf.keras.layers.RNN(DNC(output_size, 100, 64, 16, 4), return_sequences=True)(input_tensor)
 

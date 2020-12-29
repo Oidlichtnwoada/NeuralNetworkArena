@@ -7,14 +7,14 @@ from collections.abc import Sized, Iterable
 import numpy as np
 import tensorflow as tf
 
-from models.model_factory import get_model_output_by_name
+from models.model_factory import get_model_output_by_name, get_model_descriptions
 
 
 class Benchmark(ABC):
-    def __init__(self, name, iterative_data, models, parser_configs):
+    def __init__(self, name, iterative_data, parser_configs):
         self.name = name
         self.iterative_data = iterative_data
-        self.models = models
+        self.models = get_model_descriptions()
         self.args = self.get_args(parser_configs)
         self.project_directory = os.getcwd()
         self.saved_model_directory = os.path.join(self.project_directory, self.args.saved_model_folder_name, self.name)

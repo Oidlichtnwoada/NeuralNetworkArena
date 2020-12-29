@@ -6,11 +6,6 @@ from benchmark import Benchmark
 class MemoryBenchmark(Benchmark):
     def __init__(self):
         super().__init__('memory', True,
-                         {'memory_layer': True,
-                          'lstm': True,
-                          'differentiable_neural_computer': True,
-                          'unitary_rnn': True,
-                          'enhanced_unitary_rnn': True},
                          (('--memory_length', 100, int),
                           ('--sequence_length', 10, int),
                           ('--category_amount', 10, int),

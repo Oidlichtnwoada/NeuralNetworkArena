@@ -8,10 +8,6 @@ from benchmark import Benchmark
 class WalkerBenchmark(Benchmark):
     def __init__(self):
         super().__init__('walker', True,
-                         {'transformer': False,
-                          'memory_layer_transformer': False,
-                          'recurrent_transformer': False,
-                          'neural_circuit_policies': True},
                          (('--skip_percentage', 0.1, float),
                           ('--sequence_length', 64, int),
                           ('--loss_name', 'MeanSquaredError', str),
