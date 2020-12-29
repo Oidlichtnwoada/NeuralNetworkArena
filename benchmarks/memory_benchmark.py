@@ -1,11 +1,7 @@
 import numpy as np
-import tensorflow as tf
 
+import models.model_factory
 from benchmark import Benchmark
-from models.differentiable_neural_computer import DNC
-from models.enhanced_unitary_rnn import EnhancedUnitaryRNN
-from models.memory_layer import MemoryLayerCell
-from models.unitary_rnn import EUNNCell
 
 
 class MemoryBenchmark(Benchmark):
@@ -41,17 +37,15 @@ class MemoryBenchmark(Benchmark):
 
     def get_model_output(self, model):
         if model == 'memory_layer':
-            return tf.keras.layers.RNN(MemoryLayerCell(output_size=self.args.category_amount), return_sequences=True)(self.inputs[0])
+            return models.model_factory.get_memory_layer_output(self.args.category_amount, self.inputs[0])
         elif model == 'lstm':
-            return tf.keras.layers.TimeDistributed(tf.keras.layers.Dense(self.args.category_amount))(
-                tf.keras.layers.LSTM(40, return_sequences=True)(self.inputs[0]))
+            return models.model_factory.get_lstm_output(self.args.category_amount, self.inputs[0])
         elif model == 'differentiable_neural_computer':
-            return tf.keras.layers.RNN(DNC(self.args.category_amount, 100, 64, 16, 4), return_sequences=True)(self.inputs[0])
+            return models.model_factory.get_differentiable_neural_computer_output(self.args.category_amount, self.inputs[0])
         elif model == 'unitary_rnn':
-            return tf.keras.layers.TimeDistributed(tf.keras.layers.Dense(self.args.category_amount))(
-                tf.math.real(tf.keras.layers.RNN(EUNNCell(128, 4), return_sequences=True)(self.inputs[0])))
+            return models.model_factory.get_unitary_rnn_output(self.args.category_amount, self.inputs[0])
         elif model == 'enhanced_unitary_rnn':
-            return tf.keras.layers.RNN(EnhancedUnitaryRNN(128, self.args.category_amount), return_sequences=True)(self.inputs[0])
+            return models.model_factory.get_enhanced_unitary_rnn_output(self.args.category_amount, self.inputs[0])
 
 
 MemoryBenchmark()

@@ -2,11 +2,8 @@ import os
 
 import numpy as np
 
+import models.model_factory
 from benchmark import Benchmark
-from models.memory_layer import MemoryLayerAttention
-from models.neural_circuit_policies import NeuralCircuitPolicies
-from models.recurrent_transformer import MultiHeadRecurrentAttention
-from models.transformer import Transformer, MultiHeadAttention
 
 
 class WalkerBenchmark(Benchmark):
@@ -51,18 +48,13 @@ class WalkerBenchmark(Benchmark):
 
     def get_model_output(self, model):
         if model == 'transformer':
-            return Transformer(token_amount=1, token_size=self.inputs[0].shape[2], d_model=64, num_heads=4, d_ff=128,
-                               num_layers=4, dropout_rate=0.1, attention=MultiHeadAttention)(self.inputs)
+            return models.model_factory.get_transformer_output(self.inputs[0].shape[2], self.inputs)
         elif model == 'memory_layer_transformer':
-            return Transformer(token_amount=1, token_size=self.inputs[0].shape[2], d_model=16, num_heads=2, d_ff=32,
-                               num_layers=2, dropout_rate=0.1, attention=MemoryLayerAttention)(self.inputs)
+            return models.model_factory.get_memory_layer_transformer_output(self.inputs[0].shape[2], self.inputs)
         elif model == 'recurrent_transformer':
-            return Transformer(token_amount=1, token_size=self.inputs[0].shape[2], d_model=32, num_heads=4, d_ff=64,
-                               num_layers=1, dropout_rate=0.1, attention=MultiHeadRecurrentAttention)(self.inputs)
+            return models.model_factory.get_recurrent_transformer_output(self.inputs[0].shape[2], self.inputs)
         elif model == 'neural_circuit_policies':
-            return NeuralCircuitPolicies(
-                output_length=self.inputs[0].shape[2], inter_neurons=32, command_neurons=16, motor_neurons=self.inputs[0].shape[2],
-                sensory_fanout=4, inter_fanout=4, recurrent_command_synapses=8, motor_fanin=6)(self.inputs)
+            return models.model_factory.get_neural_circuit_policies_output(self.inputs[0].shape[2], self.inputs)
 
 
 WalkerBenchmark()
