@@ -1,12 +1,12 @@
 import tensorflow as tf
 
-from models.differentiable_neural_computer import DNC
-from models.enhanced_unitary_rnn import EnhancedUnitaryRNN
-from models.memory_layer import MemoryLayerCell, MemoryLayerAttention
-from models.neural_circuit_policies import NeuralCircuitPolicies
-from models.recurrent_transformer import MultiHeadRecurrentAttention
-from models.transformer import Transformer, MultiHeadAttention
-from models.unitary_rnn import EUNNCell
+from src.models.differentiable_neural_computer import DNC
+from src.models.enhanced_unitary_rnn import EnhancedUnitaryRNN
+from src.models.memory_layer import MemoryLayerCell, MemoryLayerAttention
+from src.models.neural_circuit_policies import NeuralCircuitPolicies
+from src.models.recurrent_transformer import MultiHeadRecurrentAttention
+from src.models.transformer import Transformer, MultiHeadAttention
+from src.models.unitary_rnn import EUNNCell
 
 
 def get_model_descriptions():
