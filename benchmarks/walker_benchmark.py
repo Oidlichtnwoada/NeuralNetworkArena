@@ -2,7 +2,6 @@ import os
 
 import numpy as np
 
-import models.model_factory
 from benchmark import Benchmark
 
 
@@ -44,17 +43,7 @@ class WalkerBenchmark(Benchmark):
                                   time_dataset[start_index: end_index],
                                   output_dataset[start_index: end_index]])
         reshaped_sequences = np.swapaxes(sequences, 0, 1)
-        return reshaped_sequences[:2], reshaped_sequences[2:]
-
-    def get_model_output(self, model):
-        if model == 'transformer':
-            return models.model_factory.get_transformer_output(self.inputs[0].shape[2], self.inputs)
-        elif model == 'memory_layer_transformer':
-            return models.model_factory.get_memory_layer_transformer_output(self.inputs[0].shape[2], self.inputs)
-        elif model == 'recurrent_transformer':
-            return models.model_factory.get_recurrent_transformer_output(self.inputs[0].shape[2], self.inputs)
-        elif model == 'neural_circuit_policies':
-            return models.model_factory.get_neural_circuit_policies_output(self.inputs[0].shape[2], self.inputs)
+        return reshaped_sequences[:2], reshaped_sequences[2:], (len(reshaped_sequences[0][0][0]), slice(None))
 
 
 WalkerBenchmark()

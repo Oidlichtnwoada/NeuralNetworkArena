@@ -50,3 +50,7 @@ def get_neural_circuit_policies_output(output_size, input_tensor):
 
 def get_memory_layer_output(output_size, input_tensor):
     return tf.keras.layers.RNN(MemoryLayerCell(output_size=output_size), return_sequences=True)(input_tensor)
+
+
+def get_model_output_by_name(model_name, output_size, input_tensor):
+    return eval(f'get_{model_name}_output')(output_size, input_tensor if len(input_tensor) > 1 else input_tensor[0])

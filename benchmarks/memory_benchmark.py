@@ -1,6 +1,5 @@
 import numpy as np
 
-import models.model_factory
 from benchmark import Benchmark
 
 
@@ -33,19 +32,7 @@ class MemoryBenchmark(Benchmark):
         time_sequence = np.ones_like(input_sequence)
         third_blank_sequence = (category_amount - 2) * np.ones((sample_amount, memory_length + sequence_length, 1))
         output_sequence = np.concatenate((third_blank_sequence, memory_sequence), 1)
-        return np.stack((input_sequence, time_sequence)), np.stack((output_sequence,))
-
-    def get_model_output(self, model):
-        if model == 'memory_layer':
-            return models.model_factory.get_memory_layer_output(self.args.category_amount, self.inputs[0])
-        elif model == 'lstm':
-            return models.model_factory.get_lstm_output(self.args.category_amount, self.inputs[0])
-        elif model == 'differentiable_neural_computer':
-            return models.model_factory.get_differentiable_neural_computer_output(self.args.category_amount, self.inputs[0])
-        elif model == 'unitary_rnn':
-            return models.model_factory.get_unitary_rnn_output(self.args.category_amount, self.inputs[0])
-        elif model == 'enhanced_unitary_rnn':
-            return models.model_factory.get_enhanced_unitary_rnn_output(self.args.category_amount, self.inputs[0])
+        return np.stack((input_sequence, time_sequence)), np.stack((output_sequence,)), (self.args.category_amount, slice(1))
 
 
 MemoryBenchmark()

@@ -7,6 +7,8 @@ from collections.abc import Sized, Iterable
 import numpy as np
 import tensorflow as tf
 
+from models.model_factory import get_model_output_by_name
+
 
 class Benchmark(ABC):
     def __init__(self, name, iterative_data, models, parser_configs):
@@ -18,7 +20,8 @@ class Benchmark(ABC):
         self.saved_model_directory = os.path.join(self.project_directory, self.args.saved_model_folder_name, self.name)
         self.tensorboard_directory = os.path.join(self.project_directory, self.args.tensorboard_folder_name, self.name)
         self.supplementary_data_directory = os.path.join(self.project_directory, self.args.supplementary_data_folder_name, self.name)
-        self.input_data, self.output_data = tuple((np.array(x) for x in self.get_data()))
+        self.input_data, self.output_data, self.model_output_params = self.get_data()
+        self.input_data, self.output_data = np.array(self.input_data), np.array(self.output_data)
         self.random_integer = np.random.randint(2 ** 30)
         np.random.default_rng(self.random_integer).shuffle(self.input_data, 1)
         np.random.default_rng(self.random_integer).shuffle(self.output_data, 1)
@@ -94,7 +97,8 @@ class Benchmark(ABC):
         if self.args.use_saved_model:
             model = tf.keras.models.load_model(model_save_location)
         else:
-            model = tf.keras.Model(inputs=self.inputs, outputs=self.get_model_output(self.args.model))
+            model = tf.keras.Model(inputs=self.inputs,
+                                   outputs=get_model_output_by_name(self.args.model, self.model_output_params[0], self.inputs[self.model_output_params[1]]))
             optimizer = tf.keras.optimizers.get({'class_name': self.args.optimizer_name,
                                                  'config': {'learning_rate': self.args.learning_rate}})
             loss = tf.keras.losses.get({'class_name': self.args.loss_name,
@@ -162,8 +166,4 @@ class Benchmark(ABC):
 
     @abstractmethod
     def get_data(self):
-        raise NotImplementedError
-
-    @abstractmethod
-    def get_model_output(self, model):
         raise NotImplementedError
