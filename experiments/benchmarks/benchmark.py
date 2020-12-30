@@ -5,6 +5,7 @@ import os
 import shutil
 
 import numpy as np
+import pandas as pd
 import tensorflow as tf
 
 import experiments.models.model_factory
@@ -20,6 +21,8 @@ class Benchmark(abc.ABC):
         self.saved_model_directory = os.path.join(self.project_directory, self.args.saved_model_folder_name, self.name)
         self.tensorboard_directory = os.path.join(self.project_directory, self.args.tensorboard_folder_name, self.name)
         self.supplementary_data_directory = os.path.join(self.project_directory, self.args.supplementary_data_folder_name, self.name)
+        self.result_directory = os.path.join(self.project_directory, self.args.result_folder_name, self.name)
+        self.visualization_directory = os.path.join(self.project_directory, self.args.visualization_folder_name, self.name)
         self.input_data, self.output_data, self.model_output_params = self.get_data()
         self.input_data, self.output_data = np.array(self.input_data), np.array(self.output_data)
         self.random_integer = np.random.randint(2 ** 30)
@@ -38,6 +41,7 @@ class Benchmark(abc.ABC):
         self.test_output_data = self.postprocess_data(self.output_data[:, :self.test_samples])
         self.validation_output_data = self.postprocess_data(self.output_data[:, self.test_samples:-self.training_samples])
         self.training_output_data = self.postprocess_data(self.output_data[:, -self.training_samples:])
+        self.fit_result, self.evaluate_result = None, None
         self.train_and_test()
 
     def preprocess_data(self):
@@ -84,9 +88,13 @@ class Benchmark(abc.ABC):
 
     def check_directories(self):
         shutil.rmtree(os.path.join(self.tensorboard_directory, self.args.model), ignore_errors=True)
+        shutil.rmtree(os.path.join(self.result_directory, self.args.model), ignore_errors=True)
+        shutil.rmtree(os.path.join(self.visualization_directory, self.args.model), ignore_errors=True)
         for model_name in self.models:
             os.makedirs(os.path.join(self.saved_model_directory, model_name), exist_ok=True)
             os.makedirs(os.path.join(self.tensorboard_directory, model_name), exist_ok=True)
+            os.makedirs(os.path.join(self.result_directory, model_name), exist_ok=True)
+            os.makedirs(os.path.join(self.visualization_directory, model_name), exist_ok=True)
 
     def train_and_test(self):
         self.check_directories()
@@ -107,7 +115,7 @@ class Benchmark(abc.ABC):
             model.compile(optimizer=optimizer, loss=loss, metrics=metric, run_eagerly=self.args.debug)
         model.summary()
         if not self.args.skip_training:
-            model.fit(
+            self.fit_result = model.fit(
                 x=self.training_input_data,
                 y=self.training_output_data,
                 batch_size=self.args.batch_size,
@@ -118,11 +126,26 @@ class Benchmark(abc.ABC):
                            tf.keras.callbacks.TerminateOnNaN(),
                            tf.keras.callbacks.ReduceLROnPlateau(patience=self.args.no_improvement_lr_patience),
                            tf.keras.callbacks.TensorBoard(log_dir=model_tensorboard_location)))
-        model.evaluate(
+        self.evaluate_result = model.evaluate(
             x=self.test_input_data,
             y=self.test_output_data,
             batch_size=self.args.batch_size,
-            callbacks=(tf.keras.callbacks.TensorBoard(log_dir=model_tensorboard_location)))
+            callbacks=(tf.keras.callbacks.TensorBoard(log_dir=model_tensorboard_location)),
+            return_dict=True)
+        if not self.args.skip_training:
+            self.create_visualizations()
+
+    def create_visualizations(self):
+        for name, result_dict in (('training', self.fit_result.history), ('testing', self.evaluate_result)):
+            results = list(result_dict.items())
+            header = [x[0] for x in results]
+            data = np.array([x[1] for x in results])
+            if len(data.shape) > 1:
+                data = data.T
+            else:
+                data = np.expand_dims(data, 0)
+            table = pd.DataFrame(data=data, columns=header)
+            table.to_csv(os.path.join(self.result_directory, self.args.model, name))
 
     @staticmethod
     def get_numpy_array(array):
@@ -144,7 +167,7 @@ class Benchmark(abc.ABC):
     def get_args(self, parser_configs):
         parser = argparse.ArgumentParser()
         parser.add_argument('--model', default=list(self.models)[0], type=str)
-        parser.add_argument('--epochs', default=256, type=int)
+        parser.add_argument('--epochs', default=2, type=int)
         parser.add_argument('--batch_size', default=32, type=int)
         parser.add_argument('--optimizer_name', default='adam', type=str)
         parser.add_argument('--learning_rate', default=0.001, type=float)
@@ -158,6 +181,8 @@ class Benchmark(abc.ABC):
         parser.add_argument('--saved_model_folder_name', default='saved_models', type=str)
         parser.add_argument('--tensorboard_folder_name', default='tensorboard', type=str)
         parser.add_argument('--supplementary_data_folder_name', default='supplementary_data', type=str)
+        parser.add_argument('--result_folder_name', default='results', type=str)
+        parser.add_argument('--visualization_folder_name', default='visualizations', type=str)
         parser.add_argument('--shrink_divisor', default=8, type=int)
         for parser_config in parser_configs:
             argument_name, default, cls = parser_config
