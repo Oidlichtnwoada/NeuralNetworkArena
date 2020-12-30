@@ -135,7 +135,7 @@ class Benchmark(abc.ABC):
             return_dict=True)
         if not self.args.skip_training:
             self.create_visualization()
-        self.accumulate_data()
+            self.accumulate_data()
 
     def create_visualization(self):
         fit_results = list(self.fit_result.history.items())
