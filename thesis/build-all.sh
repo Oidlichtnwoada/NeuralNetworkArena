@@ -17,7 +17,7 @@ pdflatex $CLASS.ins
 
 # Build the vutinfth example document
 pdflatex $SOURCE
-bibtex   $SOURCE
+bibtex $SOURCE
 pdflatex $SOURCE
 pdflatex $SOURCE
 makeindex -t $SOURCE.glg -s $SOURCE.ist -o $SOURCE.gls $SOURCE.glo

@@ -1,9 +1,9 @@
 import numpy as np
 
-from benchmark import Benchmark
+import experiments.benchmarks.benchmark
 
 
-class MemoryBenchmark(Benchmark):
+class MemoryBenchmark(experiments.benchmarks.benchmark.Benchmark):
     def __init__(self):
         super().__init__('memory', True,
                          (('--memory_length', 100, int),

@@ -1,20 +1,20 @@
+import abc
+import argparse
+import collections.abc
 import os
 import shutil
-from abc import ABC, abstractmethod
-from argparse import ArgumentParser
-from collections.abc import Sized, Iterable
 
 import numpy as np
 import tensorflow as tf
 
-from experiments.models.model_factory import get_model_output_by_name, get_model_descriptions
+import experiments.models.model_factory
 
 
-class Benchmark(ABC):
+class Benchmark(abc.ABC):
     def __init__(self, name, iterative_data, parser_configs):
         self.name = name
         self.iterative_data = iterative_data
-        self.models = get_model_descriptions()
+        self.models = experiments.models.model_factory.get_model_descriptions()
         self.args = self.get_args(parser_configs)
         self.project_directory = os.getcwd()
         self.saved_model_directory = os.path.join(self.project_directory, self.args.saved_model_folder_name, self.name)
@@ -98,7 +98,7 @@ class Benchmark(ABC):
             model = tf.keras.models.load_model(model_save_location)
         else:
             model = tf.keras.Model(inputs=self.inputs,
-                                   outputs=get_model_output_by_name(self.args.model, self.model_output_params[0], self.inputs[self.model_output_params[1]]))
+                                   outputs=experiments.models.model_factory.get_model_output_by_name(self.args.model, self.model_output_params[0], self.inputs[self.model_output_params[1]]))
             optimizer = tf.keras.optimizers.get({'class_name': self.args.optimizer_name,
                                                  'config': {'learning_rate': self.args.learning_rate}})
             loss = tf.keras.losses.get({'class_name': self.args.loss_name,
@@ -136,13 +136,13 @@ class Benchmark(ABC):
 
     @staticmethod
     def get_recursive_shape(array):
-        if isinstance(array, Iterable) and isinstance(array, Sized):
+        if isinstance(array, collections.abc.Iterable) and isinstance(array, collections.abc.Sized):
             return (len(array),) + Benchmark.get_recursive_shape(array[0])
         else:
             return ()
 
     def get_args(self, parser_configs):
-        parser = ArgumentParser()
+        parser = argparse.ArgumentParser()
         parser.add_argument('--model', default=list(self.models)[0], type=str)
         parser.add_argument('--epochs', default=256, type=int)
         parser.add_argument('--batch_size', default=32, type=int)
@@ -164,6 +164,6 @@ class Benchmark(ABC):
             parser.add_argument(argument_name, default=default, type=cls)
         return parser.parse_args()
 
-    @abstractmethod
+    @abc.abstractmethod
     def get_data(self):
         raise NotImplementedError

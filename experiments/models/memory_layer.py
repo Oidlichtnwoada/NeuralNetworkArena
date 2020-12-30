@@ -1,6 +1,6 @@
 import tensorflow as tf
 
-from experiments.models.transformer import positional_encoding, feed_forward_network
+import experiments.models.transformer
 
 
 @tf.keras.utils.register_keras_serializable()
@@ -19,10 +19,10 @@ class MemoryLayerCell(tf.keras.layers.AbstractRNNCell):
         self.heads = heads
         self.attention = tf.keras.layers.MultiHeadAttention(self.heads, self.embedding_size)
         self.feed_forward_size = feed_forward_size
-        self.feed_forward_layer = feed_forward_network(self.embedding_size, self.feed_forward_size)
+        self.feed_forward_layer = experiments.models.transformer.feed_forward_network(self.embedding_size, self.feed_forward_size)
         self.layer_normalization = tf.keras.layers.LayerNormalization(epsilon=1E-6)
         self.state_size_value = ((self.memory_rows, self.memory_columns),)
-        self.positional_encoding = positional_encoding(tf.range(1 + self.memory_rows)[tf.newaxis, ..., tf.newaxis], self.embedding_size)
+        self.positional_encoding = experiments.models.transformer.positional_encoding(tf.range(1 + self.memory_rows)[tf.newaxis, ..., tf.newaxis], self.embedding_size)
 
     @property
     def state_size(self):

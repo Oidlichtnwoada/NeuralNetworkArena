@@ -2,10 +2,10 @@ import os
 
 import numpy as np
 
-from benchmark import Benchmark
+import experiments.benchmarks.benchmark
 
 
-class WalkerBenchmark(Benchmark):
+class WalkerBenchmark(experiments.benchmarks.benchmark.Benchmark):
     def __init__(self):
         super().__init__('walker', True,
                          (('--skip_percentage', 0.1, float),

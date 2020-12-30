@@ -13,11 +13,9 @@ Conventions:
     W - size of each memory slot i.e word size
 """
 
-from collections import OrderedDict
-from collections import namedtuple
+import collections
 
 import tensorflow as tf
-from tensorflow.python.util import nest
 
 # -*- coding: utf-8 -*-
 """DNC memory operations and state.
@@ -241,7 +239,7 @@ class Memory:
         read_heads_num (int): number of read heads to use inside memory
     """
 
-    state = namedtuple(
+    state = collections.namedtuple(
         "memory_state", [
             'memory_matrix',
             'usage_vector',
@@ -427,13 +425,13 @@ class DNC(tf.keras.layers.AbstractRNNCell):
         num_read_heads (int): number of memory read heads
     """
 
-    state = namedtuple("dnc_state", [
+    state = collections.namedtuple("dnc_state", [
         "memory_state",
         "controller_state",
         "read_vectors",
     ])
 
-    interface = namedtuple("interface", [
+    interface = collections.namedtuple("interface", [
         "read_keys",
         "read_strengths",
         "write_key",
@@ -469,7 +467,7 @@ class DNC(tf.keras.layers.AbstractRNNCell):
         r, w = self._R, self._W
 
         sizes = [r * w, r, w, 1, w, w, r, 1, 1, 3 * r]
-        fns = OrderedDict([
+        fns = collections.OrderedDict([
             ("read_keys", lambda v: tf.reshape(v, (-1, w, r))),
             ("read_strengths", lambda v: 1 + tf.nn.softplus((tf.reshape(v, (-1, r))))),
             ("write_key", lambda v: tf.reshape(v, (-1, w, 1))),
@@ -491,7 +489,7 @@ class DNC(tf.keras.layers.AbstractRNNCell):
         return tf.reshape(x, (-1, self._W * self._R))
 
     def call(self, inputs, prev_dnc_state):
-        prev_dnc_state = nest.pack_sequence_as(self.state_size_nested, prev_dnc_state)
+        prev_dnc_state = tf.nest.pack_sequence_as(self.state_size_nested, prev_dnc_state)
         with tf.name_scope("inputs_to_controller"):
             read_vectors_flat = self._flatten_read_vectors(prev_dnc_state.read_vectors)
             input_augmented = tf.concat([inputs, read_vectors_flat], 1)
@@ -519,7 +517,7 @@ class DNC(tf.keras.layers.AbstractRNNCell):
             final_output = self._final_output_dense(final_output)
             final_output = tf.clip_by_value(final_output, -self._clip, self._clip)
 
-        return final_output, nest.flatten(state)
+        return final_output, tf.nest.flatten(state)
 
     @property
     def state_size_nested(self):
@@ -531,7 +529,7 @@ class DNC(tf.keras.layers.AbstractRNNCell):
 
     @property
     def state_size(self):
-        return nest.flatten(self.state_size_nested)
+        return tf.nest.flatten(self.state_size_nested)
 
     def get_initial_state(self, inputs=None, batch_size=None, dtype=tf.float32):
         del inputs
@@ -540,7 +538,7 @@ class DNC(tf.keras.layers.AbstractRNNCell):
             controller_state=self._controller.get_initial_state(batch_size=batch_size, dtype=dtype),
             read_vectors=tf.fill([batch_size, self._W, self._R], EPSILON),
         )
-        return nest.flatten(initial_state_nested)
+        return tf.nest.flatten(initial_state_nested)
 
     @property
     def output_size(self):

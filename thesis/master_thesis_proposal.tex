@@ -6,128 +6,155 @@
 \addbibresource{thesis.bib}
 
 \begin{document}
-\title{\textbf{Master Thesis Proposal}\\Capturing Long-Term Dependencies in Neural Regulatory Networks}
-\author{Advisor: Univ.-Prof. Dipl.-Ing. Dr.rer.nat. Radu Grosu\\Student: Hannes Brantner (01614466)}
-\maketitle{}
-\section{Problem Statement}
-\subsection{Recurrent Neural Networks}
-Capturing long-term dependencies in time series with machine learning models is difficult. 
-A machine learning model is a function with an input and parameters.
-For example, the machine learning model GPT-3 proposed in \cite{GPT-3} has 175 billion parameters.
-The whole field of sequence modelling started with recurrent neural networks. 
-These are models like our physical environment, where the current state $h_{t}$ and the next input $x_{t+1}$ determine the next state $h_{t+1}$ and output $y_{t+1}$ deterministically. 
-In this model all the past inputs are implicitly encoded in the current state. 
-This is a big challenge for computer scientists, since computers only allow states of finite size and finite precision, unlike our physical environment, which results in an information bottleneck. 
-The next state of a recurrent neural network $h_{t+1}$ is typically computed by an equation like the one proposed in \cite{UnitaryRNNs} (using a non-linear function $\sigma$ and two matrices $W$ and $V$):
-\begin{align} \label{rnn_state_update}
-    h_{t+1} = \sigma(Wh_t + Vx_{t+1})
-\end{align}
-\subsection{Loss function}
-Most machine learning model optimization processes are guided by a loss function $L$. 
-This function takes all the parameters of the machine learning model as arguments and outputs a scalar loss.
-This function could simply be the percentage of correctly classified input data of the input data set. 
-In the general case, a computer scientist wants to find the global minimum of that function with respect to all machine learning model parameters.
-As this is a problem that cannot be solved analytically in most cases, it is approximated using gradient descent \cite{GradientDescent}, where each parameter is optimized incrementally depending on the gradient of the loss function with respect to each parameter in lock step.
-\subsection{Gradients in Recurrent Neural Networks}
-The following inequality from \cite{UnitaryRNNs} using norms ($L_2$ norm for vectors and spectral radius norm for matrices) shows the relation between a recent state $h_T$ and a state from the far past $h_t$:
-\begin{align}
-    \left\Vert \pdv{L}{h_t} \right\Vert \leq \left\Vert \pdv{L}{h_T} \right\Vert \prod^{T-1}_{k=t} \left\Vert W \right\Vert \left\Vert diag(\sigma'(Wh_t + Vx_{t+1})) \right\Vert
-\end{align}
-This inequality contains all essential parts to understand why learning long-term dependencies with recurrent neural networks is difficult. 
-Some problems that machine learning tries to solve need to incorporate input data from the distant past to make good predictions in the present.
-Since these inputs are stored in the states of the distant past, $\left\Vert \pdv{L}{h_t} \right\Vert$ should not decay to $0$ or grow unboundedly to effectively optimize the parameters using gradient descent to incorporate distant past inputs in present predictions to minimize the loss. 
-If $\left\Vert W \right\Vert > 1$, $\left\Vert \pdv{L}{h_t} \right\Vert$ may grow unboundedly, making it difficult to apply the gradient descent technique to optimize parameters. 
-If $\left\Vert W \right\Vert < 1$, $\left\Vert \pdv{L}{h_t} \right\Vert$ will decay to $0$, making it impossible to apply the gradient descent technique to optimize parameters. 
-The previous two statements are only true, if the norm of the diagonal matrix containing the derivatives of the function $\sigma$ is $1$ in most cases (for example the rectified linear unit activation function), otherwise different problems arise.
-These two problems are called the vanishing or exploding gradient problem and are further explained in \cite{LongTermDependenciesGradientDescent}.
-\subsection{Mitigations to the vanishing gradient problem}
-\cite{UnitaryRNNs} works with a matrix $W$ that fulfills $\left\Vert W \right\Vert = 1$ to tackle these problems. 
-This idea was later refined by \cite{EfficientUnitaryRNNs}. 
-The vanishing gradient problem was also tackled by \cite{LSTM} and a mechanism called gating, that changed the next state computation for an ordinary recurrent neural network.
-Another possible mitigation to the vanishing gradient problem is the transformer architecture proposed in \cite{Transformer} using a mechanism called attention. 
-In principle the transformer architecture model has access to all past inputs and just learns, which ones are important for the current prediction and the transformer should attend to. 
-\subsection{Problem of the thesis}
-This work will focus on the gating mechanism to tackle the vanishing gradient problem and will also apply it to the LTC network architecture introduced in \cite{LTCNetworks} by introducing reciprocal gated LTC neuron pairs \cite{RCNN_ReciprocalGatedCell}.
-LTC neurons are the building blocks of LTC networks, which are time-continuous recurrent neural networks and are also called neural regulatory networks. 
-In this models the state update function is not determined by a difference equation, but with a differential equation instead.
-A subset of LTC networks called neural circuit policies \cite{NCP} was shown to reach great expressiveness with very few parameters.
-As a reciprocal gated LTC neuron pair should function like a memory cell, it is called a continuous flip-flop, which is itself a pair of two latches.
-The problem is now to build a memory layer out of several reciprocal gated LTC neuron pairs to replace the attention mechanism in a transformer.
-Possible further use cases can be evaluated, too.
-The performance of the proposed transformer model (to incorporate long-term dependencies in decisions) is evaluated via the transformer benchmark suite proposed in \cite{TransformerBenchmark}.
-\section{Aim of the Work}
-\subsection{Reach greater expressiveness with fewer parameters}
-This work aims to design a memory layer out of reciprocal gated LTC neuron pairs that incorporates gating to mitigate the vanishing gradient problem.
-This memory layer should then be used to replace the attention mechanism in the transformer architecture to cut down the parameter count without sacrificing too much of its expressiveness. 
-\subsection{Motivate others to do research with time-continuous recurrent neural networks}
-The transformer architecture is no recurrent network model and operates on discrete time steps. 
-The superior ability of transformers to learn long-term dependencies in contrast to recurrent neural networks led to performance improvements in many domains \cite{Transformer,TransformerforRL}.
-Another main goal of this thesis is to show that continuous-time recurrent neural network models, that are a close fit to biological neurons, can model long-term dependencies and be more expressive with fewer parameters than ordinary transformer models.
-\section{Methodological Approach}
-\subsection{Build LTC neuron pair}
-The first thing to do is to implement the reciprocal gated LTC neuron pair. 
-The differential equations that govern LTC neuron dynamics were already implemented in a GitHub repository linked in \cite{NCP}. The basic building block consists of two LTC neurons, each with a connection to the input. 
-Only the output of one LTC neuron is used as output of the continuous flip-flop. 
-The reciprocal gating connections are implemented using two synaptic connections between each other with inhibitory polarity. 
-Furthermore, each LTC neuron has itself a recurrent synaptic connection with inhibitory polarity, because without a recurrent connection, there would be no memory.
-\subsection{Build memory layer}
-This basic building block, the CFF (continuous flip-flop), is used to build a memory layer. 
-The CFFs could be interconnected in various ways using different adjacency matrices, that would result in a dense or sparse memory array of any dimension.
-\subsection{Use memory layer in a transformer architecture}
-This memory layer should then be used to replace the attention mechanism of a transformer in a suitable way.
-\subsection{Evaluate and compare new transformer model to other transformer models}
-The performance of the synthesized model is then evaluated using the transformer benchmark \cite{TransformerBenchmark} and also compared to other transformers in terms of accuracy and parameter count.
-\section{Structure of the Work}
-\begin{enumerate}
-    \item{Introduction}
+    \title{\textbf{Master Thesis Proposal}\\Capturing Long-Term Dependencies in Neural Regulatory Networks}
+    \author{Advisor: Univ.-Prof. Dipl.-Ing. Dr.rer.nat. Radu Grosu\\Student: Hannes Brantner (01614466)}
+    \maketitle{}
+
+
+    \section{Problem Statement}
+
+    \subsection{Recurrent Neural Networks}
+    Capturing long-term dependencies in time series with machine learning models is difficult.
+    A machine learning model is a function with an input and parameters.
+    For example, the machine learning model GPT-3 proposed in \cite{GPT-3} has 175 billion parameters.
+    The whole field of sequence modelling started with recurrent neural networks.
+    These are models like our physical environment, where the current state $h_{t}$ and the next input $x_{t+1}$ determine the next state $h_{t+1}$ and output $y_{t+1}$ deterministically.
+    In this model all the past inputs are implicitly encoded in the current state.
+    This is a big challenge for computer scientists, since computers only allow states of finite size and finite precision, unlike our physical environment, which results in an information bottleneck.
+    The next state of a recurrent neural network $h_{t+1}$ is typically computed by an equation like the one proposed in \cite{UnitaryRNNs} (using a non-linear function $\sigma$ and two matrices $W$ and $V$):
+    \begin{align}
+        \label{rnn_state_update}
+        h_{t+1} = \sigma(Wh_t + Vx_{t+1})
+    \end{align}
+
+    \subsection{Loss function}
+    Most machine learning model optimization processes are guided by a loss function $L$.
+    This function takes all the parameters of the machine learning model as arguments and outputs a scalar loss.
+    This function could simply be the percentage of correctly classified input data of the input data set.
+    In the general case, a computer scientist wants to find the global minimum of that function with respect to all machine learning model parameters.
+    As this is a problem that cannot be solved analytically in most cases, it is approximated using gradient descent \cite{GradientDescent}, where each parameter is optimized incrementally depending on the gradient of the loss function with respect to each parameter in lock step.
+
+    \subsection{Gradients in Recurrent Neural Networks}
+    The following inequality from \cite{UnitaryRNNs} using norms ($L_2$ norm for vectors and spectral radius norm for matrices) shows the relation between a recent state $h_T$ and a state from the far past $h_t$:
+    \begin{align}
+        \left\Vert \pdv{L}{h_t} \right\Vert \leq \left\Vert \pdv{L}{h_T} \right\Vert \prod^{T-1}_{k=t} \left\Vert W \right\Vert \left\Vert diag(\sigma'(Wh_t + Vx_{t+1})) \right\Vert
+    \end{align}
+    This inequality contains all essential parts to understand why learning long-term dependencies with recurrent neural networks is difficult.
+    Some problems that machine learning tries to solve need to incorporate input data from the distant past to make good predictions in the present.
+    Since these inputs are stored in the states of the distant past, $\left\Vert \pdv{L}{h_t} \right\Vert$ should not decay to $0$ or grow unboundedly to effectively optimize the parameters using gradient descent to incorporate distant past inputs in present predictions to minimize the loss.
+    If $\left\Vert W \right\Vert > 1$, $\left\Vert \pdv{L}{h_t} \right\Vert$ may grow unboundedly, making it difficult to apply the gradient descent technique to optimize parameters.
+    If $\left\Vert W \right\Vert < 1$, $\left\Vert \pdv{L}{h_t} \right\Vert$ will decay to $0$, making it impossible to apply the gradient descent technique to optimize parameters.
+    The previous two statements are only true, if the norm of the diagonal matrix containing the derivatives of the function $\sigma$ is $1$ in most cases (for example the rectified linear unit activation function), otherwise different problems arise.
+    These two problems are called the vanishing or exploding gradient problem and are further explained in \cite{LongTermDependenciesGradientDescent}.
+
+    \subsection{Mitigations to the vanishing gradient problem}
+    \cite{UnitaryRNNs} works with a matrix $W$ that fulfills $\left\Vert W \right\Vert = 1$ to tackle these problems.
+    This idea was later refined by \cite{EfficientUnitaryRNNs}.
+    The vanishing gradient problem was also tackled by \cite{LSTM} and a mechanism called gating, that changed the next state computation for an ordinary recurrent neural network.
+    Another possible mitigation to the vanishing gradient problem is the transformer architecture proposed in \cite{Transformer} using a mechanism called attention.
+    In principle the transformer architecture model has access to all past inputs and just learns, which ones are important for the current prediction and the transformer should attend to.
+
+    \subsection{Problem of the thesis}
+    This work will focus on the gating mechanism to tackle the vanishing gradient problem and will also apply it to the LTC network architecture introduced in \cite{LTCNetworks} by introducing reciprocal gated LTC neuron pairs \cite{RCNN_ReciprocalGatedCell}.
+    LTC neurons are the building blocks of LTC networks, which are time-continuous recurrent neural networks and are also called neural regulatory networks.
+    In this models the state update function is not determined by a difference equation, but with a differential equation instead.
+    A subset of LTC networks called neural circuit policies \cite{NCP} was shown to reach great expressiveness with very few parameters.
+    As a reciprocal gated LTC neuron pair should function like a memory cell, it is called a continuous flip-flop, which is itself a pair of two latches.
+    The problem is now to build a memory layer out of several reciprocal gated LTC neuron pairs to replace the attention mechanism in a transformer.
+    Possible further use cases can be evaluated, too.
+    The performance of the proposed transformer model (to incorporate long-term dependencies in decisions) is evaluated via the transformer benchmark suite proposed in \cite{TransformerBenchmark}.
+
+
+    \section{Aim of the Work}
+
+    \subsection{Reach greater expressiveness with fewer parameters}
+    This work aims to design a memory layer out of reciprocal gated LTC neuron pairs that incorporates gating to mitigate the vanishing gradient problem.
+    This memory layer should then be used to replace the attention mechanism in the transformer architecture to cut down the parameter count without sacrificing too much of its expressiveness.
+
+    \subsection{Motivate others to do research with time-continuous recurrent neural networks}
+    The transformer architecture is no recurrent network model and operates on discrete time steps.
+    The superior ability of transformers to learn long-term dependencies in contrast to recurrent neural networks led to performance improvements in many domains \cite{Transformer,TransformerforRL}.
+    Another main goal of this thesis is to show that continuous-time recurrent neural network models, that are a close fit to biological neurons, can model long-term dependencies and be more expressive with fewer parameters than ordinary transformer models.
+
+
+    \section{Methodological Approach}
+
+    \subsection{Build LTC neuron pair}
+    The first thing to do is to implement the reciprocal gated LTC neuron pair.
+    The differential equations that govern LTC neuron dynamics were already implemented in a GitHub repository linked in \cite{NCP}. The basic building block consists of two LTC neurons, each with a connection to the input.
+    Only the output of one LTC neuron is used as output of the continuous flip-flop.
+    The reciprocal gating connections are implemented using two synaptic connections between each other with inhibitory polarity.
+    Furthermore, each LTC neuron has itself a recurrent synaptic connection with inhibitory polarity, because without a recurrent connection, there would be no memory.
+
+    \subsection{Build memory layer}
+    This basic building block, the CFF (continuous flip-flop), is used to build a memory layer.
+    The CFFs could be interconnected in various ways using different adjacency matrices, that would result in a dense or sparse memory array of any dimension.
+
+    \subsection{Use memory layer in a transformer architecture}
+    This memory layer should then be used to replace the attention mechanism of a transformer in a suitable way.
+
+    \subsection{Evaluate and compare new transformer model to other transformer models}
+    The performance of the synthesized model is then evaluated using the transformer benchmark \cite{TransformerBenchmark} and also compared to other transformers in terms of accuracy and parameter count.
+
+
+    \section{Structure of the Work}
     \begin{enumerate}
-        \item{Problem Statement}
-        \item{Aim of the Work}
-        \item{Methodological Approach}
-        \item{State of the Art}
+        \item{Introduction}
+        \begin{enumerate}
+            \item{Problem Statement}
+            \item{Aim of the Work}
+            \item{Methodological Approach}
+            \item{State of the Art}
+        \end{enumerate}
+        \item{Architecture}
+        \begin{enumerate}
+            \item{Continuous Flip-Flop}
+            \item{Memory Layer}
+            \item{Transformer with Memory Layer}
+        \end{enumerate}
+        \item{Evaluation}
+        \item{Summary}
     \end{enumerate}
-    \item{Architecture}
-    \begin{enumerate}
-        \item{Continuous Flip-Flop}
-        \item{Memory Layer}
-        \item{Transformer with Memory Layer}
-    \end{enumerate}
-    \item{Evaluation}
-    \item{Summary}
-\end{enumerate}
-\section{State of the Art}
-\subsection{LSTM (Long Short-Term Memory)}
-The LSTM is a an RNN whose state update function is more complex than the one presented in \ref{rnn_state_update}. 
-The next input $x_{t+1}$ and the current state $h_{t}$ determine how much of the current state should be forgotten, how much of the next input should be saved in the next state $h_{t+1}$ and what parts of the next state should be used to build the next output $y_{t+1}$.
-The details of the LSTM architecture can be found in \cite{LSTM}. 
-These three features are called input, output and forget gate and the general mechanism is called gating.
-This allows the LSTM to learn when and how to update the state, since the input has no direct influence on the state like in equation \ref{rnn_state_update}. 
-This leads to a state that is able to carry information from the distant past (may be very important to the problem) to the present, by gating unnecessary future inputs, since that time point in the distant past, away.
-The gating mechanism is controlled by multiple parameters that are optimized using gradient descent. 
-This enables the LSTM architecture to be able to learn long-term dependencies.
-A simplification of the LSTM architecture called the GRU (Gated Recurrent Unit) that is using fewer parameters and reaches the same expressiveness is proposed here \cite{GRU}.
-\subsection{EUNN (Efficient Unitary Neural Networks)}
-These models are able to learn long-term dependencies, since it parametrizes $W$ in equation \ref{rnn_state_update} such that $\left\Vert W \right\Vert = 1$. 
-Therefore, this model does not suffer from the vanishing or exploding gradient problem. The results of the experiments in \cite{EfficientUnitaryRNNs} propose superior expressivity to LSTMs at the same parameter count.
-However, EUNNs are not widely adopted and LSTMs are known in general to need more parameters to be expressive enough to solve a problem when compared to other models.
-\subsection{Transformer}
-The transformer architecture transforms a variable-length input sequence into a variable-length output sequence. 
-The model gets all the inputs at once and not one input at each time instant. 
-To accumulate information across all the inputs a mechanism called attention is used.
-The attention between different inputs is simply the result of the dot product between vectors crafted from the inputs. 
-If one input contains much information about another input, those would have a high dot product, as the transformer's parameters will be learnt that way.
-Since this architecture only focuses on the most important parts of the inputs, it can deal with lots of input data at the same time and easily learn long-term dependencies between them, as past state inputs are available to the model instantly and not encoded into states of RNNs.
-The details of the transformer architecture can be found in \cite{Transformer}.
-\section{Relevance to the Curricula of Computer Engineering}
-\begin{itemize}
-    \item{182.763 - Stochastic Foundations of Cyber-Physical Systems}
-    \item{186.844 - Introduction to Pattern Recognition}
-    \item{182.755 - Advanced Digital Design}
-    \item{191.105 - Advanced Computer Architecture}
-    \item{389.166 - Signal Processing 1}
-    \item{389.170 - Signal Processing 2}
-    \item{104.267 - Analysis 2}
-    \item{104.271 - Discrete Mathematics}
-\end{itemize}
-\printbibliography
+
+
+    \section{State of the Art}
+
+    \subsection{LSTM (Long Short-Term Memory)}
+    The LSTM is a an RNN whose state update function is more complex than the one presented in \ref{rnn_state_update}.
+    The next input $x_{t+1}$ and the current state $h_{t}$ determine how much of the current state should be forgotten, how much of the next input should be saved in the next state $h_{t+1}$ and what parts of the next state should be used to build the next output $y_{t+1}$.
+    The details of the LSTM architecture can be found in \cite{LSTM}.
+    These three features are called input, output and forget gate and the general mechanism is called gating.
+    This allows the LSTM to learn when and how to update the state, since the input has no direct influence on the state like in equation \ref{rnn_state_update}.
+    This leads to a state that is able to carry information from the distant past (may be very important to the problem) to the present, by gating unnecessary future inputs, since that time point in the distant past, away.
+    The gating mechanism is controlled by multiple parameters that are optimized using gradient descent.
+    This enables the LSTM architecture to be able to learn long-term dependencies.
+    A simplification of the LSTM architecture called the GRU (Gated Recurrent Unit) that is using fewer parameters and reaches the same expressiveness is proposed here \cite{GRU}.
+
+    \subsection{EUNN (Efficient Unitary Neural Networks)}
+    These models are able to learn long-term dependencies, since it parametrizes $W$ in equation \ref{rnn_state_update} such that $\left\Vert W \right\Vert = 1$.
+    Therefore, this model does not suffer from the vanishing or exploding gradient problem. The results of the experiments in \cite{EfficientUnitaryRNNs} propose superior expressivity to LSTMs at the same parameter count.
+    However, EUNNs are not widely adopted and LSTMs are known in general to need more parameters to be expressive enough to solve a problem when compared to other models.
+
+    \subsection{Transformer}
+    The transformer architecture transforms a variable-length input sequence into a variable-length output sequence.
+    The model gets all the inputs at once and not one input at each time instant.
+    To accumulate information across all the inputs a mechanism called attention is used.
+    The attention between different inputs is simply the result of the dot product between vectors crafted from the inputs.
+    If one input contains much information about another input, those would have a high dot product, as the transformer's parameters will be learnt that way.
+    Since this architecture only focuses on the most important parts of the inputs, it can deal with lots of input data at the same time and easily learn long-term dependencies between them, as past state inputs are available to the model instantly and not encoded into states of RNNs.
+    The details of the transformer architecture can be found in \cite{Transformer}.
+
+
+    \section{Relevance to the Curricula of Computer Engineering}
+    \begin{itemize}
+        \item{182.763 - Stochastic Foundations of Cyber-Physical Systems}
+        \item{186.844 - Introduction to Pattern Recognition}
+        \item{182.755 - Advanced Digital Design}
+        \item{191.105 - Advanced Computer Architecture}
+        \item{389.166 - Signal Processing 1}
+        \item{389.170 - Signal Processing 2}
+        \item{104.267 - Analysis 2}
+        \item{104.271 - Discrete Mathematics}
+    \end{itemize}
+    \printbibliography
 \end{document}

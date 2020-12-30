@@ -30,12 +30,12 @@
 
 % Set PDF document properties
 \hypersetup{
-    pdfpagelayout   = TwoPageRight,           % How the document is shown in PDF viewers (optional).
-    linkbordercolor = {Melon},                % The color of the borders of boxes around crosslinks (optional).
-    pdfauthor       = {\authorname},          % The author's name in the document properties (optional).
-    pdftitle        = {\thesistitle},         % The document's title in the document properties (optional).
-    pdfsubject      = {Subject},              % The document's subject in the document properties (optional).
-    pdfkeywords     = {a, list, of, keywords} % The document's keywords in the document properties (optional).
+pdfpagelayout   = TwoPageRight,           % How the document is shown in PDF viewers (optional).
+linkbordercolor = {Melon},                % The color of the borders of boxes around crosslinks (optional).
+pdfauthor       = {\authorname},          % The author's name in the document properties (optional).
+pdftitle        = {\thesistitle},         % The document's title in the document properties (optional).
+pdfsubject      = {Subject},              % The document's subject in the document properties (optional).
+pdfkeywords     = {a, list, of, keywords} % The document's keywords in the document properties (optional).
 }
 
 \setpnumwidth{2.5em}        % Avoid overfull hboxes in the table of contents (see memoir manual).
@@ -97,242 +97,276 @@
 
 \begin{document}
 
-\frontmatter % Switches to roman numbering.
+    \frontmatter % Switches to roman numbering.
 % The structure of the thesis has to conform to the guidelines at
 %  https://informatics.tuwien.ac.at/study-services
 
 %\addtitlepage{naustrian} % German title page (not for dissertations at the PhD School).
-\addtitlepage{english} % English title page.
+    \addtitlepage{english} % English title page.
 
-\AddStatementPage
+    \AddStatementPage
 
 %\begin{danksagung*}
 %\todo{Ihr Text hier.}
 %\end{danksagung*}
 
-\begin{acknowledgements*}
+    \begin{acknowledgements*}
 %\todo{Enter your text here.}
-\end{acknowledgements*}
+    \end{acknowledgements*}
 
 %\begin{kurzfassung}
 %\todo{Ihr Text hier.}
 %\end{kurzfassung}
 
-\begin{abstract}
+    \begin{abstract}
 %\todo{Enter your text here.}
-\end{abstract}
+    \end{abstract}
 
 % Select the language of the thesis, e.g., english or naustrian.
-\selectlanguage{english}
+    \selectlanguage{english}
 
 % Add a table of contents (toc).
-\tableofcontents % Starred version, i.e., \tableofcontents*, removes the self-entry.
+    \tableofcontents % Starred version, i.e., \tableofcontents*, removes the self-entry.
 
 % Switch to arabic numbering and start the enumeration of chapters in the table of content.
-\mainmatter
+    \mainmatter
 
-\chapter{Introduction}
-\section{Problem Statement}
-\section{Aim of the Work}
-\section{Methodological Approach}
-\section{State of the Art}
+
+    \chapter{Introduction}
+
+
+    \section{Problem Statement}
+
+
+    \section{Aim of the Work}
+
+
+    \section{Methodological Approach}
+
+
+    \section{State of the Art}
 
 %\todo{Enter your text here.}
 
-\chapter{Architecture}
-\section{Continuous Flip-Flop}
-\section{Memory Layer}
-\section{Transformer with Memory Layer}
+
+    \chapter{Architecture}
 
 
+    \section{Continuous Flip-Flop}
 
-\chapter{Experiments}
-All models and benchmarks can be found under: \\
-\url{https://github.com/Oidlichtnwoada/LongTermDependenciesLearning}
-\section{Models}
-\subsection{Differentiable Neural Computer} \label{Differentiable Neural Computer}
-This model defines a memory-augmented neural network architecture, that consists of a controller, read and write heads and obviously an external memory that is not parameterized by the neural network parameter. 
-Furthermore, the external memory was structured in rows, where each memory row has a specific length.
-The architecture was taken from \cite{DNC} and is an enhancement to the Neural Turing Machine firstly introduced in \cite{NTM}. 
-The Neural Turing Machine introduced differentiable read and write functions that allow to access the memory by context or by location in both read and write mode.
-The access by context was implemented by comparing the cosine distance of an emitted key vector to all memory row contents and by applying the softmax function to that distance vector, which yields a weight vector. 
-The access by location was implemented by adding a possibility to interleave the previous step weights with the current step content-based weights and adding a "blurry" shift operation on top of it. 
-These weight vectors are then normalized using a softmax function that takes each argument to the power of an emitted number to sharpen the weights.
-Some improvements of the Differentiable Neural Computer include a memory management system that is able to allocate and free memory in the external memory to avoid overwriting of important information and a memory use link matrix that allows the model to track its memory operations through time.
-\subsection{Memory Cell} \label{Memory Cell}
-The Memory Cell is a simple RNN consisting of two LTC neurons as described in \cite{LTCNetworks} and used in \cite{NCP}.
-However the leakage term was removed from the ordinary differential equation describing the state dynamics, as a fading potential would mean losing information stored in the memory cell over time.
-It has a 2-dimensional input, the input voltage for each of the two neurons delivered by a synapse, and a 1-dimensional output, which is just the potential of the first neuron.
-This model was implemented to tune state dynamics and parameters for the suggested memory cell architecture.
-Each cell has three incoming synapses:
-\begin{itemize}
-    \item{}
-    an excitatory synapse that delivers the input voltage over a synapse to the neuron
-    \item{}
-    a recurrent excitatory synapse that connects each neuron with itself, which is useful to maintain an excitation in a single neuron
-    \item{}
-    an inhibitory synapse from the other neuron, to create mutual exclusive excitation 
-\end{itemize}
-This simple memory cell should now be able to store information over a long time horizon, the input vectors are provided in the right way.
-Recent results have shown that this architecture is not capable of repeatedly storing information and I am not sure in what range the input values shall lie. 
-As described in \cite{LTCNetworks}, the synaptic current is computed by multiplying a non-linear conductance with a potential difference.
-The potential difference is just a parameter $E_{ij}$ minus the potential of the postsynaptic neuron $V_j$. 
-However, if the potentials are not bounded, this would mean even an excitatory synapse can deliver a negative current or analogously an inhibitory synapse can deliver a positive current.
-The bounded dynamics of LTC networks is no longer valid, as the leakage term was removed from the state dynamics equation.
-\subsection{Memory Cell NCP} \label{Memory Cell NCP}
-This is a wiring that was written for the keras-ncp Python package derived from \cite{NCP} that implements the memory cell architecture from the previous section in a parallel manner, however with a leakage current term in the state dynamics. 
-However results have shown that it is not really able to store information over a long time horizon.
-\subsection{Memory Layer} \label{Memory Layer}
-This model implements the architecture of the memory cell, in a parallelized manner. It is therefore also an RNN and includes an input and output control, which are simply multi-layer perceptrons. 
-The input control gets the current step RNN inputs and the current memory state as input and  transforms this information to an input current to each memory cell without passing it through a synaptic non-linearity.
-One neuron in each memory cell gets the unmodified input from the input control, the other neuron gets the negated input current as input. 
-The output of the whole architecture is then computed by passing the potentials of every first neuron in each memory cell through the output control, that generated the final RNN output.
-This model also performs not as well as expected.
-\subsection{Memory Layer Attention} \label{Memory Layer Attention}
-To possibly improve the Transformer architecture described in \cite{Transformer}, a new mechanism instead of multi-head attention must be implemented.
-Therefore, memory layer attention was created which simply concatenates every query vector with each value vector and feeds all concatenated vectors per query as a sequence to an RNN architecture.
-As an RNN architecture, the predescribed memory layer RNN is used. The output of the RNN is then the new representation of the query vector at the input of the memory layer attention.
-This architecture does not use separate key and value vectors and combines them in a single representation. 
-A similar approach was taken in the Reformer architecture \cite{Reformer}, which is a computationally more efficient transformer.
-This approach was not thoroughly tested as the basic building block, the memory layer RNN does not work as expected.
-\subsection{Transformer} \label{Transformer}
-This model implements the transformer architecture firstly introduced in \cite{Transformer}. The input and output embedding were replaced with a fully connected layer, as this model should also work with vector sized input. 
-The linear layer at the output of the transformer was also replaced with a fully connected layer, which emits an output token of the specified token size.
-Instead of stopping the transformer architecture when the stop token was emitted by the decoder layer, this architecture stops after a specified amount of tokens.
-Moreover, the positional input encoding was extended to also support non-equidistant positions at the input, occurring when sampling irregularly.
-Therefore, the input to the transformer is a tuple, which must include position intervals, between two successive inputs.
-These are then used to build a cumulative sum to generate the absolute positions. If you just want to use the regularly sampled mode, just provide only $1$s for the intervals.
-This architecture performs very well if a reasonably sized model with enough parameters is chosen.
-\subsection{Recurrent Transformer} \label{Recurrent Transformer}
-This is a slightly modified version of the transformer model \ref{Transformer}. 
-It does not simply add the weighted value vectors up in the multi-head attention mechanism, but instead passes the weighted value vectors through an RNN, whose final output vector represents the added weighted values vectors in the ordinary multi-head attention.
-This architecture also performs reasonably well in the benchmarks.
-\subsection{Neural Circuit Policies} \label{Neural Circuit Policies}
-This model is a specifically connected LTC network \cite{LTCNetworks}, firstly described in \cite{NCP}.
-It is very demanding in computational resources and does not perform very well on the benchmarks.
-\subsection{Unitary RNN} \label{Unitary RNN}
-Unitary RNNs were firstly introduced in \cite{UnitaryRNNs} and made learning long-term dependencies with RNNs possible by keeping gradient sizes stable, even if backpropagation occurs to a distant past state. 
-It is achieved by parameterizing the weight matrix of the hidden state in the next state equation in a way, that it stays a unitary matrix. 
-This matrix can be constructed out of real and complex numbers, the whole unitary matrix space of size $N^2$ was efficiently parameterized by \cite{EfficientUnitaryRNNs}.
-With this approach, it can be shown that distant past inputs have the same influence on the current state as current inputs in terms of their gradient size, which only differs by a constant.
-\subsection{Unitary RNN} \label{Unitary RNN}
-Unitary RNNs were firstly introduced in \cite{UnitaryRNNs} and made learning long-term dependencies with RNNs possible by keeping gradient sizes stable, even if backpropagation occurs to a distant past state. 
-It is achieved by parameterizing the weight matrix of the hidden state in the next state equation in a way, that it stays a unitary matrix. 
-This matrix can be constructed out of real numbers, which was done in \cite{UnitaryRNNs}, but it can also be extended to the complex domain, which was done in \cite{EfficientUnitaryRNNs}.
-With this approach, it can be shown that distant past inputs have the same influence on the current state as current inputs in terms of their gradient size, which only differs by a constant.
-\subsection{Enhanced Unitary RNN} \label{Enhanced Unitary RNN}
-This model uses the time domain input to compute a frequency domain input, both are fed concatenated as input vector $i_t$ to the RNN as input.
-My intuition was that some tasks are easier to solve in the frequency domain, whereas some tasks are easier to solve in the time domain.
-The state equation of the RNN can be expressed as follows, where $W_1$ and $W_2$ are unitary matrices and $\sigma(z) = max(0,|z|+b)*\frac{z}{|z|}$ (parameterized modrelu activation function defined in \cite{UnitaryRNNs}):
-\begin{equation}
-h_{t+1} = \sigma(W_2 * (\sigma(W_1 * h_t + V * i_{t+1})))
-\end{equation}
-The second matrix multiplication was added, such that the current hidden state has an influence where information about the current input is stored, which was not the case in the approach of \cite{UnitaryRNNs}.
-There exist other RNNs that use this state equations like the Fourier Recurrent Unit that was firstly introduced in \cite{FRU}.
-The parameterization of the unitary matrices was done with a complex square matrix $A$ of the same dimension.
-This matrix $A$ was then added to its adjoint $A^H$, which yields an arbitrary Hermitian matrix $H$. 
-As each unitary matrix can be expressed by using the matrix exponential $e^{iH}$, each unitary matrix can be parameterized by $A$.
-However, the results were not as good as expected because gradients were not stable.
-\section{Benchmarks}
-\subsection{Walker}
-This benchmark evaluates how well a model can predict a dynamical, physical system's behavior and was taken from \cite{LongTermDependenciesIrregularTimeSeries}.
-The training data is acquired simulation data of the \texttt{Walker2d-v2} OpenAI gym \cite{OpenAIGym} controlled by a pre-trained policy.
-The objective was to learn the kinematic simulation of the physics engine in an auto-regressive fashion using imitation learning.
-To increase the task difficulty, the simulation data was acquired from different training stages of the pre-trained policy (between 500 and 1200 Proximal Policy Optimization iterations) and 1\% of actions were overwritten by random actions.
-Furthermore, frame-skips were introduced by removing 10\% of all time-steps to get irregularly sampled training data. 
-Moreover, the training data was divided into equally long sequences.
-For non-recurrent models, the input per time-step was the whole training sequence, but future values were zero-padded to ensure the model is only able to derive future predictions from past values.
-The model needs to predict the simulation state in the next time-step.
-Mean squared error was used as loss function when training the models.
-Further results of recurrent neural network models doing this benchmark can be found in \cite{LatentODEsIrregularlySampled}.
-The results are presented in the following table:
-\begin{table}[h]
-\begin{tabular}{lll}
-\hline
-Model & Parameter Count & Mean Squared Error \\ \hline
-Transformer & 338257 & 0.793 \\ 
-Recurrent Transformer & 439633 & 0.599 \\ 
-Recurrent Transformer & 29617 & 1.102 \\ 
-Memory Layer Transformer & 174529 & 7.624 \\ 
-Neural Circuit Policies & 21889 & 2.297 \\
-\end{tabular}
-\end{table}
-\subsection{Memory}
-This benchmark evaluates how well a model can be trained to incorporate long-term dependencies in its predictions.
-The structure of this benchmark was taken from \cite{UnitaryRNNs}, who also tested their recurrent neural network with this long-term dependency benchmark.
-The training data only contains integers from $0$ to $N-1$. The first ten input symbols of each input sequence are randomly sampled integers from $0$ to $N-3$ (i.i.d. uniform). 
-Then the following symbols are copies of the integer $N-2$ in the amount of the tested memory length $T$ minus $1$. 
-After that follows a marker, which is a single integer $N-1$. 
-Then the remaining ten symbols are again copies of the integer $N-2$. 
-The expected output sequence starts with $T+10$ copies of $N-2$ followed by the ten randomly sampled symbols from the start of the input sequence.
-Each tested model must produce an output vector of size $N$ per time-step to a apply a sparse categorical cross-entropy loss directly from the model output logits.
-The loss was weighted such that the loss given by each of the last ten output vectors has the same weight as all previous output vectors combined, as it is easily to optimize to predict only the same class for a long interval.
-Clearly, a model can only solve this task if it is able to store information over a time period in the same size of the memory length.
-The baseline for this benchmark's mean categorical entropy loss per batch can be set to $\frac{10\log(N-2)}{T+20}$, as a memory-less strategy can perfectly predict the first $T+10$ symbols of the required output sequence and then it predicts the remaining $10$ symbols randomly from $0$ to $N-3$ (i.i.d. uniform).
-The results are presented in the following table, where $N$ was $10$, $T$ was $100$ and the baseline therefore was $0.173$:
-\begin{table}[h]
-\begin{tabular}{llll}
-\hline
-Model & Parameter Count & Cross-Entropy Error & Correctly Memorized Symbols \\ \hline
-LSTM & 7130 & 0.157 & 1.1 \\ 
-Memory Layer & 49720 & 0.400 & 0.0 \\
-Differentiable Neural Computer & 81685 & 0.145 & 2.0 \\
-Unitary RNN & 1674 & 0.009 & 10.0 \\
-Enhanced Unitary RNN & 101388 & 0.3151 & 1.3 \\
-\end{tabular}
-\end{table}
-\subsection{Cell}
-This is a very small benchmark that tries to find the right parameter and input ranges for the memory cell \ref{Memory Cell}.
-This benchmark should make clear if a memory cell is able to switch its state multiple times and keep information over a long period of time.
-It is directly implemented in the same file as the memory cell itself.
-The memory cell in the current test setup has no more recurrent, excitatory synapses. 
-As discussed in our meeting the state of a memory cell is now only changed through four synapses, two per neuron.
-One synapse per neuron delivers the input via a synaptic activation and the other synapse ensures the opposite potentials of both neurons. 
-The synaptic current can be computed by $g_{syn}(V_{pre}) * (E_{pre,post} - V_{post})$.
-I have found out that the LTC equations are not suited at all to build a memory cell, as a $1$ input should deliver a big current and a $0$ input should lead to a big negative current, no matter what the potential of the postsynaptic neuron is. 
-However with the current equations, this is not possible to achieve, since the non-linear synaptic conductance is always positive and therefore the sign of the current cannot be determined by the input. 
-Therefore, the underlying equations must be changed.
-The same argument holds for the mutual inhibitory synapses. The higher potential neuron should send a negative current to the other neuron, whereas the lower potential neuron should send a positive current to the higher potential neuron. 
-These things are not possible with the current setup, and therefore need to be changed.
-The memory cell receives only a single input that will be passed untouched to the first neuron's synaptic activation, but the second neuron will get the negated input to its synaptic activation for the input. 
-The negation is currently implemented using the function $f(x) = 1-x$.
-This input is only passed at the specific time step, when the input current provider needs to save something, otherwise both neurons in the memory cell get no input and should therefore hold their state.
-All memory cells are initialized to all contain zeros.
-As the output of the memory cell is the potential of the first neuron, this means that all first neurons in the memory cells have starting potential $0$ and all second neurons have starting potential $1$.
-The benchmark now feeds sparse inputs as described before to the memory cell, and requires the cell to hold the state from the last non-sparse input. 
-This time horizon is the memory length of the memory cell, the amount of time it can save information.
-The benchmark not only checks the potential of the first neuron, but also the potential of the second neuron to be in the required range.
-Furthermore, the benchmarks alternates the symbol that should be saved first, half of the time it is a $0$, half of the time it is a $1$.
-Moreover, the memory cell state is switched again two times after the first input by providing two additional inputs, which represent the negated current memory cell potential, to check if the cell is able to switch its state.
-This results can be easily viewed when executing the memory cell Python script, they are not interesting since the memory cell does not learn anything.
 
-\chapter{Summary}
+    \section{Memory Layer}
+
+
+    \section{Transformer with Memory Layer}
+
+
+    \chapter{Experiments}
+    All models and benchmarks can be found under: \\
+    \url{https://github.com/Oidlichtnwoada/LongTermDependenciesLearning}
+
+
+    \section{Models}
+
+    \subsection{Differentiable Neural Computer} \label{Differentiable Neural Computer}
+    This model defines a memory-augmented neural network architecture, that consists of a controller, read and write heads and obviously an external memory that is not parameterized by the neural network parameter.
+    Furthermore, the external memory was structured in rows, where each memory row has a specific length.
+    The architecture was taken from \cite{DNC} and is an enhancement to the Neural Turing Machine firstly introduced in \cite{NTM}.
+    The Neural Turing Machine introduced differentiable read and write functions that allow to access the memory by context or by location in both read and write mode.
+    The access by context was implemented by comparing the cosine distance of an emitted key vector to all memory row contents and by applying the softmax function to that distance vector, which yields a weight vector.
+    The access by location was implemented by adding a possibility to interleave the previous step weights with the current step content-based weights and adding a "blurry" shift operation on top of it.
+    These weight vectors are then normalized using a softmax function that takes each argument to the power of an emitted number to sharpen the weights.
+    Some improvements of the Differentiable Neural Computer include a memory management system that is able to allocate and free memory in the external memory to avoid overwriting of important information and a memory use link matrix that allows the model to track its memory operations through time.
+
+    \subsection{Memory Cell} \label{Memory Cell}
+    The Memory Cell is a simple RNN consisting of two LTC neurons as described in \cite{LTCNetworks} and used in \cite{NCP}.
+    However the leakage term was removed from the ordinary differential equation describing the state dynamics, as a fading potential would mean losing information stored in the memory cell over time.
+    It has a 2-dimensional input, the input voltage for each of the two neurons delivered by a synapse, and a 1-dimensional output, which is just the potential of the first neuron.
+    This model was implemented to tune state dynamics and parameters for the suggested memory cell architecture.
+    Each cell has three incoming synapses:
+    \begin{itemize}
+        \item{}
+        an excitatory synapse that delivers the input voltage over a synapse to the neuron
+        \item{}
+        a recurrent excitatory synapse that connects each neuron with itself, which is useful to maintain an excitation in a single neuron
+        \item{}
+        an inhibitory synapse from the other neuron, to create mutual exclusive excitation
+    \end{itemize}
+    This simple memory cell should now be able to store information over a long time horizon, the input vectors are provided in the right way.
+    Recent results have shown that this architecture is not capable of repeatedly storing information and I am not sure in what range the input values shall lie.
+    As described in \cite{LTCNetworks}, the synaptic current is computed by multiplying a non-linear conductance with a potential difference.
+    The potential difference is just a parameter $E_{ij}$ minus the potential of the postsynaptic neuron $V_j$.
+    However, if the potentials are not bounded, this would mean even an excitatory synapse can deliver a negative current or analogously an inhibitory synapse can deliver a positive current.
+    The bounded dynamics of LTC networks is no longer valid, as the leakage term was removed from the state dynamics equation.
+
+    \subsection{Memory Cell NCP} \label{Memory Cell NCP}
+    This is a wiring that was written for the keras-ncp Python package derived from \cite{NCP} that implements the memory cell architecture from the previous section in a parallel manner, however with a leakage current term in the state dynamics.
+    However results have shown that it is not really able to store information over a long time horizon.
+
+    \subsection{Memory Layer} \label{Memory Layer}
+    This model implements the architecture of the memory cell, in a parallelized manner. It is therefore also an RNN and includes an input and output control, which are simply multi-layer perceptrons.
+    The input control gets the current step RNN inputs and the current memory state as input and transforms this information to an input current to each memory cell without passing it through a synaptic non-linearity.
+    One neuron in each memory cell gets the unmodified input from the input control, the other neuron gets the negated input current as input.
+    The output of the whole architecture is then computed by passing the potentials of every first neuron in each memory cell through the output control, that generated the final RNN output.
+    This model also performs not as well as expected.
+
+    \subsection{Memory Layer Attention} \label{Memory Layer Attention}
+    To possibly improve the Transformer architecture described in \cite{Transformer}, a new mechanism instead of multi-head attention must be implemented.
+    Therefore, memory layer attention was created which simply concatenates every query vector with each value vector and feeds all concatenated vectors per query as a sequence to an RNN architecture.
+    As an RNN architecture, the predescribed memory layer RNN is used. The output of the RNN is then the new representation of the query vector at the input of the memory layer attention.
+    This architecture does not use separate key and value vectors and combines them in a single representation.
+    A similar approach was taken in the Reformer architecture \cite{Reformer}, which is a computationally more efficient transformer.
+    This approach was not thoroughly tested as the basic building block, the memory layer RNN does not work as expected.
+
+    \subsection{Transformer} \label{Transformer}
+    This model implements the transformer architecture firstly introduced in \cite{Transformer}. The input and output embedding were replaced with a fully connected layer, as this model should also work with vector sized input.
+    The linear layer at the output of the transformer was also replaced with a fully connected layer, which emits an output token of the specified token size.
+    Instead of stopping the transformer architecture when the stop token was emitted by the decoder layer, this architecture stops after a specified amount of tokens.
+    Moreover, the positional input encoding was extended to also support non-equidistant positions at the input, occurring when sampling irregularly.
+    Therefore, the input to the transformer is a tuple, which must include position intervals, between two successive inputs.
+    These are then used to build a cumulative sum to generate the absolute positions. If you just want to use the regularly sampled mode, just provide only $1$s for the intervals.
+    This architecture performs very well if a reasonably sized model with enough parameters is chosen.
+
+    \subsection{Recurrent Transformer} \label{Recurrent Transformer}
+    This is a slightly modified version of the transformer model \ref{Transformer}.
+    It does not simply add the weighted value vectors up in the multi-head attention mechanism, but instead passes the weighted value vectors through an RNN, whose final output vector represents the added weighted values vectors in the ordinary multi-head attention.
+    This architecture also performs reasonably well in the benchmarks.
+
+    \subsection{Neural Circuit Policies} \label{Neural Circuit Policies}
+    This model is a specifically connected LTC network \cite{LTCNetworks}, firstly described in \cite{NCP}.
+    It is very demanding in computational resources and does not perform very well on the benchmarks.
+
+    \subsection{Unitary RNN} \label{Unitary RNN}
+    Unitary RNNs were firstly introduced in \cite{UnitaryRNNs} and made learning long-term dependencies with RNNs possible by keeping gradient sizes stable, even if backpropagation occurs to a distant past state.
+    It is achieved by parameterizing the weight matrix of the hidden state in the next state equation in a way, that it stays a unitary matrix.
+    This matrix can be constructed out of real and complex numbers, the whole unitary matrix space of size $N^2$ was efficiently parameterized by \cite{EfficientUnitaryRNNs}.
+    With this approach, it can be shown that distant past inputs have the same influence on the current state as current inputs in terms of their gradient size, which only differs by a constant.
+
+    \subsection{Unitary RNN} \label{Unitary RNN}
+    Unitary RNNs were firstly introduced in \cite{UnitaryRNNs} and made learning long-term dependencies with RNNs possible by keeping gradient sizes stable, even if backpropagation occurs to a distant past state.
+    It is achieved by parameterizing the weight matrix of the hidden state in the next state equation in a way, that it stays a unitary matrix.
+    This matrix can be constructed out of real numbers, which was done in \cite{UnitaryRNNs}, but it can also be extended to the complex domain, which was done in \cite{EfficientUnitaryRNNs}.
+    With this approach, it can be shown that distant past inputs have the same influence on the current state as current inputs in terms of their gradient size, which only differs by a constant.
+
+    \subsection{Enhanced Unitary RNN} \label{Enhanced Unitary RNN}
+    This model uses the time domain input to compute a frequency domain input, both are fed concatenated as input vector $i_t$ to the RNN as input.
+    My intuition was that some tasks are easier to solve in the frequency domain, whereas some tasks are easier to solve in the time domain.
+    The state equation of the RNN can be expressed as follows, where $W_1$ and $W_2$ are unitary matrices and $\sigma(z) = max(0,|z|+b)*\frac{z}{|z|}$ (parameterized modrelu activation function defined in \cite{UnitaryRNNs}):
+    \begin{equation}
+        h_{t+1} = \sigma(W_2 * (\sigma(W_1 * h_t + V * i_{t+1})))
+    \end{equation}
+    The second matrix multiplication was added, such that the current hidden state has an influence where information about the current input is stored, which was not the case in the approach of \cite{UnitaryRNNs}.
+    There exist other RNNs that use this state equations like the Fourier Recurrent Unit that was firstly introduced in \cite{FRU}.
+    The parameterization of the unitary matrices was done with a complex square matrix $A$ of the same dimension.
+    This matrix $A$ was then added to its adjoint $A^H$, which yields an arbitrary Hermitian matrix $H$.
+    As each unitary matrix can be expressed by using the matrix exponential $e^{iH}$, each unitary matrix can be parameterized by $A$.
+    However, the results were not as good as expected because gradients were not stable.
+
+
+    \section{Benchmarks}
+
+    \subsection{Walker}
+    This benchmark evaluates how well a model can predict a dynamical, physical system's behavior and was taken from \cite{LongTermDependenciesIrregularTimeSeries}.
+    The training data is acquired simulation data of the \texttt{Walker2d-v2} OpenAI gym \cite{OpenAIGym} controlled by a pre-trained policy.
+    The objective was to learn the kinematic simulation of the physics engine in an auto-regressive fashion using imitation learning.
+    To increase the task difficulty, the simulation data was acquired from different training stages of the pre-trained policy (between 500 and 1200 Proximal Policy Optimization iterations) and 1\% of actions were overwritten by random actions.
+    Furthermore, frame-skips were introduced by removing 10\% of all time-steps to get irregularly sampled training data.
+    Moreover, the training data was divided into equally long sequences.
+    For non-recurrent models, the input per time-step was the whole training sequence, but future values were zero-padded to ensure the model is only able to derive future predictions from past values.
+    The model needs to predict the simulation state in the next time-step.
+    Mean squared error was used as loss function when training the models.
+    Further results of recurrent neural network models doing this benchmark can be found in \cite{LatentODEsIrregularlySampled}.
+    The results are presented in the following table:
+    \begin{table}[h]
+        \begin{tabular}{lll}
+            \hline
+            Model                    & Parameter Count & Mean Squared Error \\ \hline
+            Transformer              & 338257          & 0.793              \\
+            Recurrent Transformer    & 439633          & 0.599              \\
+            Recurrent Transformer    & 29617           & 1.102              \\
+            Memory Layer Transformer & 174529          & 7.624              \\
+            Neural Circuit Policies  & 21889           & 2.297              \\
+        \end{tabular}
+    \end{table}
+
+    \subsection{Memory}
+    This benchmark evaluates how well a model can be trained to incorporate long-term dependencies in its predictions.
+    The structure of this benchmark was taken from \cite{UnitaryRNNs}, who also tested their recurrent neural network with this long-term dependency benchmark.
+    The training data only contains integers from $0$ to $N-1$. The first ten input symbols of each input sequence are randomly sampled integers from $0$ to $N-3$ (i.i.d. uniform).
+    Then the following symbols are copies of the integer $N-2$ in the amount of the tested memory length $T$ minus $1$.
+    After that follows a marker, which is a single integer $N-1$.
+    Then the remaining ten symbols are again copies of the integer $N-2$.
+    The expected output sequence starts with $T+10$ copies of $N-2$ followed by the ten randomly sampled symbols from the start of the input sequence.
+    Each tested model must produce an output vector of size $N$ per time-step to a apply a sparse categorical cross-entropy loss directly from the model output logits.
+    The loss was weighted such that the loss given by each of the last ten output vectors has the same weight as all previous output vectors combined, as it is easily to optimize to predict only the same class for a long interval.
+    Clearly, a model can only solve this task if it is able to store information over a time period in the same size of the memory length.
+    The baseline for this benchmark's mean categorical entropy loss per batch can be set to $\frac{10\log(N-2)}{T+20}$, as a memory-less strategy can perfectly predict the first $T+10$ symbols of the required output sequence and then it predicts the remaining $10$ symbols randomly from $0$ to $N-3$ (i.i.d. uniform).
+    The results are presented in the following table, where $N$ was $10$, $T$ was $100$ and the baseline therefore was $0.173$:
+    \begin{table}[h]
+        \begin{tabular}{llll}
+            \hline
+            Model                          & Parameter Count & Cross-Entropy Error & Correctly Memorized Symbols \\ \hline
+            LSTM                           & 7130            & 0.157               & 1.1                         \\
+            Memory Layer                   & 49720           & 0.400               & 0.0                         \\
+            Differentiable Neural Computer & 81685           & 0.145               & 2.0                         \\
+            Unitary RNN                    & 1674            & 0.009               & 10.0                        \\
+            Enhanced Unitary RNN           & 101388          & 0.3151              & 1.3                         \\
+        \end{tabular}
+    \end{table}
+
+    \subsection{Cell}
+    This is a very small benchmark that tries to find the right parameter and input ranges for the memory cell \ref{Memory Cell}.
+    This benchmark should make clear if a memory cell is able to switch its state multiple times and keep information over a long period of time.
+    It is directly implemented in the same file as the memory cell itself.
+    The memory cell in the current test setup has no more recurrent, excitatory synapses.
+    As discussed in our meeting the state of a memory cell is now only changed through four synapses, two per neuron.
+    One synapse per neuron delivers the input via a synaptic activation and the other synapse ensures the opposite potentials of both neurons.
+    The synaptic current can be computed by $g_{syn}(V_{pre}) * (E_{pre,post} - V_{post})$.
+    I have found out that the LTC equations are not suited at all to build a memory cell, as a $1$ input should deliver a big current and a $0$ input should lead to a big negative current, no matter what the potential of the postsynaptic neuron is.
+    However with the current equations, this is not possible to achieve, since the non-linear synaptic conductance is always positive and therefore the sign of the current cannot be determined by the input.
+    Therefore, the underlying equations must be changed.
+    The same argument holds for the mutual inhibitory synapses. The higher potential neuron should send a negative current to the other neuron, whereas the lower potential neuron should send a positive current to the higher potential neuron.
+    These things are not possible with the current setup, and therefore need to be changed.
+    The memory cell receives only a single input that will be passed untouched to the first neuron's synaptic activation, but the second neuron will get the negated input to its synaptic activation for the input.
+    The negation is currently implemented using the function $f(x) = 1-x$.
+    This input is only passed at the specific time step, when the input current provider needs to save something, otherwise both neurons in the memory cell get no input and should therefore hold their state.
+    All memory cells are initialized to all contain zeros.
+    As the output of the memory cell is the potential of the first neuron, this means that all first neurons in the memory cells have starting potential $0$ and all second neurons have starting potential $1$.
+    The benchmark now feeds sparse inputs as described before to the memory cell, and requires the cell to hold the state from the last non-sparse input.
+    This time horizon is the memory length of the memory cell, the amount of time it can save information.
+    The benchmark not only checks the potential of the first neuron, but also the potential of the second neuron to be in the required range.
+    Furthermore, the benchmarks alternates the symbol that should be saved first, half of the time it is a $0$, half of the time it is a $1$.
+    Moreover, the memory cell state is switched again two times after the first input by providing two additional inputs, which represent the negated current memory cell potential, to check if the cell is able to switch its state.
+    This results can be easily viewed when executing the memory cell Python script, they are not interesting since the memory cell does not learn anything.
+
+
+    \chapter{Summary}
 %\todo{Enter your text here.}
 
 % Remove following line for the final thesis.
 % \input{intro.tex} % A short introduction to LaTeX.
 
-\backmatter
+    \backmatter
 
 % Use an optional list of figures.
-\listoffigures % Starred version, i.e., \listoffigures*, removes the toc entry.
+    \listoffigures % Starred version, i.e., \listoffigures*, removes the toc entry.
 
 % Use an optional list of tables.
-\cleardoublepage % Start list of tables on the next empty right hand page.
-\listoftables % Starred version, i.e., \listoftables*, removes the toc entry.
+    \cleardoublepage % Start list of tables on the next empty right hand page.
+    \listoftables % Starred version, i.e., \listoftables*, removes the toc entry.
 
 % Use an optional list of algorithms.
 %\listofalgorithms
 %\addcontentsline{toc}{chapter}{List of Algorithms}
 
 % Add an index.
-\printindex
+    \printindex
 
 % Add a glossary.
-\printglossaries
+    \printglossaries
 
 % Add a bibliography.
-\bibliographystyle{alpha}
-\bibliography{thesis}
+    \bibliographystyle{alpha}
+    \bibliography{thesis}
 
 \end{document}
