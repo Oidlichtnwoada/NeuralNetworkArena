@@ -135,18 +135,19 @@ class Benchmark(abc.ABC):
             return_dict=True)
         if not self.args.skip_training:
             self.create_visualization()
+        self.accumulate_data()
 
     def create_visualization(self):
         fit_results = list(self.fit_result.history.items())
         fit_header = self.correct_names([x[0] for x in fit_results], train=True)
         fit_data = np.array([x[1] for x in fit_results])
         fit_table = pd.DataFrame(data=fit_data.T, columns=fit_header)
-        fit_table.to_csv(os.path.join(self.result_directory, self.args.model, 'training.csv'))
+        fit_table.to_csv(os.path.join(self.result_directory, self.args.model, 'training.csv'), index=False)
         evaluate_results = list(self.evaluate_result.items())
         evaluate_header = self.correct_names([x[0] for x in evaluate_results], train=False)
         evaluate_data = np.array([x[1] for x in evaluate_results])
         evaluate_table = pd.DataFrame(data=np.expand_dims(evaluate_data, 0), columns=evaluate_header)
-        evaluate_table.to_csv(os.path.join(self.result_directory, self.args.model, 'testing.csv'))
+        evaluate_table.to_csv(os.path.join(self.result_directory, self.args.model, 'testing.csv'), index=False)
         fit_table.drop(fit_table.columns[-1], axis=1, inplace=True)
         x_data = range(1, max(self.fit_result.epoch) + 2)
         figure, first_axis = plt.subplots()
@@ -162,6 +163,18 @@ class Benchmark(abc.ABC):
         first_axis.legend(loc='center left', prop={'size': 6})
         second_axis.legend(loc='center right', prop={'size': 6})
         plt.savefig(os.path.join(self.visualization_directory, f'{self.args.model}.pdf'))
+
+    def accumulate_data(self):
+        testing_data = []
+        for model_name in self.models:
+            test_results_path = os.path.join(self.result_directory, model_name, 'testing.csv')
+            if os.path.exists(test_results_path):
+                table = pd.read_csv(test_results_path)
+                table.insert(0, 'model', model_name)
+                testing_data.append(table)
+        merged_table = pd.concat(testing_data)
+        merged_table.sort_values(merged_table.columns[1], inplace=True)
+        merged_table.to_csv(os.path.join(self.result_directory, 'merged_results.csv'), index=False)
 
     def correct_names(self, names, train):
         loss_name = self.fit_result.model.loss.name
