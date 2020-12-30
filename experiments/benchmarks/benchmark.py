@@ -148,7 +148,7 @@ class Benchmark(abc.ABC):
         evaluate_table = pd.DataFrame(data=np.expand_dims(evaluate_data, 0), columns=evaluate_header)
         evaluate_table.to_csv(os.path.join(self.result_directory, self.args.model, 'testing.csv'))
         fit_table.drop(fit_table.columns[-1], axis=1, inplace=True)
-        x_data = range(1, max(self.fit_result.epoch) + 1)
+        x_data = range(1, max(self.fit_result.epoch) + 2)
         figure, first_axis = plt.subplots()
         first_axis.set_xlabel('epochs')
         first_axis.set_xticks(x_data)
