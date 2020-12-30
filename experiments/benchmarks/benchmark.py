@@ -5,6 +5,7 @@ import os
 import shutil
 
 import matplotlib.pyplot as plt
+import matplotlib.ticker as ticker
 import numpy as np
 import pandas as pd
 import tensorflow as tf
@@ -90,12 +91,11 @@ class Benchmark(abc.ABC):
     def check_directories(self):
         shutil.rmtree(os.path.join(self.tensorboard_directory, self.args.model), ignore_errors=True)
         shutil.rmtree(os.path.join(self.result_directory, self.args.model), ignore_errors=True)
-        shutil.rmtree(os.path.join(self.visualization_directory, self.args.model), ignore_errors=True)
         for model_name in self.models:
             os.makedirs(os.path.join(self.saved_model_directory, model_name), exist_ok=True)
             os.makedirs(os.path.join(self.tensorboard_directory, model_name), exist_ok=True)
             os.makedirs(os.path.join(self.result_directory, model_name), exist_ok=True)
-            os.makedirs(os.path.join(self.visualization_directory, model_name), exist_ok=True)
+            os.makedirs(os.path.join(self.visualization_directory), exist_ok=True)
 
     def train_and_test(self):
         self.check_directories()
@@ -151,7 +151,7 @@ class Benchmark(abc.ABC):
         x_data = range(1, max(self.fit_result.epoch) + 2)
         figure, first_axis = plt.subplots()
         first_axis.set_xlabel('epochs')
-        first_axis.set_xticks(x_data)
+        first_axis.xaxis.set_major_locator(ticker.MaxNLocator(integer=True))
         first_axis.set_title(f'{self.args.model.replace("_", " ")}  @ {self.__class__.__name__}')
         second_axis = first_axis.twinx()
         axes = [first_axis, second_axis]
@@ -161,7 +161,7 @@ class Benchmark(abc.ABC):
             axes[index % 2].hlines(evaluate_table[column].tolist(), x_data[0], x_data[-1], label=column, linestyles='dashed', colors='black')
         first_axis.legend(loc='center left', prop={'size': 6})
         second_axis.legend(loc='center right', prop={'size': 6})
-        plt.show()
+        plt.savefig(os.path.join(self.visualization_directory, f'{self.args.model}.pdf'))
 
     def correct_names(self, names, train):
         loss_name = self.fit_result.model.loss.name
@@ -196,7 +196,7 @@ class Benchmark(abc.ABC):
     def get_args(self, parser_configs):
         parser = argparse.ArgumentParser()
         parser.add_argument('--model', default=list(self.models)[0], type=str)
-        parser.add_argument('--epochs', default=2, type=int)
+        parser.add_argument('--epochs', default=128, type=int)
         parser.add_argument('--batch_size', default=32, type=int)
         parser.add_argument('--optimizer_name', default='adam', type=str)
         parser.add_argument('--learning_rate', default=0.001, type=float)
