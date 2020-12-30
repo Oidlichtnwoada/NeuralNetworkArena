@@ -12,7 +12,7 @@ class WalkerBenchmark(experiments.benchmarks.benchmark.Benchmark):
                           ('--sequence_length', 64, int),
                           ('--loss_name', 'MeanSquaredError', str),
                           ('--loss_config', {}, dict),
-                          ('--metric_name', 'MeanSquaredError', str)))
+                          ('--metric_name', 'MeanAbsoluteError', str)))
 
     def get_data(self):
         datasets = []

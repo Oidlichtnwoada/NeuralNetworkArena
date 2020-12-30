@@ -4,6 +4,7 @@ import collections.abc
 import os
 import shutil
 
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import tensorflow as tf
@@ -133,19 +134,47 @@ class Benchmark(abc.ABC):
             callbacks=(tf.keras.callbacks.TensorBoard(log_dir=model_tensorboard_location)),
             return_dict=True)
         if not self.args.skip_training:
-            self.create_visualizations()
+            self.create_visualization()
 
-    def create_visualizations(self):
-        for name, result_dict in (('training', self.fit_result.history), ('testing', self.evaluate_result)):
-            results = list(result_dict.items())
-            header = [x[0] for x in results]
-            data = np.array([x[1] for x in results])
-            if len(data.shape) > 1:
-                data = data.T
+    def create_visualization(self):
+        fit_results = list(self.fit_result.history.items())
+        fit_header = self.correct_names([x[0] for x in fit_results], train=True)
+        fit_data = np.array([x[1] for x in fit_results])
+        fit_table = pd.DataFrame(data=fit_data.T, columns=fit_header)
+        fit_table.to_csv(os.path.join(self.result_directory, self.args.model, 'training.csv'))
+        evaluate_results = list(self.evaluate_result.items())
+        evaluate_header = self.correct_names([x[0] for x in evaluate_results], train=False)
+        evaluate_data = np.array([x[1] for x in evaluate_results])
+        evaluate_table = pd.DataFrame(data=np.expand_dims(evaluate_data, 0), columns=evaluate_header)
+        evaluate_table.to_csv(os.path.join(self.result_directory, self.args.model, 'testing.csv'))
+        fit_table.drop(fit_table.columns[-1], axis=1, inplace=True)
+        x_data = range(1, self.args.epochs + 1)
+        figure, first_axis = plt.subplots()
+        first_axis.set_xlabel('epochs')
+        first_axis.set_xticks(x_data)
+        first_axis.set_title(f'{self.args.model.replace("_", " ")}  @ {self.__class__.__name__}')
+        second_axis = first_axis.twinx()
+        axes = [first_axis, second_axis]
+        for index, column in enumerate(fit_table):
+            axes[index % 2].plot(x_data, fit_table[column].tolist(), label=column)
+        for index, column in enumerate(evaluate_table):
+            axes[index % 2].hlines(evaluate_table[column].tolist(), x_data[0], x_data[-1], label=column, linestyles='dashed', colors='black')
+        first_axis.legend(loc='center left', prop={'size': 6})
+        second_axis.legend(loc='center right', prop={'size': 6})
+        plt.show()
+
+    def correct_names(self, names, train):
+        loss_name = self.fit_result.model.loss.name
+        lr_name = 'learning rate'
+        corrected_names = []
+        for name in names:
+            if train:
+                if not name.startswith('val'):
+                    name = 'train ' + name
             else:
-                data = np.expand_dims(data, 0)
-            table = pd.DataFrame(data=data, columns=header)
-            table.to_csv(os.path.join(self.result_directory, self.args.model, name))
+                name = 'test ' + name
+            corrected_names.append(name.replace('loss', loss_name).replace('lr', lr_name).replace('_', ' '))
+        return corrected_names
 
     @staticmethod
     def get_numpy_array(array):
@@ -167,7 +196,7 @@ class Benchmark(abc.ABC):
     def get_args(self, parser_configs):
         parser = argparse.ArgumentParser()
         parser.add_argument('--model', default=list(self.models)[0], type=str)
-        parser.add_argument('--epochs', default=2, type=int)
+        parser.add_argument('--epochs', default=16, type=int)
         parser.add_argument('--batch_size', default=32, type=int)
         parser.add_argument('--optimizer_name', default='adam', type=str)
         parser.add_argument('--learning_rate', default=0.001, type=float)
