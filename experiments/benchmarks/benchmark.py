@@ -149,11 +149,11 @@ class Benchmark(abc.ABC):
         evaluate_table = pd.DataFrame(data=np.expand_dims(evaluate_data, 0), columns=evaluate_header)
         evaluate_table.to_csv(os.path.join(self.result_directory, self.args.model, 'testing.csv'), index=False)
         fit_table.drop(fit_table.columns[-1], axis=1, inplace=True)
-        x_data = range(1, max(self.fit_result.epoch) + 2)
+        x_data = np.array(range(1, max(self.fit_result.epoch) + 2)) * len(self.training_input_data[0])
         figure, first_axis = plt.subplots()
-        first_axis.set_xlabel('epochs')
+        first_axis.set_xlabel('training samples')
         first_axis.xaxis.set_major_locator(ticker.MaxNLocator(integer=True))
-        first_axis.set_title(f'{self.args.model.replace("_", " ")}  @ {self.__class__.__name__}')
+        first_axis.set_title(f'{self.args.model.replace("_", " ")} @ {self.__class__.__name__}')
         second_axis = first_axis.twinx()
         axes = [first_axis, second_axis]
         for index, column in enumerate(fit_table):
