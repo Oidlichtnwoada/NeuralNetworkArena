@@ -145,7 +145,12 @@ class Encoder(tf.keras.layers.Layer):
 
     def call(self, inputs, **kwargs):
         # this function computes the output of the encoder
-        encoder_input, times = inputs
+        if isinstance(inputs, tuple):
+            encoder_input, times = inputs
+            positional_encoding_matrix = positional_encoding(tf.cumsum(times, axis=1), self.d_model)
+        else:
+            encoder_input = inputs
+            positional_encoding_matrix = positional_encoding(tf.range(encoder_input.shape[1])[tf.newaxis, :, tf.newaxis], self.d_model)
         # compute mask to not attend to zero inputs if enabled
         if self.mask_zero_inputs:
             encoder_zero_input_mask = compute_padding_mask(encoder_input)
@@ -156,7 +161,7 @@ class Encoder(tf.keras.layers.Layer):
         # scale with with factor
         embedded_signals *= tf.math.sqrt(tf.cast(self.d_model, dtype=tf.float32))
         # add positional information to the embedded signals using times
-        positional_embedded_signals = embedded_signals + positional_encoding(tf.cumsum(times, axis=1), self.d_model)
+        positional_embedded_signals = embedded_signals + positional_encoding_matrix
         # use a dropout layer to prevent overfitting
         positional_embedded_signals = self.dropout_layer(positional_embedded_signals)
         # create variable that is updated by each encoder layer
@@ -165,7 +170,7 @@ class Encoder(tf.keras.layers.Layer):
             # compute output of each encoder layer
             encoder_layer_inout = self.encoder_layers[i]((encoder_layer_inout, encoder_zero_input_mask))
         # the output of the last encoder layer is the output of the encoder
-        return encoder_layer_inout
+        return encoder_layer_inout, encoder_zero_input_mask
 
 
 class DecoderLayer(tf.keras.layers.Layer):
@@ -234,21 +239,13 @@ class Decoder(tf.keras.layers.Layer):
 
     def call(self, inputs, **kwargs):
         # split inputs tuple to the arguments
-        encoder_output, encoder_input = inputs
-        # compute mask to not attend to zero inputs if enabled
-        if self.mask_zero_inputs:
-            decoder_zero_input_mask = compute_padding_mask(encoder_input)
-        else:
-            decoder_zero_input_mask = None
+        encoder_output, decoder_zero_input_mask = inputs
         # create a start token
         tokens = tf.repeat(tf.ones_like(encoder_output)[:, :1, :1], self.token_size, axis=-1)
         # create the right amount of tokens
         for _ in range(self.token_amount):
             # create a look ahead mask such that tokens can only attend to previous positions
             look_ahead_mask = compute_look_ahead_mask(tokens)
-            # compute mask to not attend to zero input tokens if enabled
-            if self.mask_zero_inputs:
-                look_ahead_mask = tf.maximum(compute_padding_mask(tokens), look_ahead_mask)
             # embed the current tokens
             embedded_tokens = self.embedding(tokens)
             # scale with with factor
@@ -297,7 +294,7 @@ class Transformer(tf.keras.Model):
         # build the encoder output
         encoder_output = self.encoder(inputs)
         # build the decoder output
-        decoder_output = self.decoder((encoder_output, inputs[0]))
+        decoder_output = self.decoder(encoder_output)
         # the output of the transformer is the (squeezed) output of the decoder
         if self.squeeze_output:
             return tf.squeeze(decoder_output)
