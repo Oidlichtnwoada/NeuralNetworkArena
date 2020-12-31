@@ -1,6 +1,9 @@
 import tensorflow as tf
 
-import experiments.models.transformer
+
+def split_heads(qkv, num_heads, d_qkv):
+    # split queries, key or values into num_heads - permutation necessary to compute right dot product
+    return tf.transpose(tf.reshape(qkv, (-1,) + (qkv.shape[1],) + (num_heads, d_qkv)), perm=[0, 2, 1, 3])
 
 
 def recurrent_dot_product_attention(queries, keys, values, d_qkv, recurrent_network_layers, mask):
@@ -52,9 +55,9 @@ class MultiHeadRecurrentAttention(tf.keras.layers.Layer):
         keys = self.key_generator_network(key_gen_input)
         values = self.value_generator_network(value_gen_input)
         # split queries, keys and values to the right amount of heads
-        queries_heads = experiments.models.transformer.split_heads(queries, self.num_heads, self.d_qkv)
-        keys_heads = experiments.models.transformer.split_heads(keys, self.num_heads, self.d_qkv)
-        value_heads = experiments.models.transformer.split_heads(values, self.num_heads, self.d_qkv)
+        queries_heads = split_heads(queries, self.num_heads, self.d_qkv)
+        keys_heads = split_heads(keys, self.num_heads, self.d_qkv)
+        value_heads = split_heads(values, self.num_heads, self.d_qkv)
         # compute the recurrent dot product attention
         rdpa, attention_weights = recurrent_dot_product_attention(queries_heads, keys_heads, value_heads, self.d_qkv, self.recurrent_network_layers, mask)
         # transpose rdpa matrix such that the heads dimension is behind input dimension

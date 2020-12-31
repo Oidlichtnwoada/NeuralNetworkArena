@@ -1,6 +1,20 @@
 import tensorflow as tf
 
 
+def compute_padding_mask(signals):
+    # mask the input away if all vector entries are zero
+    padding_mask = tf.reduce_max(tf.cast(signals != 0, dtype=tf.float32), axis=2)
+    # adjust dimension to enable batch operation during dot product attention
+    return padding_mask[:, tf.newaxis, :]
+
+
+def compute_look_ahead_mask(signals):
+    # make sure that no attention to future positions is possible
+    look_ahead_mask = tf.linalg.band_part(tf.ones((signals.shape[1], signals.shape[1])), -1, 0)
+    # adjust dimension to enable batch operation during dot product attention
+    return look_ahead_mask[tf.newaxis, ...]
+
+
 def positional_encoding(positions, d_model):
     # compute factors for all dimensions
     positional_encoding_factors = 1 / tf.pow(1E4, tf.cast(2 * (tf.range(d_model) // 2) / d_model, dtype=tf.float32))
@@ -24,37 +38,6 @@ def feed_forward_network(d_model, d_ff):
     ])
 
 
-def dot_product_attention(queries, keys, values, d_qkv, mask):
-    # compute the attention logits from each query to each key
-    attention_logits = tf.matmul(queries, keys, transpose_b=True)
-    # scale the attention logits
-    scaled_attention_logits = attention_logits / tf.math.sqrt(tf.cast(d_qkv, dtype=tf.float32))
-    # set attention logits to very small value for input positions in mask (if present)
-    if mask is not None:
-        scaled_attention_logits -= tf.where(mask == 1, tf.ones_like(mask) * float('inf'), mask)
-    # compute the attention weight to each value per query
-    attention_weights = tf.nn.softmax(scaled_attention_logits)
-    # compute the dpa output by weighting each value with the corresponding attention weight
-    return tf.matmul(attention_weights, values), attention_weights
-
-
-def split_heads(qkv, num_heads, d_qkv):
-    # split queries, key or values into num_heads - permutation necessary to compute right dot product
-    return tf.transpose(tf.reshape(qkv, (-1,) + (qkv.shape[1],) + (num_heads, d_qkv)), perm=[0, 2, 1, 3])
-
-
-def compute_padding_mask(signals):
-    # mask the input away if all vector entries are zero
-    padding_mask = tf.reduce_min(tf.cast(signals == 0, dtype=tf.float32), axis=2)
-    # adjust dimension to enable batch operation during dot product attention
-    return padding_mask[:, tf.newaxis, tf.newaxis, :]
-
-
-def compute_look_ahead_mask(signals):
-    # make sure that no attention to future positions is possible
-    return 1 - tf.linalg.band_part(tf.ones((signals.shape[1], signals.shape[1])), -1, 0)
-
-
 class MultiHeadAttention(tf.keras.layers.Layer):
     def __init__(self, d_model, num_heads):
         super(MultiHeadAttention, self).__init__()
@@ -62,33 +45,13 @@ class MultiHeadAttention(tf.keras.layers.Layer):
         self.d_model = d_model
         self.num_heads = num_heads
         # set size of queries, keys and values to d_model / num_heads
-        assert self.d_model % self.num_heads == 0
-        self.d_qkv = self.d_model // self.num_heads
-        # used layers
-        self.query_generator_network = tf.keras.layers.Dense(self.d_model)
-        self.key_generator_network = tf.keras.layers.Dense(self.d_model)
-        self.value_generator_network = tf.keras.layers.Dense(self.d_model)
-        self.att_output_generator_network = tf.keras.layers.Dense(self.d_model)
+        self.mha = tf.keras.layers.MultiHeadAttention(self.num_heads, self.d_model)
 
     def call(self, inputs, **kwargs):
         # split inputs tuple to the arguments
         query_gen_input, key_gen_input, value_gen_input, mask = inputs
-        # generate queries, keys and values
-        queries = self.query_generator_network(query_gen_input)
-        keys = self.key_generator_network(key_gen_input)
-        values = self.value_generator_network(value_gen_input)
-        # split queries, keys and values to the right amount of heads
-        queries_heads = split_heads(queries, self.num_heads, self.d_qkv)
-        keys_heads = split_heads(keys, self.num_heads, self.d_qkv)
-        value_heads = split_heads(values, self.num_heads, self.d_qkv)
-        # compute the dot product attention
-        dpa, attention_weights = dot_product_attention(queries_heads, keys_heads, value_heads, self.d_qkv, mask)
-        # transpose dpa matrix such that the heads dimension is behind input dimension
-        reshaped_dpa = tf.transpose(dpa, perm=[0, 2, 1, 3])
-        # merge heads to single value dimension
-        concatenated_dpa = tf.reshape(reshaped_dpa, (-1,) + (reshaped_dpa.shape[1],) + (self.d_model,))
-        # transform concatenated dpa to vectors of size d_model
-        return self.att_output_generator_network(concatenated_dpa), attention_weights
+        # return mha attention output using the predefined layer
+        return self.mha(query_gen_input, value_gen_input, key_gen_input, attention_mask=mask, return_attention_scores=True)
 
 
 class EncoderLayer(tf.keras.layers.Layer):
