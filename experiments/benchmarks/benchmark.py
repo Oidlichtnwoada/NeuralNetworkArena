@@ -43,7 +43,7 @@ class Benchmark(abc.ABC):
         self.test_output_data = self.postprocess_data(self.output_data[:, :self.test_samples])
         self.validation_output_data = self.postprocess_data(self.output_data[:, self.test_samples:-self.training_samples])
         self.training_output_data = self.postprocess_data(self.output_data[:, -self.training_samples:])
-        self.fit_result, self.evaluate_result = None, None
+        self.model, self.fit_result, self.evaluate_result = (None,) * 3
         self.train_and_test()
 
     def preprocess_data(self):
@@ -104,19 +104,19 @@ class Benchmark(abc.ABC):
         model_save_location = os.path.join(self.saved_model_directory, model_name)
         model_tensorboard_location = os.path.join(self.tensorboard_directory, model_name)
         if self.args.use_saved_model:
-            model = tf.keras.models.load_model(model_save_location)
+            self.model = tf.keras.models.load_model(model_save_location)
         else:
-            model = tf.keras.Model(inputs=self.inputs,
-                                   outputs=experiments.models.model_factory.get_model_output_by_name(self.args.model, self.model_output_params[0], self.inputs[self.model_output_params[1]]))
+            self.model = tf.keras.Model(inputs=self.inputs,
+                                        outputs=experiments.models.model_factory.get_model_output_by_name(self.args.model, self.model_output_params[0], self.inputs[self.model_output_params[1]]))
             optimizer = tf.keras.optimizers.get({'class_name': self.args.optimizer_name,
                                                  'config': {'learning_rate': self.args.learning_rate}})
             loss = tf.keras.losses.get({'class_name': self.args.loss_name,
                                         'config': self.args.loss_config})
             metric = tf.keras.metrics.get(self.args.metric_name)
-            model.compile(optimizer=optimizer, loss=loss, metrics=metric, run_eagerly=self.args.debug)
-        model.summary()
+            self.model.compile(optimizer=optimizer, loss=loss, metrics=metric, run_eagerly=self.args.debug)
+        self.model.summary()
         if not self.args.skip_training:
-            self.fit_result = model.fit(
+            self.fit_result = self.model.fit(
                 x=self.training_input_data,
                 y=self.training_output_data,
                 batch_size=self.args.batch_size,
@@ -127,7 +127,7 @@ class Benchmark(abc.ABC):
                            tf.keras.callbacks.TerminateOnNaN(),
                            tf.keras.callbacks.ReduceLROnPlateau(patience=self.args.no_improvement_lr_patience),
                            tf.keras.callbacks.TensorBoard(log_dir=model_tensorboard_location)))
-        self.evaluate_result = model.evaluate(
+        self.evaluate_result = self.model.evaluate(
             x=self.test_input_data,
             y=self.test_output_data,
             batch_size=self.args.batch_size,
@@ -147,6 +147,8 @@ class Benchmark(abc.ABC):
         evaluate_header = self.correct_names([x[0] for x in evaluate_results], train=False)
         evaluate_data = np.array([x[1] for x in evaluate_results])
         evaluate_table = pd.DataFrame(data=np.expand_dims(evaluate_data, 0), columns=evaluate_header)
+        evaluate_table.insert(0, 'model', self.args.model)
+        evaluate_table.insert(1, 'trainable parameters', np.sum([np.prod(x.shape) for x in self.model.trainable_variables]))
         evaluate_table.to_csv(os.path.join(self.result_directory, self.args.model, 'testing.csv'), index=False)
         fit_table.drop(fit_table.columns[-1], axis=1, inplace=True)
         x_data = np.array(range(1, max(self.fit_result.epoch) + 2)) * len(self.training_input_data[0])
@@ -156,9 +158,9 @@ class Benchmark(abc.ABC):
         first_axis.set_title(f'{self.args.model.replace("_", " ")} @ {self.__class__.__name__}')
         second_axis = first_axis.twinx()
         axes = [first_axis, second_axis]
-        for index, column in enumerate(fit_table):
+        for index, column in enumerate(fit_table.columns):
             axes[index % 2].plot(x_data, fit_table[column].tolist(), label=column)
-        for index, column in enumerate(evaluate_table):
+        for index, column in enumerate(evaluate_table.columns[2:]):
             axes[index % 2].hlines(evaluate_table[column].tolist(), x_data[0], x_data[-1], label=column, linestyles='dashed', colors='black')
         first_axis.legend(loc='center left', prop={'size': 6})
         second_axis.legend(loc='center right', prop={'size': 6})
@@ -170,10 +172,9 @@ class Benchmark(abc.ABC):
             test_results_path = os.path.join(self.result_directory, model_name, 'testing.csv')
             if os.path.exists(test_results_path):
                 table = pd.read_csv(test_results_path)
-                table.insert(0, 'model', model_name)
                 testing_data.append(table)
         merged_table = pd.concat(testing_data)
-        merged_table.sort_values(merged_table.columns[1], inplace=True)
+        merged_table.sort_values(merged_table.columns[2], inplace=True)
         merged_table.to_csv(os.path.join(self.result_directory, 'merged_results.csv'), index=False)
 
     def correct_names(self, names, train):
