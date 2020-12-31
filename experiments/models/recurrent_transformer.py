@@ -26,7 +26,7 @@ def recurrent_dot_product_attention(queries, keys, values, d_qkv, recurrent_netw
         rnn_input = tf.reshape(weighted_value_vectors[:, head_index, :, :, :], shape)
         rnn_output = tf.reshape(recurrent_network_layers[head_index](rnn_input), shape)
         # concatenate the real part of the output for this head to the running variable
-        concatenated_rnn_output = tf.concat([concatenated_rnn_output, tf.expand_dims(tf.math.real(rnn_output), axis=1)], axis=1)
+        concatenated_rnn_output = tf.concat([concatenated_rnn_output, tf.expand_dims(rnn_output, axis=1)], axis=1)
     # return the concatenated result of all heads
     return concatenated_rnn_output, attention_weights
 
