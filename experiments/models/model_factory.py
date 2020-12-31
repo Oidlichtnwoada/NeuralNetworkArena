@@ -2,6 +2,7 @@ import tensorflow as tf
 
 import experiments.models.differentiable_neural_computer as dnc
 import experiments.models.enhanced_unitary_rnn as eurnn
+import experiments.models.memory_cell as memory_cell
 import experiments.models.memory_layer as memory_layer
 import experiments.models.neural_circuit_policies as ncp
 import experiments.models.recurrent_transformer as recurrent_transformer
@@ -10,7 +11,8 @@ import experiments.models.unitary_rnn as urnn
 
 
 def get_model_descriptions():
-    return {'memory_layer': True,
+    return {'memory_cell': True,
+            'memory_layer': True,
             'lstm': True,
             'differentiable_neural_computer': True,
             'unitary_rnn': True,
@@ -62,6 +64,11 @@ def get_neural_circuit_policies_output(output_size, input_tensor):
 
 def get_memory_layer_output(output_size, input_tensor):
     return tf.keras.layers.RNN(memory_layer.MemoryLayerCell(output_size=output_size), return_sequences=True)(input_tensor)
+
+
+def get_memory_cell_output(output_size, input_tensor):
+    assert output_size == 2
+    return tf.keras.layers.RNN(memory_cell.MemoryCell(), return_sequences=True)(input_tensor)
 
 
 def get_model_output_by_name(model_name, output_size, input_tensor):
