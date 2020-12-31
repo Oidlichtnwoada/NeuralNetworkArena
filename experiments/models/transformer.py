@@ -40,7 +40,7 @@ def feed_forward_network(d_model, d_ff):
 
 class MultiHeadAttention(tf.keras.layers.Layer):
     def __init__(self, d_model, num_heads):
-        super(MultiHeadAttention, self).__init__()
+        super().__init__()
         # parameters
         self.d_model = d_model
         self.num_heads = num_heads
@@ -56,7 +56,7 @@ class MultiHeadAttention(tf.keras.layers.Layer):
 
 class EncoderLayer(tf.keras.layers.Layer):
     def __init__(self, d_model, num_heads, d_ff, dropout_rate, attention):
-        super(EncoderLayer, self).__init__()
+        super().__init__()
         # parameters
         self.d_model = d_model
         self.num_heads = num_heads
@@ -92,7 +92,7 @@ class EncoderLayer(tf.keras.layers.Layer):
 
 class Encoder(tf.keras.layers.Layer):
     def __init__(self, d_model, num_heads, d_ff, num_layers, mask_zero_inputs, dropout_rate, attention):
-        super(Encoder, self).__init__()
+        super().__init__()
         # parameters
         self.d_model = d_model
         self.num_heads = num_heads
@@ -138,7 +138,7 @@ class Encoder(tf.keras.layers.Layer):
 
 class DecoderLayer(tf.keras.layers.Layer):
     def __init__(self, d_model, num_heads, d_ff, dropout_rate, attention):
-        super(DecoderLayer, self).__init__()
+        super().__init__()
         # parameters
         self.d_model = d_model
         self.num_heads = num_heads
@@ -183,7 +183,7 @@ class DecoderLayer(tf.keras.layers.Layer):
 
 class Decoder(tf.keras.layers.Layer):
     def __init__(self, d_model, num_heads, d_ff, num_layers, token_amount, token_size, mask_zero_inputs, dropout_rate, attention):
-        super(Decoder, self).__init__()
+        super().__init__()
         # parameters
         self.d_model = d_model
         self.num_heads = num_heads

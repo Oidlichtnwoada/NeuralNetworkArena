@@ -48,6 +48,7 @@ class ContentAddressing:
             strengths (Tensor [B, R]): strengths for each lookup key
             sharpness_op (fn): operation to transform strengths before softmax
 
+
         Returns:
             Tensor [B, N, R]: lookup weightings for each key
         """

@@ -3,8 +3,8 @@ import tensorflow as tf
 
 @tf.keras.utils.register_keras_serializable()
 class MemoryCell(tf.keras.layers.AbstractRNNCell):
-    def __init__(self, discretization_steps=2):
-        super().__init__()
+    def __init__(self, discretization_steps=2, **kwargs):
+        super().__init__(**kwargs)
         self.discretization_steps = discretization_steps
         self.params = {
             'step_size': self.add_weight(name='step_size', shape=(1,), initializer=tf.keras.initializers.Constant(1.5573331)),

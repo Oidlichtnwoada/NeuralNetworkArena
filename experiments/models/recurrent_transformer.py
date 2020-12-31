@@ -33,7 +33,7 @@ def recurrent_dot_product_attention(queries, keys, values, d_qkv, recurrent_netw
 
 class MultiHeadRecurrentAttention(tf.keras.layers.Layer):
     def __init__(self, d_model, num_heads):
-        super(MultiHeadRecurrentAttention, self).__init__()
+        super().__init__()
         # parameters
         self.d_model = d_model
         self.num_heads = num_heads
