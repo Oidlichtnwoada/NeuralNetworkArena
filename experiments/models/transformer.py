@@ -224,10 +224,9 @@ class Decoder(tf.keras.layers.Layer):
             for i in range(self.num_layers):
                 # compute output of each decoder layer
                 decoder_layer_inout = self.decoder_layers[i]((decoder_layer_inout, encoder_output, decoder_zero_input_mask, look_ahead_mask))
-            # the output of the last decoder layer must be fed to the output dense layer to produce output tokens for each input token
-            next_tokens = self.token_output_layer(decoder_layer_inout)
+            # the output of the last decoder layer must be fed to the output dense layer
             # only the output token corresponding to the last input token is used
-            next_token = next_tokens[:, -1:, :]
+            next_token = self.token_output_layer(decoder_layer_inout[:, -1:, :])
             # add the new token to the token matrix
             tokens = tf.concat([tokens, next_token], axis=1)
         # return all produced tokens except the start token
@@ -236,7 +235,7 @@ class Decoder(tf.keras.layers.Layer):
 
 @tf.keras.utils.register_keras_serializable()
 class Transformer(tf.keras.Model):
-    def __init__(self, token_amount, token_size, d_model, num_heads, d_ff, num_layers, dropout_rate, attention, squeeze_output=True, mask_zero_inputs=True, **kwargs):
+    def __init__(self, token_amount, token_size, d_model, num_heads, d_ff, num_layers, dropout_rate, attention, flatten_output=True, mask_zero_inputs=True, **kwargs):
         super().__init__(**kwargs)
         # parameters
         self.token_amount = token_amount
@@ -245,22 +244,23 @@ class Transformer(tf.keras.Model):
         self.num_heads = num_heads
         self.d_ff = d_ff
         self.num_layers = num_layers
-        self.squeeze_output = squeeze_output
+        self.flatten_output = flatten_output
         self.mask_zero_inputs = mask_zero_inputs
         self.dropout_rate = dropout_rate
         self.attention = attention
         # used layers
         self.encoder = Encoder(self.d_model, self.num_heads, self.d_ff, self.num_layers, self.mask_zero_inputs, self.dropout_rate, self.attention)
         self.decoder = Decoder(self.d_model, self.num_heads, self.d_ff, self.num_layers, self.token_amount, self.token_size, self.mask_zero_inputs, self.dropout_rate, self.attention)
+        self.flatten = tf.keras.layers.Flatten()
 
     def call(self, inputs, training=None, mask=None):
         # build the encoder output
         encoder_output = self.encoder(inputs)
         # build the decoder output
         decoder_output = self.decoder(encoder_output)
-        # the output of the transformer is the (squeezed) output of the decoder
-        if self.squeeze_output:
-            return tf.squeeze(decoder_output)
+        # the output of the transformer is the (flattened) output of the decoder
+        if self.flatten_output:
+            return self.flatten(decoder_output)
         else:
             return decoder_output
 
@@ -275,7 +275,7 @@ class Transformer(tf.keras.Model):
             'num_layers': self.num_layers,
             'dropout_rate': self.dropout_rate,
             'attention': self.attention,
-            'squeeze_output': self.squeeze_output,
+            'flatten_output': self.flatten_output,
             'mask_zero_inputs': self.mask_zero_inputs
         })
         return config
