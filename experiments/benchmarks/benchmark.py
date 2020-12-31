@@ -209,7 +209,7 @@ class Benchmark(abc.ABC):
     def get_args(self, parser_configs):
         parser = argparse.ArgumentParser()
         parser.add_argument('--model', default=list(self.models)[0], type=str)
-        parser.add_argument('--epochs', default=128, type=int)
+        parser.add_argument('--epochs', default=1024, type=int)
         parser.add_argument('--batch_size', default=32, type=int)
         parser.add_argument('--optimizer_name', default='adam', type=str)
         parser.add_argument('--learning_rate', default=0.001, type=float)
