@@ -25,7 +25,7 @@ def positional_encoding(positions, d_model):
     # apply a cosine to the odd dimensions
     pem_cosine = tf.cos(positional_encoding_matrix[:, :, 1::2])
     # cast the result and return a tensor
-    return tf.reshape(tf.concat([pem_sine[..., tf.newaxis], pem_cosine[..., tf.newaxis]], axis=-1), (-1,) + (positional_encoding_matrix.shape[1],) + (positional_encoding_matrix.shape[2],))
+    return tf.reshape(tf.concat([pem_sine[..., tf.newaxis], pem_cosine[..., tf.newaxis]], axis=-1), (-1, positional_encoding_matrix.shape[1], positional_encoding_matrix.shape[2]))
 
 
 def feed_forward_network(d_model, d_ff):
