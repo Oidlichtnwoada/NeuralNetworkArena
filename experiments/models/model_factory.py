@@ -50,8 +50,8 @@ def get_memory_layer_transformer_output(output_size, input_tensor):
 
 
 def get_recurrent_transformer_output(output_size, input_tensor):
-    return transformer.Transformer(token_amount=1, token_size=output_size, d_model=64, num_heads=4, d_ff=128,
-                                   num_layers=4, dropout_rate=0.1, attention=recurrent_transformer.MultiHeadRecurrentAttention)(input_tensor)
+    return transformer.Transformer(token_amount=1, token_size=output_size, d_model=32, num_heads=2, d_ff=64,
+                                   num_layers=2, dropout_rate=0.1, attention=recurrent_transformer.MultiHeadRecurrentAttention)(input_tensor)
 
 
 def get_neural_circuit_policies_output(output_size, input_tensor):

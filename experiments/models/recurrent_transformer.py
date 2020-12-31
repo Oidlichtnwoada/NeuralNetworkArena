@@ -3,7 +3,7 @@ import tensorflow as tf
 
 def split_heads(qkv, num_heads, d_qkv):
     # split queries, key or values into num_heads - permutation necessary to compute right dot product
-    return tf.transpose(tf.reshape(qkv, (-1,) + (qkv.shape[1],) + (num_heads, d_qkv)), perm=[0, 2, 1, 3])
+    return tf.transpose(tf.reshape(qkv, (-1, qkv.shape[1], num_heads, d_qkv)), perm=[0, 2, 1, 3])
 
 
 def recurrent_dot_product_attention(queries, keys, values, d_qkv, recurrent_network_layers, mask):
@@ -37,32 +37,31 @@ class MultiHeadRecurrentAttention(tf.keras.layers.Layer):
         # parameters
         self.d_model = d_model
         self.num_heads = num_heads
-        # set size of queries, keys and values to d_model / num_heads
-        assert self.d_model % self.num_heads == 0
-        self.d_qkv = self.d_model // self.num_heads
         # used layers
-        self.query_generator_network = tf.keras.layers.Dense(self.d_model)
-        self.key_generator_network = tf.keras.layers.Dense(self.d_model)
-        self.value_generator_network = tf.keras.layers.Dense(self.d_model)
+        self.query_generator_network = tf.keras.layers.Dense(self.num_heads * self.d_model)
+        self.key_generator_network = tf.keras.layers.Dense(self.num_heads * self.d_model)
+        self.value_generator_network = tf.keras.layers.Dense(self.num_heads * self.d_model)
         self.mhra_output_generator_network = tf.keras.layers.Dense(self.d_model)
-        self.recurrent_network_layers = [tf.keras.layers.RNN(tf.keras.layers.LSTMCell(self.d_qkv)) for _ in range(self.num_heads)]
+        self.recurrent_network_layers = [tf.keras.layers.LSTM(self.d_model) for _ in range(self.num_heads)]
 
     def call(self, inputs, **kwargs):
         # split inputs tuple to the arguments
         query_gen_input, key_gen_input, value_gen_input, mask = inputs
+        # bring mask to format where 1 denotes no attention and insert head dimension
+        mask = tf.expand_dims(1 - mask, 1)
         # generate queries, keys and values
         queries = self.query_generator_network(query_gen_input)
         keys = self.key_generator_network(key_gen_input)
         values = self.value_generator_network(value_gen_input)
         # split queries, keys and values to the right amount of heads
-        queries_heads = split_heads(queries, self.num_heads, self.d_qkv)
-        keys_heads = split_heads(keys, self.num_heads, self.d_qkv)
-        value_heads = split_heads(values, self.num_heads, self.d_qkv)
+        queries_heads = split_heads(queries, self.num_heads, self.d_model)
+        keys_heads = split_heads(keys, self.num_heads, self.d_model)
+        value_heads = split_heads(values, self.num_heads, self.d_model)
         # compute the recurrent dot product attention
-        rdpa, attention_weights = recurrent_dot_product_attention(queries_heads, keys_heads, value_heads, self.d_qkv, self.recurrent_network_layers, mask)
+        rdpa, attention_weights = recurrent_dot_product_attention(queries_heads, keys_heads, value_heads, self.d_model, self.recurrent_network_layers, mask)
         # transpose rdpa matrix such that the heads dimension is behind input dimension
         reshaped_rdpa = tf.transpose(rdpa, perm=[0, 2, 1, 3])
         # merge heads to single value dimension
-        concatenated_rdpa = tf.reshape(reshaped_rdpa, (-1,) + (reshaped_rdpa.shape[1],) + (self.d_model,))
+        concatenated_rdpa = tf.reshape(reshaped_rdpa, (-1, reshaped_rdpa.shape[1], self.num_heads * self.d_model))
         # transform concatenated dpa to vectors of size d_model
         return self.mhra_output_generator_network(concatenated_rdpa), attention_weights
