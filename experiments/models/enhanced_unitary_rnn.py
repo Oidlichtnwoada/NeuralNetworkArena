@@ -1,5 +1,7 @@
 import tensorflow as tf
 
+import experiments.models.model_factory as model_factory
+
 
 def get_unitary_matrix(matrix):
     return tf.linalg.expm(1j * (matrix + tf.linalg.adjoint(matrix)))
@@ -36,15 +38,17 @@ class EnhancedUnitaryRNN(tf.keras.layers.AbstractRNNCell):
         return self.output_size_value
 
     def get_initial_state(self, inputs=None, batch_size=None, dtype=None):
-        return tf.complex(self.real_initial_state, self.imag_initial_state)
+        return tf.repeat(tf.complex(self.real_initial_state, self.imag_initial_state), batch_size, 0)
 
     def build(self, input_shape):
-        self.real_initial_state = self.add_weight('real_initial_state', (input_shape[0], self.state_size), tf.float32, tf.keras.initializers.Constant(1))
-        self.imag_initial_state = self.add_weight('imag_initial_state', (input_shape[0], self.state_size), tf.float32, tf.keras.initializers.Constant())
-        self.real_input_matrix = self.add_weight('real_input_matrix', (self.state_size, 2 * input_shape[-1]), tf.float32, tf.keras.initializers.Identity())
-        self.imag_input_matrix = self.add_weight('imag_input_matrix', (self.state_size, 2 * input_shape[-1]), tf.float32, tf.keras.initializers.Identity())
+        inputs_size = model_factory.get_concat_input_shape(input_shape)
+        self.real_initial_state = self.add_weight('real_initial_state', (1, self.state_size), tf.float32, tf.keras.initializers.Constant(1))
+        self.imag_initial_state = self.add_weight('imag_initial_state', (1, self.state_size), tf.float32, tf.keras.initializers.Constant())
+        self.real_input_matrix = self.add_weight('real_input_matrix', (self.state_size, 2 * inputs_size), tf.float32, tf.keras.initializers.Identity())
+        self.imag_input_matrix = self.add_weight('imag_input_matrix', (self.state_size, 2 * inputs_size), tf.float32, tf.keras.initializers.Identity())
 
     def call(self, inputs, states):
+        inputs = model_factory.get_concat_inputs(inputs)
         state_matrix = get_unitary_matrix(tf.complex(self.real_state_matrix, self.imag_state_matrix))
         step_matrix = get_unitary_matrix(tf.complex(self.real_step_matrix, self.imag_step_matrix))
         input_matrix = tf.complex(self.real_input_matrix, self.imag_input_matrix)

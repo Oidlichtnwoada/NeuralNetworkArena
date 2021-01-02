@@ -1,9 +1,9 @@
 import numpy as np
 
-import experiments.benchmarks.benchmark
+import experiments.benchmarks.benchmark as benchmark
 
 
-class MemoryBenchmark(experiments.benchmarks.benchmark.Benchmark):
+class MemoryBenchmark(benchmark.Benchmark):
     def __init__(self):
         super().__init__('memory', True,
                          (('--memory_length', 100, int),
@@ -27,7 +27,7 @@ class MemoryBenchmark(experiments.benchmarks.benchmark.Benchmark):
         time_sequence = np.ones_like(input_sequence)
         third_blank_sequence = (category_amount - 2) * np.ones((sample_amount, memory_length + sequence_length, 1))
         output_sequence = np.concatenate((third_blank_sequence, memory_sequence), 1)
-        return np.stack((input_sequence, time_sequence)), np.stack((output_sequence,)), (self.args.category_amount, slice(1))
+        return np.stack((input_sequence, time_sequence)), np.stack((output_sequence,)), self.args.category_amount
 
 
 MemoryBenchmark()

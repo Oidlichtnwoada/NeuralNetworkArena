@@ -3,6 +3,8 @@ import math
 import numpy as np
 import tensorflow as tf
 
+import experiments.models.model_factory as model_factory
+
 
 def modrelu(inputs, bias, cplex=True):
     """
@@ -129,10 +131,15 @@ class EUNNCell(tf.keras.layers.AbstractRNNCell):
                 raise ValueError("Tunable style only supports even number of hidden size")
             if self._capacity % 2 != 0:
                 raise ValueError("Tunable style only supports even number of capacity")
+        if self._cplex:
+            self.U_re, self.U_im = None, None
+        else:
+            self.U = None
+        self._v1, self._v2, self._ind, self._diag, self.bias = (None,) * 5
 
     def build(self, input_shape):
+        inputs_size = model_factory.get_concat_input_shape(input_shape)
         input_matrix_init = tf.random_uniform_initializer(-0.01, 0.01)
-        inputs_size = input_shape[-1]
         if self._cplex:
             self.U_re = self.add_weight("U_re", [inputs_size, self._num_units], initializer=input_matrix_init)
             self.U_im = self.add_weight("U_im", [inputs_size, self._num_units], initializer=input_matrix_init)
@@ -251,6 +258,7 @@ class EUNNCell(tf.keras.layers.AbstractRNNCell):
         return h
 
     def call(self, inputs, state):
+        inputs = model_factory.get_concat_inputs(inputs)
         if self._cplex:
             inputs_re = tf.matmul(inputs, self.U_re)
             inputs_im = tf.matmul(inputs, self.U_im)

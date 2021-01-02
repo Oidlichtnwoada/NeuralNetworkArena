@@ -10,14 +10,14 @@ import numpy as np
 import pandas as pd
 import tensorflow as tf
 
-import experiments.models.model_factory
+import experiments.models.model_factory as model_factory
 
 
 class Benchmark(abc.ABC):
     def __init__(self, name, iterative_data, parser_configs):
         self.name = name
         self.iterative_data = iterative_data
-        self.models = experiments.models.model_factory.get_model_descriptions()
+        self.models = model_factory.get_model_descriptions()
         self.args = self.get_args(parser_configs)
         self.project_directory = os.getcwd()
         self.saved_model_directory = os.path.join(self.project_directory, self.args.saved_model_folder_name, self.name)
@@ -25,7 +25,7 @@ class Benchmark(abc.ABC):
         self.supplementary_data_directory = os.path.join(self.project_directory, self.args.supplementary_data_folder_name, self.name)
         self.result_directory = os.path.join(self.project_directory, self.args.result_folder_name, self.name)
         self.visualization_directory = os.path.join(self.project_directory, self.args.visualization_folder_name, self.name)
-        self.input_data, self.output_data, self.model_output_params = self.get_data()
+        self.input_data, self.output_data, self.output_size = self.get_data()
         self.input_data, self.output_data = np.array(self.input_data), np.array(self.output_data)
         self.random_integer = np.random.randint(2 ** 30)
         np.random.default_rng(self.random_integer).shuffle(self.input_data, 1)
@@ -33,7 +33,7 @@ class Benchmark(abc.ABC):
         self.preprocess_data()
         self.data_samples = self.input_data.shape[1]
         assert self.data_samples == self.output_data.shape[1]
-        self.inputs = tuple((tf.keras.Input(shape=self.get_recursive_shape(x)[1:], batch_size=self.args.batch_size) for x in self.input_data))
+        self.inputs = tuple((tf.keras.Input(shape=get_recursive_shape(x)[1:], batch_size=self.args.batch_size) for x in self.input_data))
         self.test_samples = int(self.data_samples * self.args.test_data_percentage)
         self.validation_samples = int(self.data_samples * self.args.validation_data_percentage)
         self.training_samples = self.data_samples - self.test_samples - self.validation_samples
@@ -50,8 +50,8 @@ class Benchmark(abc.ABC):
         if self.iterative_data and not self.models[self.args.model]:
             sequence_length = self.input_data.shape[2]
             samples = self.input_data.shape[1] // self.args.shrink_divisor
-            input_shapes = tuple((list(self.get_recursive_shape(x)) for x in self.input_data))
-            output_shapes = tuple((list(self.get_recursive_shape(x[:, 0])) for x in self.output_data))
+            input_shapes = tuple((list(get_recursive_shape(x)) for x in self.input_data))
+            output_shapes = tuple((list(get_recursive_shape(x[:, 0])) for x in self.output_data))
             for shape in input_shapes + output_shapes:
                 shape[0] = sequence_length * samples
             input_data_tuple = tuple((np.zeros(x) for x in input_shapes))
@@ -60,10 +60,10 @@ class Benchmark(abc.ABC):
                 for subsequence_length in range(1, sequence_length + 1):
                     for input_index, input_data in enumerate(input_data_tuple):
                         input_data[sample_index * sequence_length + subsequence_length - 1, :subsequence_length] = \
-                            self.get_numpy_array(self.input_data[input_index, sample_index, :subsequence_length])
+                            get_numpy_array(self.input_data[input_index, sample_index, :subsequence_length])
                     for output_index, output_data in enumerate(output_data_tuple):
                         output_data[sample_index * sequence_length + subsequence_length - 1] = \
-                            self.get_numpy_array(self.output_data[output_index, sample_index, subsequence_length - 1])
+                            get_numpy_array(self.output_data[output_index, sample_index, subsequence_length - 1])
             del self.input_data, self.output_data
             input_data_list = []
             for input_data in input_data_tuple:
@@ -86,7 +86,7 @@ class Benchmark(abc.ABC):
         elements_to_remove = data_samples % self.args.batch_size
         if elements_to_remove != 0:
             data = data[:, :-elements_to_remove]
-        return tuple((self.get_numpy_array(x) for x in data))
+        return tuple((get_numpy_array(x) for x in data))
 
     def check_directories(self):
         shutil.rmtree(os.path.join(self.tensorboard_directory, self.args.model), ignore_errors=True)
@@ -106,8 +106,9 @@ class Benchmark(abc.ABC):
         if self.args.use_saved_model:
             self.model = tf.keras.models.load_model(model_save_location)
         else:
+            inputs_slice = slice(None) if self.args.use_time_input else slice(-1)
             self.model = tf.keras.Model(inputs=self.inputs,
-                                        outputs=experiments.models.model_factory.get_model_output_by_name(self.args.model, self.model_output_params[0], self.inputs[self.model_output_params[1]]))
+                                        outputs=model_factory.get_model_output_by_name(self.args.model, self.output_size, self.inputs[inputs_slice]))
             optimizer = tf.keras.optimizers.get({'class_name': self.args.optimizer_name,
                                                  'config': {'learning_rate': self.args.learning_rate}})
             loss = tf.keras.losses.get({'class_name': self.args.loss_name,
@@ -190,23 +191,6 @@ class Benchmark(abc.ABC):
             corrected_names.append(name.replace('loss', loss_name).replace('lr', lr_name).replace('_', ' '))
         return corrected_names
 
-    @staticmethod
-    def get_numpy_array(array):
-        array = np.array(array)
-        numpy_shape = array.shape
-        actual_shape = Benchmark.get_recursive_shape(array)
-        if numpy_shape != actual_shape:
-            array = np.array(array.tolist())
-        assert array.shape == actual_shape
-        return array
-
-    @staticmethod
-    def get_recursive_shape(array):
-        if isinstance(array, collections.abc.Iterable) and isinstance(array, collections.abc.Sized):
-            return (len(array),) + Benchmark.get_recursive_shape(array[0])
-        else:
-            return ()
-
     def get_args(self, parser_configs):
         parser = argparse.ArgumentParser()
         parser.add_argument('--model', default=list(self.models)[0], type=str)
@@ -227,6 +211,7 @@ class Benchmark(abc.ABC):
         parser.add_argument('--result_folder_name', default='results', type=str)
         parser.add_argument('--visualization_folder_name', default='visualizations', type=str)
         parser.add_argument('--shrink_divisor', default=8, type=int)
+        parser.add_argument('--use_time_input', default=True, type=bool)
         for parser_config in parser_configs:
             argument_name, default, cls = parser_config
             parser.add_argument(argument_name, default=default, type=cls)
@@ -235,3 +220,20 @@ class Benchmark(abc.ABC):
     @abc.abstractmethod
     def get_data(self):
         raise NotImplementedError
+
+
+def get_numpy_array(array):
+    array = np.array(array)
+    numpy_shape = array.shape
+    actual_shape = get_recursive_shape(array)
+    if numpy_shape != actual_shape:
+        array = np.array(array.tolist())
+    assert array.shape == actual_shape
+    return array
+
+
+def get_recursive_shape(array):
+    if isinstance(array, collections.abc.Iterable) and isinstance(array, collections.abc.Sized):
+        return (len(array),) + get_recursive_shape(array[0])
+    else:
+        return ()

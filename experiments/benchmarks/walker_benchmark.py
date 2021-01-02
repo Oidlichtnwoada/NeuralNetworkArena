@@ -2,10 +2,10 @@ import os
 
 import numpy as np
 
-import experiments.benchmarks.benchmark
+import experiments.benchmarks.benchmark as benchmark
 
 
-class WalkerBenchmark(experiments.benchmarks.benchmark.Benchmark):
+class WalkerBenchmark(benchmark.Benchmark):
     def __init__(self):
         super().__init__('walker', True,
                          (('--skip_percentage', 0.1, float),
@@ -39,7 +39,7 @@ class WalkerBenchmark(experiments.benchmarks.benchmark.Benchmark):
                                   time_dataset[start_index: end_index],
                                   output_dataset[start_index: end_index]])
         reshaped_sequences = np.swapaxes(sequences, 0, 1)
-        return reshaped_sequences[:2], reshaped_sequences[2:], (len(reshaped_sequences[0][0][0]), slice(None))
+        return reshaped_sequences[:2], reshaped_sequences[2:], len(reshaped_sequences[0][0][0])
 
 
 WalkerBenchmark()

@@ -1,9 +1,9 @@
 import numpy as np
 
-import experiments.benchmarks.benchmark
+import experiments.benchmarks.benchmark as benchmark
 
 
-class CellBenchmark(experiments.benchmarks.benchmark.Benchmark):
+class CellBenchmark(benchmark.Benchmark):
     def __init__(self):
         super().__init__('cell', True,
                          (('--memory_high_symbol', 1, int),
@@ -34,7 +34,7 @@ class CellBenchmark(experiments.benchmarks.benchmark.Benchmark):
             model_input[1::2, i * memory_length, odd] = memory_low_symbol
             model_output[1::2, i * memory_length:(i + 1) * memory_length, 0] = odd * memory_high_symbol
             model_output[1::2, i * memory_length:(i + 1) * memory_length, 1] = even * memory_high_symbol
-        return (model_input,), (model_output,), (2, slice(None))
+        return (model_input,), (model_output,), 2
 
 
 CellBenchmark()

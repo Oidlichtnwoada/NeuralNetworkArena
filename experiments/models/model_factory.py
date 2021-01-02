@@ -1,5 +1,6 @@
 import tensorflow as tf
 
+import experiments.benchmarks.benchmark as benchmark
 import experiments.models.differentiable_neural_computer as dnc
 import experiments.models.enhanced_unitary_rnn as eurnn
 import experiments.models.memory_cell as memory_cell
@@ -8,6 +9,20 @@ import experiments.models.neural_circuit_policies as ncp
 import experiments.models.recurrent_transformer as recurrent_transformer
 import experiments.models.transformer as transformer
 import experiments.models.unitary_rnn as urnn
+
+
+def get_concat_inputs(inputs):
+    if isinstance(inputs, tuple):
+        return tf.concat(inputs, -1)
+    else:
+        return inputs
+
+
+def get_concat_input_shape(input_shape):
+    if len(benchmark.get_recursive_shape(input_shape)) > 1:
+        return sum([x[-1] for x in input_shape])
+    else:
+        return input_shape[-1]
 
 
 def get_model_descriptions():
@@ -38,7 +53,7 @@ def get_enhanced_unitary_rnn_output(output_size, input_tensor):
 
 def get_lstm_output(output_size, input_tensor):
     return tf.keras.layers.TimeDistributed(tf.keras.layers.Dense(output_size))(
-        tf.keras.layers.LSTM(40, return_sequences=True)(input_tensor))
+        tf.keras.layers.LSTM(40, return_sequences=True)(get_concat_inputs(input_tensor)))
 
 
 def get_transformer_output(output_size, input_tensor):

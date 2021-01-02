@@ -17,6 +17,8 @@ import collections
 
 import tensorflow as tf
 
+import experiments.models.model_factory as model_factory
+
 # -*- coding: utf-8 -*-
 """DNC memory operations and state.
 
@@ -490,6 +492,7 @@ class DNC(tf.keras.layers.AbstractRNNCell):
         return tf.reshape(x, (-1, self._W * self._R))
 
     def call(self, inputs, prev_dnc_state):
+        inputs = model_factory.get_concat_inputs(inputs)
         prev_dnc_state = tf.nest.pack_sequence_as(self.state_size_nested, prev_dnc_state)
         with tf.name_scope("inputs_to_controller"):
             read_vectors_flat = self._flatten_read_vectors(prev_dnc_state.read_vectors)
