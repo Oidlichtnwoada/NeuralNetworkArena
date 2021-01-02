@@ -9,6 +9,7 @@ class WalkerBenchmark(benchmark.Benchmark):
     def __init__(self):
         super().__init__('walker', True,
                          (('--skip_percentage', 0.1, float),
+                          ('--frame_skip', False, bool),
                           ('--sequence_length', 64, int),
                           ('--loss_name', 'MeanSquaredError', str),
                           ('--loss_config', {}, dict),
@@ -25,7 +26,7 @@ class WalkerBenchmark(benchmark.Benchmark):
             interval = 0
             for index in range(len(input_dataset)):
                 interval += 1
-                if np.random.random() > self.args.skip_percentage:
+                if np.random.random() > self.args.skip_percentage or not self.args.frame_skip:
                     lossy_input_dataset.append(input_dataset[index])
                     lossy_time_dataset.append([interval])
                     lossy_output_dataset.append(output_dataset[index])

@@ -106,7 +106,7 @@ class Benchmark(abc.ABC):
         if self.args.use_saved_model:
             self.model = tf.keras.models.load_model(model_save_location)
         else:
-            inputs_slice = slice(None) if self.args.use_time_input else slice(-1)
+            inputs_slice = slice(None) if self.args.use_time_input or len(self.inputs) == 1 else slice(-1)
             self.model = tf.keras.Model(inputs=self.inputs,
                                         outputs=model_factory.get_model_output_by_name(self.args.model, self.output_size, self.inputs[inputs_slice]))
             optimizer = tf.keras.optimizers.get({'class_name': self.args.optimizer_name,
@@ -211,7 +211,7 @@ class Benchmark(abc.ABC):
         parser.add_argument('--result_folder_name', default='results', type=str)
         parser.add_argument('--visualization_folder_name', default='visualizations', type=str)
         parser.add_argument('--shrink_divisor', default=8, type=int)
-        parser.add_argument('--use_time_input', default=True, type=bool)
+        parser.add_argument('--use_time_input', default=False, type=bool)
         for parser_config in parser_configs:
             argument_name, default, cls = parser_config
             parser.add_argument(argument_name, default=default, type=cls)
