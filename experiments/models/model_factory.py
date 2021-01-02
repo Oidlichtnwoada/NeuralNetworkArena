@@ -43,7 +43,7 @@ def get_differentiable_neural_computer_output(output_size, input_tensor, output_
 
 
 def get_unitary_rnn_output(output_size, input_tensor, output_per_timestep):
-    return tf.keras.layers.TimeDistributed(tf.keras.layers.Dense(output_size))(
+    return tf.keras.layers.Dense(output_size)(
         tf.math.real(tf.keras.layers.RNN(urnn.EUNNCell(128, 4), return_sequences=output_per_timestep)(input_tensor)))
 
 
@@ -52,7 +52,7 @@ def get_enhanced_unitary_rnn_output(output_size, input_tensor, output_per_timest
 
 
 def get_lstm_output(output_size, input_tensor, output_per_timestep):
-    return tf.keras.layers.TimeDistributed(tf.keras.layers.Dense(output_size))(
+    return tf.keras.layers.Dense(output_size)(
         tf.keras.layers.LSTM(40, return_sequences=output_per_timestep)(get_concat_inputs(input_tensor)))
 
 
