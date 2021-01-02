@@ -7,7 +7,7 @@ import experiments.benchmarks.benchmark as benchmark
 
 class WalkerBenchmark(benchmark.Benchmark):
     def __init__(self):
-        super().__init__('walker', True,
+        super().__init__('walker', True, True,
                          (('--skip_percentage', 0.1, float),
                           ('--frame_skip', False, bool),
                           ('--sequence_length', 64, int),

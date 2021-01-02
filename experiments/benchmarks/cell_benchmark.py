@@ -5,7 +5,7 @@ import experiments.benchmarks.benchmark as benchmark
 
 class CellBenchmark(benchmark.Benchmark):
     def __init__(self):
-        super().__init__('cell', True,
+        super().__init__('cell', True, True,
                          (('--memory_high_symbol', 1, int),
                           ('--memory_low_symbol', 0, int),
                           ('--memory_length', 128, int),

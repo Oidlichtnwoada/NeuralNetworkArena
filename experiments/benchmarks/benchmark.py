@@ -14,10 +14,11 @@ import experiments.models.model_factory as model_factory
 
 
 class Benchmark(abc.ABC):
-    def __init__(self, name, iterative_data, parser_configs):
+    def __init__(self, name, iterative_data, output_per_timestep, parser_configs):
         self.name = name
         self.iterative_data = iterative_data
         self.models = model_factory.get_model_descriptions()
+        self.output_per_timestep = output_per_timestep
         self.args = self.get_args(parser_configs)
         self.project_directory = os.getcwd()
         self.saved_model_directory = os.path.join(self.project_directory, self.args.saved_model_folder_name, self.name)
@@ -48,33 +49,34 @@ class Benchmark(abc.ABC):
 
     def preprocess_data(self):
         if self.iterative_data and not self.models[self.args.model]:
-            sequence_length = self.input_data.shape[2]
-            samples = self.input_data.shape[1] // self.args.shrink_divisor
-            input_shapes = tuple((list(get_recursive_shape(x)) for x in self.input_data))
-            output_shapes = tuple((list(get_recursive_shape(x[:, 0])) for x in self.output_data))
-            for shape in input_shapes + output_shapes:
-                shape[0] = sequence_length * samples
-            input_data_tuple = tuple((np.zeros(x) for x in input_shapes))
-            output_data_tuple = tuple((np.zeros(x) for x in output_shapes))
-            for sample_index in range(samples):
-                for subsequence_length in range(1, sequence_length + 1):
-                    for input_index, input_data in enumerate(input_data_tuple):
-                        input_data[sample_index * sequence_length + subsequence_length - 1, :subsequence_length] = \
-                            get_numpy_array(self.input_data[input_index, sample_index, :subsequence_length])
-                    for output_index, output_data in enumerate(output_data_tuple):
-                        output_data[sample_index * sequence_length + subsequence_length - 1] = \
-                            get_numpy_array(self.output_data[output_index, sample_index, subsequence_length - 1])
-            del self.input_data, self.output_data
-            input_data_list = []
-            for input_data in input_data_tuple:
-                input_data_list.append(input_data.tolist())
-            self.input_data = np.array(input_data_list)
-            del input_data_tuple, input_data_list
-            output_data_list = []
-            for output_data in output_data_tuple:
-                output_data_list.append(output_data.tolist())
-            self.output_data = np.array(output_data_list)
-            del output_data_tuple, output_data_list
+            if self.output_per_timestep:
+                sequence_length = self.input_data.shape[2]
+                samples = self.input_data.shape[1] // self.args.shrink_divisor
+                input_shapes = tuple((list(get_recursive_shape(x)) for x in self.input_data))
+                output_shapes = tuple((list(get_recursive_shape(x[:, 0])) for x in self.output_data))
+                for shape in input_shapes + output_shapes:
+                    shape[0] = sequence_length * samples
+                input_data_tuple = tuple((np.zeros(x) for x in input_shapes))
+                output_data_tuple = tuple((np.zeros(x) for x in output_shapes))
+                for sample_index in range(samples):
+                    for subsequence_length in range(1, sequence_length + 1):
+                        for input_index, input_data in enumerate(input_data_tuple):
+                            input_data[sample_index * sequence_length + subsequence_length - 1, :subsequence_length] = \
+                                get_numpy_array(self.input_data[input_index, sample_index, :subsequence_length])
+                        for output_index, output_data in enumerate(output_data_tuple):
+                            output_data[sample_index * sequence_length + subsequence_length - 1] = \
+                                get_numpy_array(self.output_data[output_index, sample_index, subsequence_length - 1])
+                del self.input_data, self.output_data
+                input_data_list = []
+                for input_data in input_data_tuple:
+                    input_data_list.append(input_data.tolist())
+                self.input_data = np.array(input_data_list)
+                del input_data_tuple, input_data_list
+                output_data_list = []
+                for output_data in output_data_tuple:
+                    output_data_list.append(output_data.tolist())
+                self.output_data = np.array(output_data_list)
+                del output_data_tuple, output_data_list
         elif not self.iterative_data and self.models[self.args.model]:
             raise NotImplementedError
         else:
@@ -108,7 +110,8 @@ class Benchmark(abc.ABC):
         else:
             inputs_slice = slice(None) if self.args.use_time_input or len(self.inputs) == 1 else slice(-1)
             self.model = tf.keras.Model(inputs=self.inputs,
-                                        outputs=model_factory.get_model_output_by_name(self.args.model, self.output_size, self.inputs[inputs_slice]))
+                                        outputs=model_factory.get_model_output_by_name(self.args.model, self.output_size,
+                                                                                       self.inputs[inputs_slice], self.output_per_timestep))
             optimizer = tf.keras.optimizers.get({'class_name': self.args.optimizer_name,
                                                  'config': {'learning_rate': self.args.learning_rate}})
             loss = tf.keras.losses.get({'class_name': self.args.loss_name,
@@ -210,7 +213,7 @@ class Benchmark(abc.ABC):
         parser.add_argument('--supplementary_data_folder_name', default='supplementary_data', type=str)
         parser.add_argument('--result_folder_name', default='results', type=str)
         parser.add_argument('--visualization_folder_name', default='visualizations', type=str)
-        parser.add_argument('--shrink_divisor', default=8, type=int)
+        parser.add_argument('--shrink_divisor', default=1, type=int)
         parser.add_argument('--use_time_input', default=False, type=bool)
         for parser_config in parser_configs:
             argument_name, default, cls = parser_config
