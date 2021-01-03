@@ -5,9 +5,9 @@ import experiments.benchmarks.benchmark as benchmark
 
 class XorBenchmark(benchmark.Benchmark):
     def __init__(self):
-        super().__init__('memory', True, False,
-                         (('--sequence_length', 4, int),
-                          ('--sample_amount', 1_000, int),
+        super().__init__('memory', True, True,
+                         (('--sequence_length', 8, int),
+                          ('--sample_amount', 10_000, int),
                           ('--loss_name', 'SparseCategoricalCrossentropy', str),
                           ('--loss_config', {'from_logits': True}, dict),
                           ('--metric_name', 'SparseCategoricalAccuracy', str)))
@@ -18,7 +18,7 @@ class XorBenchmark(benchmark.Benchmark):
         shape = (sample_amount, sequence_length, 1)
         input_data = np.random.randint(2, size=shape)
         time_data = np.ones_like(input_data)
-        output_data = np.sum(input_data, -2) % 2
+        output_data = np.cumsum(input_data, 1) % 2
         return np.stack((input_data, time_data)), np.stack((output_data,)), 2
 
 
