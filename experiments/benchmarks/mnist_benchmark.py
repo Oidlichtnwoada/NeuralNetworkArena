@@ -7,7 +7,7 @@ import experiments.benchmarks.benchmark as benchmark
 class MnistBenchmark(benchmark.Benchmark):
     def __init__(self):
         super().__init__('mnist', True, False,
-                         (('--max_sample_amount', 10_000, int),
+                         (('--max_sample_amount', 1_000, int),
                           ('--loss_name', 'SparseCategoricalCrossentropy', str),
                           ('--loss_config', {'from_logits': True}, dict),
                           ('--metric_name', 'SparseCategoricalAccuracy', str)))
