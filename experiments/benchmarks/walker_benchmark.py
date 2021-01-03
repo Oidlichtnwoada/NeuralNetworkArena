@@ -36,7 +36,7 @@ class WalkerBenchmark(benchmark.Benchmark):
             lossy_data.append([lossy_input_dataset, lossy_time_dataset, lossy_output_dataset])
         sequences = []
         for input_dataset, time_dataset, output_dataset in lossy_data:
-            for start_index in range(0, len(input_dataset) - self.args.sequence_length + 1, self.args.sequence_length // 4):
+            for start_index in range(0, len(input_dataset) - self.args.sequence_length + 1, self.args.sequence_length):
                 end_index = start_index + self.args.sequence_length
                 sequences.append([input_dataset[start_index: end_index],
                                   time_dataset[start_index: end_index],

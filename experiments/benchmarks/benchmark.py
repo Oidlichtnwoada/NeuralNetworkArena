@@ -201,7 +201,7 @@ class Benchmark(abc.ABC):
         parser.add_argument('--epochs', default=1024, type=int)
         parser.add_argument('--batch_size', default=32, type=int)
         parser.add_argument('--optimizer_name', default='adam', type=str)
-        parser.add_argument('--learning_rate', default=1E-4, type=float)
+        parser.add_argument('--learning_rate', default=1E-3, type=float)
         parser.add_argument('--use_saved_model', default=False, type=bool)
         parser.add_argument('--debug', default=False, type=bool)
         parser.add_argument('--skip_training', default=False, type=bool)
