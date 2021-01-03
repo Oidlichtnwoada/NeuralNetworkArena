@@ -25,8 +25,7 @@ class NeuralCircuitPolicies(tf.keras.Model):
         self.dense_layer = tf.keras.layers.Dense(self.output_length)
 
     def call(self, inputs, training=None, mask=None):
-        signals, times = inputs
-        rnn_output = self.rnn((signals, times))
+        rnn_output = self.rnn(inputs)
         return self.dense_layer(rnn_output)
 
     def get_config(self):
