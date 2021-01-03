@@ -1,6 +1,7 @@
 import tensorflow as tf
 
 import experiments.benchmarks.benchmark as benchmark
+import experiments.models.ct_gru as ct_gru
 import experiments.models.ct_rnn as ct_rnn
 import experiments.models.differentiable_neural_computer as dnc
 import experiments.models.enhanced_unitary_rnn as eurnn
@@ -40,7 +41,13 @@ def get_model_descriptions():
             'gru': True,
             'neural_circuit_policies': True,
             'ct_rnn': True,
+            'ct_gru': True,
             'ode_lstm': True}
+
+
+def get_ct_gru_output(output_size, input_tensor, output_per_timestep):
+    return tf.keras.layers.Dense(output_size)(
+        tf.keras.layers.RNN(ct_gru.CTGRU(100), return_sequences=output_per_timestep)(input_tensor))
 
 
 def get_ct_rnn_output(output_size, input_tensor, output_per_timestep):
