@@ -6,7 +6,7 @@ import experiments.benchmarks.benchmark as benchmark
 class XorBenchmark(benchmark.Benchmark):
     def __init__(self):
         super().__init__('memory', True, True,
-                         (('--sequence_length', 8, int),
+                         (('--sequence_length', 64, int),
                           ('--sample_amount', 10_000, int),
                           ('--loss_name', 'SparseCategoricalCrossentropy', str),
                           ('--loss_config', {'from_logits': True}, dict),

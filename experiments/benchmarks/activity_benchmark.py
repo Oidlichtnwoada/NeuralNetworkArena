@@ -11,7 +11,7 @@ class ActivityBenchmark(benchmark.Benchmark):
     def __init__(self):
         super().__init__('activity', True, True,
                          (('--sequence_length', 64, int),
-                          ('--max_sample_amount', 1_000, int),
+                          ('--max_sample_amount', 10_000, int),
                           ('--loss_name', 'SparseCategoricalCrossentropy', str),
                           ('--loss_config', {'from_logits': True}, dict),
                           ('--metric_name', 'SparseCategoricalAccuracy', str)))
@@ -43,7 +43,7 @@ class ActivityBenchmark(benchmark.Benchmark):
         activity_outputs = np.zeros((0, sequence_length, 1))
         for activity_set in activity_sets.values():
             activity_set_array = np.array(activity_set)
-            for end_index in range(sequence_length + 1, len(activity_set_array), sequence_length):
+            for end_index in range(sequence_length + 1, len(activity_set_array), sequence_length // 4):
                 current_sequence = np.expand_dims(activity_set_array[end_index - sequence_length:end_index], 0)
                 sensor_inputs = np.concatenate((sensor_inputs, current_sequence[..., 1:8]))
                 time_inputs = np.concatenate((time_inputs, current_sequence[..., :1]))

@@ -11,7 +11,7 @@ class WalkerBenchmark(benchmark.Benchmark):
                          (('--skip_percentage', 0.1, float),
                           ('--frame_skip', False, bool),
                           ('--sequence_length', 64, int),
-                          ('--max_sample_amount', 1_000, int),
+                          ('--max_sample_amount', 10_000, int),
                           ('--loss_name', 'MeanSquaredError', str),
                           ('--loss_config', {}, dict),
                           ('--metric_name', 'MeanAbsoluteError', str)))
@@ -36,7 +36,7 @@ class WalkerBenchmark(benchmark.Benchmark):
             lossy_data.append([lossy_input_dataset, lossy_time_dataset, lossy_output_dataset])
         sequences = []
         for input_dataset, time_dataset, output_dataset in lossy_data:
-            for start_index in range(0, len(input_dataset) - self.args.sequence_length + 1, self.args.sequence_length):
+            for start_index in range(0, len(input_dataset) - self.args.sequence_length + 1, self.args.sequence_length // 4):
                 end_index = start_index + self.args.sequence_length
                 sequences.append([input_dataset[start_index: end_index],
                                   time_dataset[start_index: end_index],
