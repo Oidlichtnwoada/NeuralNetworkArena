@@ -1,4 +1,5 @@
 tensorflow
+tensorflow-probability
 numpy
 keras-ncp
 matplotlib

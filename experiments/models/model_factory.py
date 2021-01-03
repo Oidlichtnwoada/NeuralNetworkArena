@@ -1,11 +1,13 @@
 import tensorflow as tf
 
 import experiments.benchmarks.benchmark as benchmark
+import experiments.models.ct_rnn as ct_rnn
 import experiments.models.differentiable_neural_computer as dnc
 import experiments.models.enhanced_unitary_rnn as eurnn
 import experiments.models.memory_cell as memory_cell
 import experiments.models.memory_layer as memory_layer
 import experiments.models.neural_circuit_policies as ncp
+import experiments.models.ode_lstm as ode_lstm
 import experiments.models.recurrent_transformer as recurrent_transformer
 import experiments.models.transformer as transformer
 import experiments.models.unitary_rnn as urnn
@@ -35,7 +37,20 @@ def get_model_descriptions():
             'transformer': False,
             'memory_layer_transformer': False,
             'recurrent_transformer': False,
-            'neural_circuit_policies': True}
+            'gru': True,
+            'neural_circuit_policies': True,
+            'ct_rnn': True,
+            'ode_lstm': True}
+
+
+def get_ct_rnn_output(output_size, input_tensor, output_per_timestep):
+    return tf.keras.layers.Dense(output_size)(
+        tf.keras.layers.RNN(ct_rnn.CTRNNCell(100, 'rk4', 3), return_sequences=output_per_timestep)(input_tensor))
+
+
+def get_ode_lstm_output(output_size, input_tensor, output_per_timestep):
+    return tf.keras.layers.Dense(output_size)(
+        tf.keras.layers.RNN(ode_lstm.ODELSTM(100), return_sequences=output_per_timestep)(input_tensor))
 
 
 def get_differentiable_neural_computer_output(output_size, input_tensor, output_per_timestep):
@@ -44,16 +59,21 @@ def get_differentiable_neural_computer_output(output_size, input_tensor, output_
 
 def get_unitary_rnn_output(output_size, input_tensor, output_per_timestep):
     return tf.keras.layers.Dense(output_size)(
-        tf.math.real(tf.keras.layers.RNN(urnn.EUNNCell(128, 4), return_sequences=output_per_timestep)(input_tensor)))
+        tf.math.real(tf.keras.layers.RNN(urnn.EUNNCell(100, 4), return_sequences=output_per_timestep)(input_tensor)))
 
 
 def get_enhanced_unitary_rnn_output(output_size, input_tensor, output_per_timestep):
-    return tf.keras.layers.RNN(eurnn.EnhancedUnitaryRNN(128, output_size), return_sequences=output_per_timestep)(input_tensor)
+    return tf.keras.layers.RNN(eurnn.EnhancedUnitaryRNN(100, output_size), return_sequences=output_per_timestep)(input_tensor)
 
 
 def get_lstm_output(output_size, input_tensor, output_per_timestep):
     return tf.keras.layers.Dense(output_size)(
-        tf.keras.layers.LSTM(40, return_sequences=output_per_timestep)(get_concat_inputs(input_tensor)))
+        tf.keras.layers.LSTM(100, return_sequences=output_per_timestep)(get_concat_inputs(input_tensor)))
+
+
+def get_gru_output(output_size, input_tensor, output_per_timestep):
+    return tf.keras.layers.Dense(output_size)(
+        tf.keras.layers.GRU(100, return_sequences=output_per_timestep)(get_concat_inputs(input_tensor)))
 
 
 def get_transformer_output(output_size, input_tensor, output_per_timestep):
