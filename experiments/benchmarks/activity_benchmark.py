@@ -11,7 +11,7 @@ class ActivityBenchmark(benchmark.Benchmark):
     def __init__(self):
         super().__init__('activity', True, True,
                          (('--sequence_length', 64, int),
-                          ('--max_sample_amount', 3000, int),
+                          ('--max_sample_amount', 1_000, int),
                           ('--loss_name', 'SparseCategoricalCrossentropy', str),
                           ('--loss_config', {'from_logits': True}, dict),
                           ('--metric_name', 'SparseCategoricalAccuracy', str)))

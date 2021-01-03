@@ -9,7 +9,7 @@ class MemoryBenchmark(benchmark.Benchmark):
                          (('--memory_length', 100, int),
                           ('--sequence_length', 10, int),
                           ('--category_amount', 10, int),
-                          ('--sample_amount', 10_000, int),
+                          ('--sample_amount', 1_000, int),
                           ('--loss_name', 'SparseCategoricalCrossentropy', str),
                           ('--loss_config', {'from_logits': True}, dict),
                           ('--metric_name', 'SparseCategoricalAccuracy', str)))

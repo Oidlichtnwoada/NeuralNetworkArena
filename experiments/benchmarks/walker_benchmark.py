@@ -11,11 +11,13 @@ class WalkerBenchmark(benchmark.Benchmark):
                          (('--skip_percentage', 0.1, float),
                           ('--frame_skip', False, bool),
                           ('--sequence_length', 64, int),
+                          ('--max_sample_amount', 1_000, int),
                           ('--loss_name', 'MeanSquaredError', str),
                           ('--loss_config', {}, dict),
                           ('--metric_name', 'MeanAbsoluteError', str)))
 
     def get_data(self):
+        max_sample_amount = self.args.max_sample_amount
         datasets = []
         for dataset_filename in [x for x in os.listdir(self.supplementary_data_directory) if x.endswith('.npy')]:
             dataset = np.load(os.path.join(self.supplementary_data_directory, dataset_filename))
@@ -40,7 +42,7 @@ class WalkerBenchmark(benchmark.Benchmark):
                                   time_dataset[start_index: end_index],
                                   output_dataset[start_index: end_index]])
         reshaped_sequences = np.swapaxes(sequences, 0, 1)
-        return reshaped_sequences[:2], reshaped_sequences[2:], len(reshaped_sequences[0][0][0])
+        return reshaped_sequences[:2, :max_sample_amount], reshaped_sequences[2:, :max_sample_amount], len(reshaped_sequences[0][0][0])
 
 
 WalkerBenchmark()

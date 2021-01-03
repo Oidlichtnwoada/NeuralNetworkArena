@@ -7,7 +7,7 @@ class XorBenchmark(benchmark.Benchmark):
     def __init__(self):
         super().__init__('memory', True, False,
                          (('--sequence_length', 4, int),
-                          ('--sample_amount', 100_000, int),
+                          ('--sample_amount', 1_000, int),
                           ('--loss_name', 'SparseCategoricalCrossentropy', str),
                           ('--loss_config', {'from_logits': True}, dict),
                           ('--metric_name', 'SparseCategoricalAccuracy', str)))
