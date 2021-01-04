@@ -40,7 +40,7 @@ class EnhancedUnitaryRNN(tf.keras.layers.AbstractRNNCell):
     def build(self, input_shape):
         inputs_size = model_factory.get_concat_input_shape(input_shape)
         self.real_input_matrix = self.add_weight('real_input_matrix', (self.state_size, 2 * inputs_size), tf.float32, tf.keras.initializers.GlorotUniform())
-        self.imag_input_matrix = self.add_weight('imag_input_matrix', (self.state_size, 2 * inputs_size), tf.float32, tf.keras.initializers.GlorotUniform())
+        self.imag_input_matrix = self.add_weight('imag_input_matrix', (self.state_size, 2 * inputs_size), tf.float32, tf.keras.initializers.Constant())
 
     def call(self, inputs, states):
         inputs = model_factory.get_concat_inputs(inputs)
