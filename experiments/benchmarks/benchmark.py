@@ -14,11 +14,12 @@ import experiments.models.model_factory as model_factory
 
 
 class Benchmark(abc.ABC):
-    def __init__(self, name, iterative_data, output_per_timestep, parser_configs):
+    def __init__(self, name, iterative_data, output_per_timestep, use_mask, parser_configs):
         self.name = name
         self.iterative_data = iterative_data
         self.models = model_factory.get_model_descriptions()
         self.output_per_timestep = output_per_timestep
+        self.use_mask = use_mask
         self.args = self.get_args(parser_configs)
         self.project_directory = os.getcwd()
         self.saved_model_directory = os.path.join(self.project_directory, self.args.saved_model_folder_name, self.name)
@@ -34,7 +35,7 @@ class Benchmark(abc.ABC):
         self.preprocess_data()
         self.data_samples = self.input_data.shape[1]
         assert self.data_samples == self.output_data.shape[1]
-        self.inputs = tuple((tf.keras.Input(shape=get_recursive_shape(x)[1:], batch_size=self.args.batch_size) for x in self.input_data))
+        self.inputs = tuple((tf.keras.Input(shape=get_recursive_shape(x)[1:], batch_size=self.args.batch_size, dtype=self.get_correct_datatype(index)) for index, x in enumerate(self.input_data)))
         self.test_samples = int(self.data_samples * self.args.test_data_percentage)
         self.validation_samples = int(self.data_samples * self.args.validation_data_percentage)
         self.training_samples = self.data_samples - self.test_samples - self.validation_samples
@@ -108,10 +109,12 @@ class Benchmark(abc.ABC):
         if self.args.use_saved_model:
             self.model = tf.keras.models.load_model(model_save_location)
         else:
-            inputs_slice = slice(None) if self.args.use_time_input or len(self.inputs) == 1 else slice(-1)
+            mask_tensor = self.inputs[-1] if self.use_mask else None
+            input_tensor = self.inputs[:-1] if self.use_mask else self.inputs
+            inputs_slice = slice(None) if self.args.use_time_input or len(input_tensor) == 1 else slice(-1)
             self.model = tf.keras.Model(inputs=self.inputs,
                                         outputs=model_factory.get_model_output_by_name(self.args.model, self.output_size,
-                                                                                       self.inputs[inputs_slice], self.output_per_timestep))
+                                                                                       input_tensor[inputs_slice], self.output_per_timestep, mask_tensor))
             optimizer = tf.keras.optimizers.get({'class_name': self.args.optimizer_name,
                                                  'config': {'learning_rate': self.args.learning_rate}})
             loss = tf.keras.losses.get({'class_name': self.args.loss_name,
@@ -195,6 +198,12 @@ class Benchmark(abc.ABC):
             corrected_names.append(name.replace('loss', loss_name).replace('lr', lr_name).replace('_', ' '))
         return corrected_names
 
+    def get_correct_datatype(self, index):
+        if index == len(self.input_data) - 1 and self.use_mask:
+            return tf.bool
+        else:
+            return tf.float32
+
     def get_args(self, parser_configs):
         parser = argparse.ArgumentParser()
         parser.add_argument('--model', default=list(self.models)[0], type=str)
@@ -207,8 +216,8 @@ class Benchmark(abc.ABC):
         parser.add_argument('--skip_training', default=False, type=bool)
         parser.add_argument('--validation_data_percentage', default=0.1, type=float)
         parser.add_argument('--test_data_percentage', default=0.1, type=float)
-        parser.add_argument('--no_improvement_lr_patience', default=2, type=int)
-        parser.add_argument('--no_improvement_abort_patience', default=5, type=int)
+        parser.add_argument('--no_improvement_lr_patience', default=4, type=int)
+        parser.add_argument('--no_improvement_abort_patience', default=10, type=int)
         parser.add_argument('--saved_model_folder_name', default='saved_models', type=str)
         parser.add_argument('--tensorboard_folder_name', default='tensorboard', type=str)
         parser.add_argument('--supplementary_data_folder_name', default='supplementary_data', type=str)

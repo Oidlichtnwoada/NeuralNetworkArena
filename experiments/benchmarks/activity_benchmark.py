@@ -9,7 +9,7 @@ import experiments.benchmarks.benchmark as benchmark
 
 class ActivityBenchmark(benchmark.Benchmark):
     def __init__(self):
-        super().__init__('activity', True, True,
+        super().__init__('activity', True, True, False,
                          (('--sequence_length', 64, int),
                           ('--max_sample_amount', 10_000, int),
                           ('--loss_name', 'SparseCategoricalCrossentropy', str),
