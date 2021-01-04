@@ -6,7 +6,7 @@ import experiments.models.transformer as transformer
 
 @tf.keras.utils.register_keras_serializable()
 class MemoryLayerCell(tf.keras.layers.AbstractRNNCell):
-    def __init__(self, memory_rows=32, memory_columns=16, output_size=1,
+    def __init__(self, memory_rows=16, memory_columns=16, output_size=1,
                  embedding_size=64, heads=4, feed_forward_size=256, dropout_rate=0.1, **kwargs):
         super().__init__(**kwargs)
         self.memory_rows = memory_rows
