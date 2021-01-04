@@ -21,8 +21,8 @@ class EnhancedUnitaryRNN(tf.keras.layers.AbstractRNNCell):
         self.imag_state_matrix = self.add_weight('imag_state_matrix', (self.state_size, self.state_size), tf.float32, tf.keras.initializers.Constant())
         self.real_step_matrix = self.add_weight('real_step_matrix', (self.state_size, self.state_size), tf.float32, tf.keras.initializers.Identity())
         self.imag_step_matrix = self.add_weight('imag_step_matrix', (self.state_size, self.state_size), tf.float32, tf.keras.initializers.Constant())
-        self.first_bias = self.add_weight('first_bias', (1,), tf.float32, tf.keras.initializers.Constant())
-        self.second_bias = self.add_weight('second_bias', (1,), tf.float32, tf.keras.initializers.Constant())
+        self.first_bias = self.add_weight('first_bias', (self.state_size, 1), tf.float32, tf.keras.initializers.Constant())
+        self.second_bias = self.add_weight('second_bias', (self.state_size, 1), tf.float32, tf.keras.initializers.Constant())
         self.output_layer = tf.keras.layers.Dense(self.output_size)
         self.real_initial_state = None
         self.imag_initial_state = None
