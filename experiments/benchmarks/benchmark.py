@@ -162,7 +162,7 @@ class Benchmark(abc.ABC):
         x_data = np.array(range(1, max(self.fit_result.epoch) + 2)) * len(self.training_input_data[0])
         figure, first_axis = plt.subplots()
         first_axis.set_xlabel('training samples')
-        first_axis.xaxis.set_major_locator(ticker.MaxNLocator(integer=True))
+        first_axis.xaxis.set_major_locator(ticker.MaxNLocator(nbins=7, integer=True))
         first_axis.set_title(f'{self.args.model.replace("_", " ")} @ {self.__class__.__name__}')
         second_axis = first_axis.twinx()
         axes = [first_axis, second_axis]
