@@ -1,10 +1,14 @@
 import tensorflow as tf
+import tensorflow_probability as tfp
 
 import experiments.models.model_factory as model_factory
 
 
-def get_unitary_matrix(matrix):
-    return tf.linalg.expm(matrix - tf.linalg.adjoint(matrix))
+def get_unitary_matrix(vector):
+    triangular_matrix = tfp.math.fill_triangular(vector)
+    skew_hermitian_matrix = triangular_matrix - tf.linalg.adjoint(triangular_matrix)
+    unitary_matrix = tf.linalg.expm(skew_hermitian_matrix)
+    return unitary_matrix
 
 
 def modrelu(x, bias):
@@ -17,10 +21,10 @@ class EnhancedUnitaryRNN(tf.keras.layers.AbstractRNNCell):
         super().__init__(**kwargs)
         self.state_size_value = state_size
         self.output_size_value = output_size
-        self.real_state_matrix = self.add_weight('real_state_matrix', (self.state_size, self.state_size), tf.float32, tf.keras.initializers.Identity())
-        self.imag_state_matrix = self.add_weight('imag_state_matrix', (self.state_size, self.state_size), tf.float32, tf.keras.initializers.Constant())
-        self.real_initial_state = self.add_weight('real_initial_state', (1, self.state_size), tf.float32, tf.keras.initializers.Constant(1 / self.state_size ** 0.5))
-        self.imag_initial_state = self.add_weight('imag_initial_state', (1, self.state_size), tf.float32, tf.keras.initializers.Constant())
+        self.real_state_vector = self.add_weight('real_state_vector', (self.state_size * (self.state_size + 1) // 2,), tf.float32, tf.keras.initializers.GlorotUniform())
+        self.imag_state_vector = self.add_weight('imag_state_vector', (self.state_size * (self.state_size + 1) // 2,), tf.float32, tf.keras.initializers.GlorotUniform())
+        self.real_initial_state = self.add_weight('real_initial_state', (1, self.state_size), tf.float32, tf.keras.initializers.Constant(1 / (2 * self.state_size) ** 0.5))
+        self.imag_initial_state = self.add_weight('imag_initial_state', (1, self.state_size), tf.float32, tf.keras.initializers.Constant(1 / (2 * self.state_size) ** 0.5))
         self.bias = self.add_weight('bias', (self.state_size, 1), tf.float32, tf.keras.initializers.Constant())
         self.output_layer = tf.keras.layers.Dense(self.output_size)
         self.real_input_matrix = None
@@ -44,7 +48,7 @@ class EnhancedUnitaryRNN(tf.keras.layers.AbstractRNNCell):
 
     def call(self, inputs, states):
         inputs = model_factory.get_concat_inputs(inputs)
-        state_matrix = get_unitary_matrix(tf.complex(self.real_state_matrix, self.imag_state_matrix))
+        state_matrix = get_unitary_matrix(tf.complex(self.real_state_vector, self.imag_state_vector))
         input_matrix = tf.complex(self.real_input_matrix, self.imag_input_matrix)
         time_domain_inputs = tf.cast(inputs, tf.complex64)
         frequency_domain_inputs = tf.signal.fft(time_domain_inputs)

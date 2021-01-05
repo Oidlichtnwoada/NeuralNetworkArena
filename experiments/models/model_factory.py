@@ -70,7 +70,7 @@ def get_unitary_rnn_output(output_size, input_tensor, output_per_timestep, mask_
 
 
 def get_enhanced_unitary_rnn_output(output_size, input_tensor, output_per_timestep, mask_tensor):
-    return tf.keras.layers.RNN(eurnn.EnhancedUnitaryRNN(156, output_size), return_sequences=output_per_timestep)(input_tensor, mask=mask_tensor)
+    return tf.keras.layers.RNN(eurnn.EnhancedUnitaryRNN(300, output_size), return_sequences=output_per_timestep)(input_tensor, mask=mask_tensor)
 
 
 def get_lstm_output(output_size, input_tensor, output_per_timestep, mask_tensor):
