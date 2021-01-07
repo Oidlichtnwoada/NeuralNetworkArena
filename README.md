@@ -7,4 +7,4 @@ instructions to run the code:
 - to start a benchmark with a specific model execute ``python3 -m experiments.benchmarks.{BENCHMARK_NAME} --model {MODEL_NAME}``
 - possible values for *MODEL_NAME* are: "memory_cell", "memory_layer", "lstm", "differentiable_neural_computer", "unitary_rnn", "enhanced_unitary_rnn", "transformer", "memory_layer_transformer", "
   recurrent_transformer", "gru", "neural_circuit_policies", "ct_rnn", "ct_gru", "ode_lstm"
-- please mind that MODEL_NAME "memory_cell" can only be used with the BENCHMARK_NAME "cell_benchmark" and vice versa
+- please mind that *MODEL_NAME* "memory_cell" can only be used with the *BENCHMARK_NAME* "cell_benchmark" and vice versa
