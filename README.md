@@ -1,6 +1,4 @@
-*README*
-
-run instructions:
+instructions to run the code:
 
 - make sure you have all dependencies listed in requirements.txt installed
 - make sure your current working directory is LongTimeDependenciesLearning
