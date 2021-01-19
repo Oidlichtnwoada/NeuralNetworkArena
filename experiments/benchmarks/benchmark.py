@@ -217,7 +217,7 @@ class Benchmark(abc.ABC):
         parser.add_argument('--validation_data_percentage', default=0.1, type=float)
         parser.add_argument('--test_data_percentage', default=0.1, type=float)
         parser.add_argument('--no_improvement_lr_patience', default=4, type=int)
-        parser.add_argument('--no_improvement_abort_patience', default=20, type=int)
+        parser.add_argument('--no_improvement_abort_patience', default=10, type=int)
         parser.add_argument('--saved_model_folder_name', default='saved_models', type=str)
         parser.add_argument('--tensorboard_folder_name', default='tensorboard', type=str)
         parser.add_argument('--supplementary_data_folder_name', default='supplementary_data', type=str)
