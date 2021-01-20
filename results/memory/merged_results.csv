@@ -1,2 +1,0 @@
-model,trainable parameters,test sparse categorical crossentropy,test sparse categorical accuracy
-enhanced_unitary_rnn,98410,0.0118397232145071,0.9991599321365356

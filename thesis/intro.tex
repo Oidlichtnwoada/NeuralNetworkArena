@@ -26,7 +26,7 @@
 
 \newglossaryentry{texteditor}
 {
-name={editor},
+    name={editor},
 description={A text editor is a type of program used for editing plain text files.}
 }
 
@@ -205,16 +205,16 @@ An example of the use of the \verb|alogrithm2e| package is given with Algorithm~
     \KwOut{$\vec{x}^{(n)}$ with $\mathbf{A} \vec{x}^{(n)} \approx \vec{b}$}
     \For{$k\leftarrow 1$ \KwTo maximum iterations}
     {
-    \For{$i\leftarrow 1$ \KwTo $n$}
-    {
-    $x_i^{(k)} = \frac{1}{a_{ii}} \left(b_i-\sum_{j<i} a_{ij} x_j^{(k)} - \sum_{j>i} a_{ij} x_j^{(k-1)} \right)$\;
-    }
+        \For{$i\leftarrow 1$ \KwTo $n$}
+        {
+            $x_i^{(k)} = \frac{1}{a_{ii}} \left(b_i-\sum_{j<i} a_{ij} x_j^{(k)} - \sum_{j>i} a_{ij} x_j^{(k-1)} \right)$\;
+        }
         \If{$\lvert\vec{x}^{(k)}-\vec{x}^{(k-1)}\rvert < \epsilon$}
         {\BreakFor\;}
-            }
-        \Return{$\vec{x}^{(k)}$\;}
-        \caption{Gauss-Seidel}
-        \label{alg:gauss-seidel} % \label has to be placed AFTER \caption to produce correct cross-references.
+    }
+    \Return{$\vec{x}^{(k)}$\;}
+    \caption{Gauss-Seidel}
+    \label{alg:gauss-seidel} % \label has to be placed AFTER \caption to produce correct cross-references.
 \end{algorithm}
 
 

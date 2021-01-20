@@ -5,7 +5,7 @@ import experiments.benchmarks.benchmark as benchmark
 
 class CellBenchmark(benchmark.Benchmark):
     def __init__(self):
-        super().__init__('cell', True, True, False,
+        super().__init__('cell',
                          (('--memory_high_symbol', 1, int),
                           ('--memory_low_symbol', 0, int),
                           ('--memory_length', 128, int),
@@ -15,7 +15,7 @@ class CellBenchmark(benchmark.Benchmark):
                           ('--loss_config', {}, dict),
                           ('--metric_name', 'MeanAbsoluteError', str)))
 
-    def get_data(self):
+    def get_data_and_output_size(self):
         memory_high_symbol = self.args.memory_high_symbol
         memory_low_symbol = self.args.memory_low_symbol
         memory_length = self.args.memory_length
