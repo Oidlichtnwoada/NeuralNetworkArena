@@ -10,7 +10,7 @@ class CellBenchmark(benchmark.Benchmark):
                           ('--memory_low_symbol', 0, int),
                           ('--memory_length', 128, int),
                           ('--cell_switches', 2, int),
-                          ('--sample_size', 1_000, int),
+                          ('--samples', 1_000, int),
                           ('--loss_name', 'MeanSquaredError', str),
                           ('--loss_config', {}, dict),
                           ('--metric_name', '', str)))
@@ -20,9 +20,9 @@ class CellBenchmark(benchmark.Benchmark):
         memory_low_symbol = self.args.memory_low_symbol
         memory_length = self.args.memory_length
         cell_switches = self.args.cell_switches
-        sample_size = self.args.sample_size
-        model_input = np.zeros((sample_size, (cell_switches + 1) * memory_length, 2))
-        model_output = np.zeros((sample_size, (cell_switches + 1) * memory_length, 2))
+        samples = self.args.samples
+        model_input = np.zeros((samples, (cell_switches + 1) * memory_length, 2))
+        model_output = np.zeros((samples, (cell_switches + 1) * memory_length, 2))
         for i in range(cell_switches + 1):
             even = int(i % 2 == 0)
             odd = int(i % 2 == 1)

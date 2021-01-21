@@ -2,6 +2,7 @@ import abc
 import argparse
 import os
 import shutil
+import time
 
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
@@ -112,7 +113,7 @@ class Benchmark(abc.ABC):
             corrected_names.append(name.replace('loss', loss_name).replace('lr', lr_name).replace('_', ' '))
         return corrected_names
 
-    def create_and_save_tables(self, model, fit_result, evaluate_result):
+    def create_and_save_tables(self, model, fit_result, evaluate_result, training_duration):
         fit_results = list(fit_result.history.items())
         fit_header = self.correct_names([x[0] for x in fit_results], train=True, model=model)
         fit_data = np.array([x[1] for x in fit_results])
@@ -125,13 +126,13 @@ class Benchmark(abc.ABC):
         evaluate_table = pd.DataFrame(data=np.expand_dims(evaluate_data, 0), columns=evaluate_header)
         evaluate_table.insert(0, 'model', self.args.model)
         evaluate_table.insert(1, 'trainable parameters', np.sum([np.prod(x.shape) for x in model.trainable_variables]))
+        evaluate_table.insert(2, 'training duration', training_duration)
         evaluate_table.to_csv(os.path.join(self.result_dir, self.args.model, 'testing.csv'), index=False)
-        evaluate_table.drop(evaluate_table.columns[:2], axis=1, inplace=True)
+        evaluate_table.drop(evaluate_table.columns[:3], axis=1, inplace=True)
         return fit_table, evaluate_table
 
-    def create_visualization(self, model, fit_result, evaluate_result):
-        fit_table, evaluate_table = self.create_and_save_tables(model, fit_result, evaluate_result)
-        x_data = np.array(range(1, max(fit_result.epoch) + 2))
+    def create_visualization(self, fit_table, evaluate_table):
+        x_data = np.array(range(1, fit_table.shape[0] + 1))
         figure, first_axis = plt.subplots()
         first_axis.set_xlabel('epochs')
         first_axis.xaxis.set_major_locator(ticker.MaxNLocator(integer=True))
@@ -187,6 +188,7 @@ class Benchmark(abc.ABC):
                 metric = tf.keras.metrics.get(self.args.metric_name)
             model.compile(optimizer=optimizer, loss=loss, metrics=metric, run_eagerly=self.args.debug)
         model.summary()
+        training_start = time.time()
         fit_result = model.fit(
             x=self.training_input_data,
             y=self.training_output_data,
@@ -198,6 +200,8 @@ class Benchmark(abc.ABC):
                        tf.keras.callbacks.TerminateOnNaN(),
                        tf.keras.callbacks.ReduceLROnPlateau(patience=self.args.no_improvement_lr_patience),
                        tf.keras.callbacks.TensorBoard(log_dir=tensorboard_save_location)))
+        training_end = time.time()
+        training_duration = training_end - training_start
         model = tf.keras.models.load_model(model_save_location)
         evaluate_result = model.evaluate(
             x=self.test_input_data,
@@ -205,5 +209,6 @@ class Benchmark(abc.ABC):
             batch_size=self.args.batch_size,
             callbacks=(tf.keras.callbacks.TensorBoard(log_dir=tensorboard_save_location)),
             return_dict=True)
-        self.create_visualization(model, fit_result, evaluate_result)
+        fit_table, evaluate_table = self.create_and_save_tables(model, fit_result, evaluate_result, training_duration)
+        self.create_visualization(fit_table, evaluate_table)
         self.accumulate_data()

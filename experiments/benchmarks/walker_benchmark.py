@@ -11,14 +11,14 @@ class WalkerBenchmark(benchmark.Benchmark):
                          (('--skip_percentage', 0.1, float),
                           ('--frame_skip', False, bool),
                           ('--sequence_length', 64, int),
-                          ('--max_sample_amount', 50_000, int),
+                          ('--max_samples', 50_000, int),
                           ('--sample_distance', 4, int),
                           ('--loss_name', 'MeanSquaredError', str),
                           ('--loss_config', {}, dict),
                           ('--metric_name', '', str)))
 
     def get_data_and_output_size(self):
-        max_sample_amount = self.args.max_sample_amount
+        max_samples = self.args.max_samples
         datasets = []
         for dataset_filename in [x for x in os.listdir(self.supplementary_data_dir) if x.endswith('.npy')]:
             dataset = np.load(os.path.join(self.supplementary_data_dir, dataset_filename))
@@ -44,7 +44,7 @@ class WalkerBenchmark(benchmark.Benchmark):
                 input_sequences.append(input_dataset[start_index:end_index])
                 time_sequences.append(time_dataset[start_index:end_index])
                 output_sequences.append(output_dataset[end_index - 1])
-        return (np.array(input_sequences[:max_sample_amount]), np.array(time_sequences[:max_sample_amount])), (np.array(output_sequences[:max_sample_amount]),), 17
+        return (np.array(input_sequences[:max_samples]), np.array(time_sequences[:max_samples])), (np.array(output_sequences[:max_samples]),), 17
 
 
 WalkerBenchmark()

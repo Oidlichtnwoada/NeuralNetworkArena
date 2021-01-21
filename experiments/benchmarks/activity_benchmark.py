@@ -10,7 +10,7 @@ class ActivityBenchmark(benchmark.Benchmark):
     def __init__(self):
         super().__init__('activity',
                          (('--sequence_length', 64, int),
-                          ('--max_sample_amount', 40_000, int),
+                          ('--max_samples', 40_000, int),
                           ('--sample_distance', 4, int),
                           ('--loss_name', 'SparseCategoricalCrossentropy', str),
                           ('--loss_config', {'from_logits': True}, dict),
@@ -18,7 +18,7 @@ class ActivityBenchmark(benchmark.Benchmark):
 
     def get_data_and_output_size(self):
         sequence_length = self.args.sequence_length
-        max_sample_amount = self.args.max_sample_amount
+        max_samples = self.args.max_samples
         sample_distance = self.args.sample_distance
         activity_table = pd.read_csv(os.path.join(self.supplementary_data_dir, 'activity.csv'), header=None)
         sensor_inputs = []
@@ -31,7 +31,7 @@ class ActivityBenchmark(benchmark.Benchmark):
                 sensor_inputs.append(current_sequence[:, 1:8])
                 time_inputs.append(current_sequence[:, :1])
                 activity_outputs.append(current_sequence[-1, 8:])
-        return (np.stack(sensor_inputs)[:max_sample_amount], np.stack(time_inputs)[:max_sample_amount]), (np.stack(activity_outputs)[:max_sample_amount],), 7
+        return (np.stack(sensor_inputs)[:max_samples], np.stack(time_inputs)[:max_samples]), (np.stack(activity_outputs)[:max_samples],), 7
 
 
 ActivityBenchmark()
