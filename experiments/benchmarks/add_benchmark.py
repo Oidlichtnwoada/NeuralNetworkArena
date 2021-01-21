@@ -5,12 +5,12 @@ import experiments.benchmarks.benchmark as benchmark
 
 class AddBenchmark(benchmark.Benchmark):
     def __init__(self):
-        super().__init__('memory',
+        super().__init__('add',
                          (('--sequence_length', 200, int),
                           ('--sample_amount', 100_000, int),
                           ('--loss_name', 'MeanSquaredError', str),
                           ('--loss_config', {}, dict),
-                          ('--metric_name', 'MeanAbsoluteError', str)))
+                          ('--metric_name', '', str)))
 
     def get_data_and_output_size(self):
         sequence_length = self.args.sequence_length

@@ -112,12 +112,13 @@ class Benchmark(abc.ABC):
             corrected_names.append(name.replace('loss', loss_name).replace('lr', lr_name).replace('_', ' '))
         return corrected_names
 
-    def create_visualization(self, model, fit_result, evaluate_result):
+    def create_and_save_tables(self, model, fit_result, evaluate_result):
         fit_results = list(fit_result.history.items())
         fit_header = self.correct_names([x[0] for x in fit_results], train=True, model=model)
         fit_data = np.array([x[1] for x in fit_results])
         fit_table = pd.DataFrame(data=fit_data.T, columns=fit_header)
         fit_table.to_csv(os.path.join(self.result_dir, self.args.model, 'training.csv'), index=False)
+        fit_table.drop(fit_table.columns[-1], axis=1, inplace=True)
         evaluate_results = list(evaluate_result.items())
         evaluate_header = self.correct_names([x[0] for x in evaluate_results], train=False, model=model)
         evaluate_data = np.array([x[1] for x in evaluate_results])
@@ -125,20 +126,32 @@ class Benchmark(abc.ABC):
         evaluate_table.insert(0, 'model', self.args.model)
         evaluate_table.insert(1, 'trainable parameters', np.sum([np.prod(x.shape) for x in model.trainable_variables]))
         evaluate_table.to_csv(os.path.join(self.result_dir, self.args.model, 'testing.csv'), index=False)
-        fit_table.drop(fit_table.columns[-1], axis=1, inplace=True)
-        x_data = np.array(range(1, max(fit_result.epoch) + 2)) * len(self.training_input_data[0])
+        evaluate_table.drop(evaluate_table.columns[:2], axis=1, inplace=True)
+        return fit_table, evaluate_table
+
+    def create_visualization(self, model, fit_result, evaluate_result):
+        fit_table, evaluate_table = self.create_and_save_tables(model, fit_result, evaluate_result)
+        x_data = np.array(range(1, max(fit_result.epoch) + 2))
         figure, first_axis = plt.subplots()
-        first_axis.set_xlabel('training samples')
-        first_axis.xaxis.set_major_locator(ticker.MaxNLocator(nbins=7, integer=True))
+        first_axis.set_xlabel('epochs')
+        first_axis.xaxis.set_major_locator(ticker.MaxNLocator(integer=True))
         first_axis.set_title(f'{self.args.model.replace("_", " ")} @ {self.__class__.__name__}')
-        second_axis = first_axis.twinx()
-        axes = [first_axis, second_axis]
+        first_axis.set_prop_cycle(color=['red', 'green'])
+        if self.args.metric_name == '':
+            axes = [first_axis]
+        else:
+            second_axis = first_axis.twinx()
+            second_axis.set_prop_cycle(color=['blue', 'orange'])
+            second_axis.legend(loc='center right', prop={'size': 6})
+            axes = [first_axis, second_axis]
+        hline_colors = ['black', 'grey']
+        legend_positions = ['center left', 'center right']
         for index, column in enumerate(fit_table.columns):
-            axes[index % 2].plot(x_data, fit_table[column].tolist(), label=column)
-        for index, column in enumerate(evaluate_table.columns[2:]):
-            axes[index % 2].hlines(evaluate_table[column].tolist(), x_data[0], x_data[-1], label=column, linestyles='dashed', colors='black')
-        first_axis.legend(loc='center left', prop={'size': 6})
-        second_axis.legend(loc='center right', prop={'size': 6})
+            axes[index % len(axes)].plot(x_data, fit_table[column].tolist(), label=column)
+        for index, column in enumerate(evaluate_table.columns):
+            axes[index % len(axes)].hlines(evaluate_table[column].tolist(), x_data[0], x_data[-1], label=column, linestyles='dashed', colors=hline_colors[index % len(hline_colors)])
+        for index, axis in enumerate(axes):
+            axis.legend(loc=legend_positions[index % len(legend_positions)], prop={'size': 6})
         plt.savefig(os.path.join(self.visualization_dir, f'{self.args.model}.pdf'))
 
     def accumulate_data(self):
@@ -168,7 +181,10 @@ class Benchmark(abc.ABC):
                                                  'config': {'learning_rate': self.args.learning_rate}})
             loss = tf.keras.losses.get({'class_name': self.args.loss_name,
                                         'config': self.args.loss_config})
-            metric = tf.keras.metrics.get(self.args.metric_name)
+            if self.args.metric_name == '':
+                metric = None
+            else:
+                metric = tf.keras.metrics.get(self.args.metric_name)
             model.compile(optimizer=optimizer, loss=loss, metrics=metric, run_eagerly=self.args.debug)
         model.summary()
         fit_result = model.fit(

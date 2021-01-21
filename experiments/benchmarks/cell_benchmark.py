@@ -13,7 +13,7 @@ class CellBenchmark(benchmark.Benchmark):
                           ('--sample_size', 1_000, int),
                           ('--loss_name', 'MeanSquaredError', str),
                           ('--loss_config', {}, dict),
-                          ('--metric_name', 'MeanAbsoluteError', str)))
+                          ('--metric_name', '', str)))
 
     def get_data_and_output_size(self):
         memory_high_symbol = self.args.memory_high_symbol
