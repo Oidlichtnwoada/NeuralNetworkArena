@@ -126,9 +126,11 @@ class Benchmark(abc.ABC):
         evaluate_table = pd.DataFrame(data=np.expand_dims(evaluate_data, 0), columns=evaluate_header)
         evaluate_table.insert(0, 'model', self.args.model)
         evaluate_table.insert(1, 'trainable parameters', np.sum([np.prod(x.shape) for x in model.trainable_variables]))
-        evaluate_table.insert(2, 'training duration', training_duration)
+        evaluate_table.insert(2, 'training duration total', training_duration)
+        evaluate_table.insert(3, 'training duration per epoch', training_duration / fit_table.shape[0])
+        evaluate_table.insert(4, 'epochs', fit_table.shape[0])
         evaluate_table.to_csv(os.path.join(self.result_dir, self.args.model, 'testing.csv'), index=False)
-        evaluate_table.drop(evaluate_table.columns[:3], axis=1, inplace=True)
+        evaluate_table.drop(evaluate_table.columns[:5], axis=1, inplace=True)
         return fit_table, evaluate_table
 
     def create_visualization(self, fit_table, evaluate_table):
