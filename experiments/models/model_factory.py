@@ -98,7 +98,7 @@ def get_recurrent_transformer_output(output_size, input_tensor):
 def get_neural_circuit_policies_output(output_size, input_tensor):
     return ncp.NeuralCircuitPolicies(
         output_length=output_size, inter_neurons=96, command_neurons=48, motor_neurons=output_size,
-        sensory_fanout=8, inter_fanout=8, recurrent_command_synapses=16, motor_fanin=8, output_per_timestep=output_per_timestep)(input_tensor)
+        sensory_fanout=8, inter_fanout=8, recurrent_command_synapses=16, motor_fanin=8)(input_tensor)
 
 
 def get_memory_layer_output(output_size, input_tensor):

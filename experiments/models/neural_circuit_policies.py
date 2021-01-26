@@ -5,7 +5,7 @@ import tensorflow as tf
 @tf.keras.utils.register_keras_serializable()
 class NeuralCircuitPolicies(tf.keras.Model):
     def __init__(self, output_length, inter_neurons, command_neurons, motor_neurons, sensory_fanout, inter_fanout,
-                 recurrent_command_synapses, motor_fanin, output_per_timestep, **kwargs):
+                 recurrent_command_synapses, motor_fanin, output_per_timestep=False, **kwargs):
         super().__init__(**kwargs)
         # parameters
         self.output_length = output_length
