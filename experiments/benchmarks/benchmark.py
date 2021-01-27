@@ -197,7 +197,8 @@ class Benchmark(abc.ABC):
         else:
             inputs_slice = slice(None) if self.args.use_time_input or len(self.inputs) == 1 else slice(-1)
             model = tf.keras.Model(inputs=self.inputs,
-                                   outputs=model_factory.get_model_output_by_name(self.args.model, self.output_size, self.inputs[inputs_slice]))
+                                   outputs=model_factory.get_model_output_by_name(self.args.model, self.output_size, self.inputs[inputs_slice]),
+                                   name=model_name)
             optimizer = tf.keras.optimizers.get({'class_name': self.args.optimizer_name,
                                                  'config': {'learning_rate': self.args.learning_rate}})
             loss = tf.keras.losses.get({'class_name': self.args.loss_name,
