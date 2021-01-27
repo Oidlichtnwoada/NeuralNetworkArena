@@ -6,7 +6,7 @@ import experiments.benchmarks.benchmark as benchmark
 class AddBenchmark(benchmark.Benchmark):
     def __init__(self):
         super().__init__('add',
-                         (('--sequence_length', 200, int),
+                         (('--sequence_length', 100, int),
                           ('--samples', 100_000, int),
                           ('--loss_name', 'MeanSquaredError', str),
                           ('--loss_config', {}, dict),
