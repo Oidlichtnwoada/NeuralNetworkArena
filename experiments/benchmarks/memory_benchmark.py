@@ -6,7 +6,7 @@ import experiments.benchmarks.benchmark as benchmark
 class MemoryBenchmark(benchmark.Benchmark):
     def __init__(self):
         super().__init__('memory',
-                         (('--memory_length', 500, int),
+                         (('--memory_length', 200, int),
                           ('--sequence_length', 1, int),
                           ('--category_amount', 10, int),
                           ('--samples', 100_000, int),
