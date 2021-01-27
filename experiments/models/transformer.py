@@ -234,7 +234,7 @@ class Decoder(tf.keras.layers.Layer):
 
 
 @tf.keras.utils.register_keras_serializable()
-class Transformer(tf.keras.Model):
+class Transformer(tf.keras.layers.Layer):
     def __init__(self, token_amount, token_size, d_model, num_heads, d_ff, num_layers, dropout_rate, attention, flatten_output=True, mask_zero_inputs=False, **kwargs):
         super().__init__(**kwargs)
         # parameters
@@ -253,7 +253,7 @@ class Transformer(tf.keras.Model):
         self.decoder = Decoder(self.d_model, self.num_heads, self.d_ff, self.num_layers, self.token_amount, self.token_size, self.mask_zero_inputs, self.dropout_rate, self.attention)
         self.flatten = tf.keras.layers.Flatten()
 
-    def call(self, inputs, training=None, mask=None):
+    def call(self, inputs, **kwargs):
         # build the encoder output
         encoder_output = self.encoder(inputs)
         # build the decoder output
