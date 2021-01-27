@@ -10,6 +10,7 @@ import experiments.models.neural_circuit_policies as ncp
 import experiments.models.ode_lstm as ode_lstm
 import experiments.models.recurrent_transformer as recurrent_transformer
 import experiments.models.transformer as transformer
+import experiments.models.unitary_ncp as uncp
 import experiments.models.unitary_rnn as urnn
 
 MODEL_DESCRIPTIONS = {'memory_cell': True,
@@ -25,7 +26,8 @@ MODEL_DESCRIPTIONS = {'memory_cell': True,
                       'neural_circuit_policies': True,
                       'ct_rnn': True,
                       'ct_gru': True,
-                      'ode_lstm': True}
+                      'ode_lstm': True,
+                      'unitary_ncp': True}
 
 
 def get_concat_inputs(inputs):
@@ -64,6 +66,10 @@ def get_differentiable_neural_computer_output(output_size, input_tensor):
 def get_unitary_rnn_output(output_size, input_tensor):
     return tf.keras.layers.Dense(output_size)(
         tf.math.real(tf.keras.layers.RNN(urnn.EUNNCell(128, 4))(input_tensor)))
+
+
+def get_unitary_ncp_output(output_size, input_tensor):
+    return uncp.UnitaryNCP(128, 64, output_size)(input_tensor)
 
 
 def get_enhanced_unitary_rnn_output(output_size, input_tensor):
