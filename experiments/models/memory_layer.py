@@ -7,13 +7,13 @@ import experiments.models.transformer as transformer
 @tf.keras.utils.register_keras_serializable()
 class MemoryLayerCell(tf.keras.layers.AbstractRNNCell):
     def __init__(self, memory_rows=16, memory_columns=16, output_size=1,
-                 embedding_size=64, heads=4, feed_forward_size=256, dropout_rate=0.1, **kwargs):
+                 embedding_size=64, heads=4, feed_forward_size=256, dropout_rate=0, **kwargs):
         super().__init__(**kwargs)
         self.memory_rows = memory_rows
         self.memory_columns = memory_columns
         self.output_size_value = output_size
         self.output_layer = tf.keras.layers.Dense(output_size)
-        self.memory_input_layer = tf.keras.layers.Dense(1 + self.memory_columns)
+        self.memory_input_layer = tf.keras.layers.Dense(self.memory_rows + self.memory_columns)
         self.embedding_size = embedding_size
         self.input_embedding = tf.keras.layers.Dense(self.embedding_size)
         self.memory_embedding = tf.keras.layers.Dense(self.embedding_size)
@@ -49,10 +49,11 @@ class MemoryLayerCell(tf.keras.layers.AbstractRNNCell):
         normed_attention_output = self.layer_normalization(attention_output)
         feed_forward_output = self.dropout_layer(self.feed_forward_layer(normed_attention_output)) + normed_attention_output
         normed_feed_forward_output = self.layer_normalization(feed_forward_output)
-        memory_layer_outputs = self.output_layer(normed_feed_forward_output[:, 0, :])
-        memory_inputs = self.memory_input_layer(normed_feed_forward_output[:, 1:, :])
-        control_signals = tf.sigmoid(memory_inputs[..., :1])
-        data_signals = memory_inputs[..., 1:]
+        transformer_output_flattened = tf.reshape(normed_feed_forward_output, (-1, (1 + self.memory_rows) * self.embedding_size))
+        memory_layer_outputs = self.output_layer(transformer_output_flattened)
+        memory_inputs = self.memory_input_layer(transformer_output_flattened)
+        control_signals = tf.expand_dims(memory_inputs[:, :self.memory_rows], -1)
+        data_signals = tf.expand_dims(memory_inputs[:, -self.memory_columns:], -2)
         memory_state = tf.sigmoid(-control_signals) * memory_state + tf.sigmoid(control_signals) * data_signals
         return memory_layer_outputs, (memory_state,)
 
