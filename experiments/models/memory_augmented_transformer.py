@@ -5,7 +5,7 @@ import experiments.models.transformer as transformer
 
 
 @tf.keras.utils.register_keras_serializable()
-class MemoryLayerCell(tf.keras.layers.AbstractRNNCell):
+class MemoryAugmentedTransformerCell(tf.keras.layers.AbstractRNNCell):
     def __init__(self, memory_rows=16, memory_columns=16, output_size=1,
                  embedding_size=64, heads=4, feed_forward_size=256, dropout_rate=0, **kwargs):
         super().__init__(**kwargs)
@@ -78,7 +78,7 @@ class MemoryLayerAttention(tf.keras.layers.Layer):
         self.dim = dim
         self.heads = heads
         # create a memory layer
-        self.memory_layer = tf.keras.layers.RNN(MemoryLayerCell(heads=self.heads, output_size=self.dim, embedding_size=24, feed_forward_size=64))
+        self.memory_layer = tf.keras.layers.RNN(MemoryAugmentedTransformerCell(heads=self.heads, output_size=self.dim, embedding_size=24, feed_forward_size=64))
 
     def call(self, inputs, **kwargs):
         # split inputs tuple to the arguments

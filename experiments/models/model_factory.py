@@ -4,8 +4,8 @@ import experiments.models.ct_gru as ct_gru
 import experiments.models.ct_rnn as ct_rnn
 import experiments.models.differentiable_neural_computer as dnc
 import experiments.models.enhanced_unitary_rnn as eurnn
+import experiments.models.memory_augmented_transformer as mat
 import experiments.models.memory_cell as memory_cell
-import experiments.models.memory_layer as memory_layer
 import experiments.models.neural_circuit_policies as ncp
 import experiments.models.ode_lstm as ode_lstm
 import experiments.models.recurrent_transformer as recurrent_transformer
@@ -13,7 +13,7 @@ import experiments.models.transformer as transformer
 import experiments.models.unitary_ncp as uncp
 import experiments.models.unitary_rnn as urnn
 
-MODEL_ARGUMENTS = ['memory_cell', 'memory_layer', 'lstm',
+MODEL_ARGUMENTS = ['memory_cell', 'memory_augmented_transformer', 'lstm',
                    'differentiable_neural_computer', 'unitary_rnn', 'enhanced_unitary_rnn',
                    'transformer', 'memory_layer_transformer', 'recurrent_transformer',
                    'gru', 'neural_circuit_policies', 'ct_rnn',
@@ -97,8 +97,8 @@ def get_neural_circuit_policies_output(output_size, input_tensor):
         sensory_fanout=8, inter_fanout=8, recurrent_command_synapses=16, motor_fanin=8)(input_tensor)
 
 
-def get_memory_layer_output(output_size, input_tensor):
-    return tf.keras.layers.RNN(memory_layer.MemoryLayerCell(output_size=output_size))(input_tensor)
+def get_memory_augmented_transformer_output(output_size, input_tensor):
+    return tf.keras.layers.RNN(mat.MemoryAugmentedTransformerCell(output_size=output_size))(input_tensor)
 
 
 def get_memory_cell_output(output_size, input_tensor):
