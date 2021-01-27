@@ -13,21 +13,11 @@ import experiments.models.transformer as transformer
 import experiments.models.unitary_ncp as uncp
 import experiments.models.unitary_rnn as urnn
 
-MODEL_DESCRIPTIONS = {'memory_cell': True,
-                      'memory_layer': True,
-                      'lstm': True,
-                      'differentiable_neural_computer': True,
-                      'unitary_rnn': True,
-                      'enhanced_unitary_rnn': True,
-                      'transformer': False,
-                      'memory_layer_transformer': False,
-                      'recurrent_transformer': False,
-                      'gru': True,
-                      'neural_circuit_policies': True,
-                      'ct_rnn': True,
-                      'ct_gru': True,
-                      'ode_lstm': True,
-                      'unitary_ncp': True}
+MODEL_ARGUMENTS = ['memory_cell', 'memory_layer', 'lstm',
+                   'differentiable_neural_computer', 'unitary_rnn', 'enhanced_unitary_rnn',
+                   'transformer', 'memory_layer_transformer', 'recurrent_transformer',
+                   'gru', 'neural_circuit_policies', 'ct_rnn',
+                   'ct_gru', 'ode_lstm', 'unitary_ncp']
 
 
 def get_concat_inputs(inputs):

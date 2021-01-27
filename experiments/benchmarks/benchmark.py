@@ -29,7 +29,7 @@ class Benchmark(abc.ABC):
     @staticmethod
     def get_args(parser_configs):
         parser = argparse.ArgumentParser()
-        parser.add_argument('--model', default=list(model_factory.MODEL_DESCRIPTIONS)[0], type=str)
+        parser.add_argument('--model', default=model_factory.MODEL_ARGUMENTS[0], type=str)
         parser.add_argument('--epochs', default=1024, type=int)
         parser.add_argument('--batch_size', default=32, type=int)
         parser.add_argument('--optimizer_name', default='adam', type=str)
@@ -93,7 +93,7 @@ class Benchmark(abc.ABC):
 
     def check_directories(self):
         shutil.rmtree(os.path.join(self.tensorboard_dir, self.args.model), ignore_errors=True)
-        for model_name in model_factory.MODEL_DESCRIPTIONS:
+        for model_name in model_factory.MODEL_ARGUMENTS:
             os.makedirs(os.path.join(self.saved_model_dir, model_name), exist_ok=True)
             os.makedirs(os.path.join(self.tensorboard_dir, model_name), exist_ok=True)
             os.makedirs(os.path.join(self.result_dir, model_name), exist_ok=True)
@@ -159,19 +159,37 @@ class Benchmark(abc.ABC):
 
     def accumulate_data(self):
         testing_data = []
-        for model_name in model_factory.MODEL_DESCRIPTIONS:
+        for model_name in model_factory.MODEL_ARGUMENTS:
             test_results_path = os.path.join(self.result_dir, model_name, 'testing.csv')
             if os.path.exists(test_results_path):
-                table = pd.read_csv(test_results_path)
-                testing_data.append(table)
-        merged_table = pd.concat(testing_data)
-        merged_table.sort_values(merged_table.columns[2], inplace=True)
-        merged_table.to_csv(os.path.join(self.result_dir, 'merged_results.csv'), index=False)
+                testing_table = pd.read_csv(test_results_path)
+                testing_data.append(testing_table)
+        merged_testing_table = pd.concat(testing_data)
+        merged_testing_table.sort_values(merged_testing_table.columns[5], inplace=True)
+        merged_testing_table.to_csv(os.path.join(self.result_dir, 'merged_results.csv'), index=False)
+        val_loss_data = []
+        val_loss_column = ''
+        for model_name in model_factory.MODEL_ARGUMENTS:
+            training_results_path = os.path.join(self.result_dir, model_name, 'training.csv')
+            if os.path.exists(training_results_path):
+                training_table = pd.read_csv(training_results_path)
+                val_loss_column = training_table.columns[1] if self.args.metric_name == '' else training_table.columns[2]
+                val_loss_data.append((model_name, training_table[val_loss_column].tolist()))
+        max_len = max([len(x[1]) for x in val_loss_data])
+        x_data = np.array(range(1, max_len + 1))
+        fig, axis = plt.subplots()
+        axis.set_title(f'{val_loss_column} @ {self.__class__.__name__}')
+        axis.set_xlabel('epochs')
+        axis.xaxis.set_major_locator(ticker.MaxNLocator(integer=True))
+        for model_name, val_losses in val_loss_data:
+            axis.plot(x_data[:len(val_losses)], val_losses, label=model_name)
+        axis.legend(loc='upper right', prop={'size': 6})
+        plt.savefig(os.path.join(self.visualization_dir, 'merged_visualizations.pdf'))
 
     def train_and_test(self):
         self.check_directories()
         model_name = self.args.model
-        assert model_name in model_factory.MODEL_DESCRIPTIONS
+        assert model_name in model_factory.MODEL_ARGUMENTS
         model_save_location = os.path.join(self.saved_model_dir, model_name)
         tensorboard_save_location = os.path.join(self.tensorboard_dir, model_name)
         if self.args.use_saved_model:
