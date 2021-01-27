@@ -3,19 +3,19 @@ import tensorflow as tf
 import experiments.models.ct_gru as ct_gru
 import experiments.models.ct_rnn as ct_rnn
 import experiments.models.differentiable_neural_computer as dnc
-import experiments.models.enhanced_unitary_rnn as eurnn
+import experiments.models.matrix_exponential_unitary_rnn as meurnn
 import experiments.models.memory_augmented_transformer as mat
 import experiments.models.memory_cell as memory_cell
 import experiments.models.neural_circuit_policies as ncp
 import experiments.models.ode_lstm as ode_lstm
-import experiments.models.recurrent_transformer as recurrent_transformer
+import experiments.models.recurrent_network_augmented_transformer as rnat
 import experiments.models.transformer as transformer
 import experiments.models.unitary_ncp as uncp
 import experiments.models.unitary_rnn as urnn
 
 MODEL_ARGUMENTS = ['memory_cell', 'memory_augmented_transformer', 'lstm',
-                   'differentiable_neural_computer', 'unitary_rnn', 'enhanced_unitary_rnn',
-                   'transformer', 'memory_layer_transformer', 'recurrent_transformer',
+                   'differentiable_neural_computer', 'unitary_rnn', 'matrix_exponential_unitary_rnn',
+                   'transformer', 'recurrent_network_attention_transformer', 'recurrent_network_augmented_transformer',
                    'gru', 'neural_circuit_policies', 'ct_rnn',
                    'ct_gru', 'ode_lstm', 'unitary_ncp']
 
@@ -62,8 +62,8 @@ def get_unitary_ncp_output(output_size, input_tensor):
     return uncp.UnitaryNCP(128, 64, output_size)(input_tensor)
 
 
-def get_enhanced_unitary_rnn_output(output_size, input_tensor):
-    return tf.keras.layers.RNN(eurnn.EnhancedUnitaryRNN(100, output_size))(input_tensor)
+def get_matrix_exponential_unitary_rnn_output(output_size, input_tensor):
+    return tf.keras.layers.RNN(meurnn.MatrixExponentialUnitaryRNN(100, output_size))(input_tensor)
 
 
 def get_lstm_output(output_size, input_tensor):
@@ -81,14 +81,14 @@ def get_transformer_output(output_size, input_tensor):
                                    num_layers=2, dropout_rate=0.1, attention=transformer.MultiHeadAttention)(input_tensor)
 
 
-def get_memory_layer_transformer_output(output_size, input_tensor):
+def get_recurrent_network_attention_transformer_output(output_size, input_tensor):
     return transformer.Transformer(token_amount=1, token_size=output_size, d_model=32, num_heads=2, d_ff=128,
-                                   num_layers=2, dropout_rate=0.1, attention=memory_layer.MemoryLayerAttention)(input_tensor)
+                                   num_layers=2, dropout_rate=0.1, attention=mat.RecurrentNetworkAttention)(input_tensor)
 
 
-def get_recurrent_transformer_output(output_size, input_tensor):
+def get_recurrent_network_augmented_transformer_output(output_size, input_tensor):
     return transformer.Transformer(token_amount=1, token_size=output_size, d_model=24, num_heads=2, d_ff=96,
-                                   num_layers=2, dropout_rate=0.1, attention=recurrent_transformer.MultiHeadRecurrentAttention)(input_tensor)
+                                   num_layers=2, dropout_rate=0.1, attention=rnat.MultiHeadRecurrentAttention)(input_tensor)
 
 
 def get_neural_circuit_policies_output(output_size, input_tensor):

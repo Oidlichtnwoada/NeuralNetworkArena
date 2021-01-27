@@ -16,7 +16,7 @@ def modrelu(x, bias):
 
 
 @tf.keras.utils.register_keras_serializable()
-class EnhancedUnitaryRNN(tf.keras.layers.AbstractRNNCell):
+class MatrixExponentialUnitaryRNN(tf.keras.layers.AbstractRNNCell):
     def __init__(self, state_size, output_size, use_fft=False, trainable_initial_state=False, **kwargs):
         super().__init__(**kwargs)
         self.state_size_value = state_size

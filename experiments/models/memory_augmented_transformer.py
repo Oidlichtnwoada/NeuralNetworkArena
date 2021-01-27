@@ -71,7 +71,7 @@ class MemoryAugmentedTransformerCell(tf.keras.layers.AbstractRNNCell):
         return config
 
 
-class MemoryLayerAttention(tf.keras.layers.Layer):
+class RecurrentNetworkAttention(tf.keras.layers.Layer):
     def __init__(self, dim, heads):
         super().__init__()
         # save the dimension and the heads of the transformer
