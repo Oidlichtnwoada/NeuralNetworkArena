@@ -209,6 +209,10 @@ class Benchmark(abc.ABC):
                 metric = tf.keras.metrics.get(self.args.metric_name)
             model.compile(optimizer=optimizer, loss=loss, metrics=metric, run_eagerly=self.args.debug)
         model.summary()
+        if self.args.debug:
+            sample_output = model.predict(tuple((x[:self.args.batch_size] for x in self.training_input_data)))
+            sample_loss = model.loss(tuple((x[:self.args.batch_size] for x in self.training_output_data)), sample_output).numpy()
+            assert not tf.math.is_nan(sample_loss)
         training_start = time.time()
         fit_result = model.fit(
             x=self.training_input_data,
