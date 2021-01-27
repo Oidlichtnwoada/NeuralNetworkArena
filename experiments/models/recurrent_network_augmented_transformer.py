@@ -48,7 +48,8 @@ class MultiHeadRecurrentAttention(tf.keras.layers.Layer):
         # split inputs tuple to the arguments
         query_gen_input, key_gen_input, value_gen_input, mask = inputs
         # bring mask to format where 1 denotes no attention and insert head dimension
-        mask = tf.expand_dims(1 - mask, 1)
+        if mask is not None:
+            mask = tf.expand_dims(1 - mask, 1)
         # generate queries, keys and values
         queries = self.query_generator_network(query_gen_input)
         keys = self.key_generator_network(key_gen_input)
