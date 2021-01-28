@@ -20,9 +20,8 @@ class MatrixExponentialUnitaryRNN(tf.keras.layers.AbstractRNNCell):
         self.output_size_value = output_size
         self.use_fft = use_fft
         self.trainable_initial_state = trainable_initial_state
-        self.initializer = tf.keras.initializers.GlorotUniform()
-        self.real_state_vector = self.add_weight('real_state_vector', (self.state_size * (self.state_size + 1) // 2,), tf.float32, self.initializer)
-        self.imag_state_vector = self.add_weight('imag_state_vector', (self.state_size * (self.state_size + 1) // 2,), tf.float32, self.initializer)
+        self.real_state_vector = self.add_weight('real_state_vector', (self.state_size * (self.state_size + 1) // 2,), tf.float32, tf.keras.initializers.Constant())
+        self.imag_state_vector = self.add_weight('imag_state_vector', (self.state_size * (self.state_size + 1) // 2,), tf.float32, tf.keras.initializers.Constant())
         self.real_initial_state = self.add_weight('real_initial_state', (1, self.state_size), tf.float32, tf.keras.initializers.Constant(), trainable=self.trainable_initial_state)
         self.imag_initial_state = self.add_weight('imag_initial_state', (1, self.state_size), tf.float32, tf.keras.initializers.Constant(), trainable=self.trainable_initial_state)
         self.bias = self.add_weight('bias', (self.state_size, 1), tf.float32, tf.keras.initializers.Constant())
@@ -44,8 +43,8 @@ class MatrixExponentialUnitaryRNN(tf.keras.layers.AbstractRNNCell):
     def build(self, input_shape):
         inputs_size = model_factory.get_concat_input_shape(input_shape)
         factor = 2 if self.use_fft else 1
-        self.real_input_matrix = self.add_weight('real_input_matrix', (self.state_size, factor * inputs_size), tf.float32, self.initializer)
-        self.imag_input_matrix = self.add_weight('imag_input_matrix', (self.state_size, factor * inputs_size), tf.float32, self.initializer)
+        self.real_input_matrix = self.add_weight('real_input_matrix', (self.state_size, factor * inputs_size), tf.float32, tf.keras.initializers.GlorotUniform())
+        self.imag_input_matrix = self.add_weight('imag_input_matrix', (self.state_size, factor * inputs_size), tf.float32, tf.keras.initializers.GlorotUniform())
 
     def call(self, inputs, states):
         inputs = model_factory.get_concat_inputs(inputs)
