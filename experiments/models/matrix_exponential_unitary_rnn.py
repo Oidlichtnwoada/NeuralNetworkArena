@@ -2,6 +2,7 @@ import tensorflow as tf
 import tensorflow_probability as tfp
 
 import experiments.models.model_factory as model_factory
+import experiments.models.unitary_rnn as urnn
 
 
 def get_unitary_matrix(vector):
@@ -9,10 +10,6 @@ def get_unitary_matrix(vector):
     skew_hermitian_matrix = triangular_matrix - tf.linalg.adjoint(triangular_matrix)
     unitary_matrix = tf.linalg.expm(skew_hermitian_matrix)
     return unitary_matrix
-
-
-def modrelu(x, bias):
-    return tf.cast(tf.keras.activations.relu(tf.math.abs(x) + bias), tf.complex64) * (x / tf.cast(tf.math.abs(x), tf.complex64))
 
 
 @tf.keras.utils.register_keras_serializable()
@@ -62,7 +59,7 @@ class MatrixExponentialUnitaryRNN(tf.keras.layers.AbstractRNNCell):
             augmented_inputs = time_domain_inputs
         input_parts = tf.matmul(input_matrix, augmented_inputs[..., tf.newaxis])
         state_parts = tf.matmul(state_matrix, states[0][..., tf.newaxis])
-        next_states = tf.squeeze(modrelu(state_parts + input_parts, self.bias), -1)
+        next_states = tf.squeeze(urnn.modrelu(state_parts + input_parts, self.bias), -1)
         outputs = self.output_layer(tf.concat((tf.math.real(next_states), tf.math.imag(next_states)), -1))
         return outputs, (next_states,)
 
