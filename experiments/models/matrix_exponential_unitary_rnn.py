@@ -14,7 +14,7 @@ def get_unitary_matrix(vector):
 
 @tf.keras.utils.register_keras_serializable()
 class MatrixExponentialUnitaryRNN(tf.keras.layers.AbstractRNNCell):
-    def __init__(self, state_size, output_size, use_fft=True, trainable_initial_state=False, **kwargs):
+    def __init__(self, state_size, output_size, use_fft=False, trainable_initial_state=False, **kwargs):
         super().__init__(**kwargs)
         self.state_size_value = state_size
         self.output_size_value = output_size
