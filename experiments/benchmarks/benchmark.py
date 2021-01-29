@@ -45,7 +45,6 @@ class Benchmark(abc.ABC):
         parser.add_argument('--supplementary_data_folder_name', default='supplementary_data', type=str)
         parser.add_argument('--result_folder_name', default='results', type=str)
         parser.add_argument('--visualization_folder_name', default='visualizations', type=str)
-        parser.add_argument('--shrink_divisor', default=1, type=int)
         parser.add_argument('--use_time_input', default=False, type=bool)
         for parser_config in parser_configs:
             argument_name, default, cls = parser_config
