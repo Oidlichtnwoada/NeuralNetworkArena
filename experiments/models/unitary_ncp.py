@@ -10,10 +10,10 @@ class UnitaryNCP(tf.keras.layers.Layer):
         super().__init__(**kwargs)
         self.units_urnn = units_urnn
         self.units_ncp = units_ncp
-        self.output_size_value = output_size
+        self.output_size = output_size
         self.return_sequences = return_sequences
         self.urnn = tf.keras.layers.RNN(urnn.EUNNCell(units_urnn), return_sequences=True)
-        self.ncp = ncp.NeuralCircuitPolicies(units_ncp, output_size, return_sequences=self.return_sequences)
+        self.ncp = ncp.NeuralCircuitPolicies(units_ncp, self.output_size, return_sequences=self.return_sequences)
 
     def call(self, inputs, **kwargs):
         urnn_output = self.urnn(inputs)

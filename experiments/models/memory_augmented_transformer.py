@@ -7,7 +7,7 @@ import experiments.models.transformer as transformer
 @tf.keras.utils.register_keras_serializable()
 class MemoryAugmentedTransformerCell(tf.keras.layers.AbstractRNNCell):
     def __init__(self, memory_rows=16, memory_columns=16, output_size=1,
-                 embedding_size=64, heads=4, feed_forward_size=256, dropout_rate=0, **kwargs):
+                 embedding_size=16, heads=2, feed_forward_size=64, dropout_rate=0, **kwargs):
         super().__init__(**kwargs)
         self.memory_rows = memory_rows
         self.memory_columns = memory_columns
@@ -78,7 +78,7 @@ class RecurrentNetworkAttention(tf.keras.layers.Layer):
         self.dim = dim
         self.heads = heads
         # create a memory layer
-        self.memory_layer = tf.keras.layers.RNN(MemoryAugmentedTransformerCell(heads=self.heads, output_size=self.dim, embedding_size=24, feed_forward_size=64))
+        self.memory_layer = tf.keras.layers.RNN(MemoryAugmentedTransformerCell(heads=self.heads, output_size=self.dim, embedding_size=8, feed_forward_size=16))
 
     def call(self, inputs, **kwargs):
         # split inputs tuple to the arguments

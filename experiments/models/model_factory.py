@@ -36,21 +36,21 @@ def get_concat_input_shape(input_shape):
 
 def get_ct_gru_output(output_size, input_tensor):
     return tf.keras.layers.Dense(output_size)(
-        tf.keras.layers.RNN(ct_gru.CTGRU(76))(input_tensor))
+        tf.keras.layers.RNN(ct_gru.CTGRU(32))(input_tensor))
 
 
 def get_ct_rnn_output(output_size, input_tensor):
     return tf.keras.layers.Dense(output_size)(
-        tf.keras.layers.RNN(ct_rnn.CTRNNCell(312, 'rk4', 3))(input_tensor))
+        tf.keras.layers.RNN(ct_rnn.CTRNNCell(128, 'rk4', 3))(input_tensor))
 
 
 def get_ode_lstm_output(output_size, input_tensor):
     return tf.keras.layers.Dense(output_size)(
-        tf.keras.layers.RNN(ode_lstm.ODELSTM(128))(input_tensor))
+        tf.keras.layers.RNN(ode_lstm.ODELSTM(64))(input_tensor))
 
 
 def get_differentiable_neural_computer_output(output_size, input_tensor):
-    return tf.keras.layers.RNN(dnc.DNC(output_size, 116, 64, 16, 4))(input_tensor)
+    return tf.keras.layers.RNN(dnc.DNC(output_size, 64, 16, 8, 2))(input_tensor)
 
 
 def get_unitary_rnn_output(output_size, input_tensor):
@@ -59,40 +59,40 @@ def get_unitary_rnn_output(output_size, input_tensor):
 
 
 def get_unitary_ncp_output(output_size, input_tensor):
-    return uncp.UnitaryNCP(128, 64, output_size)(input_tensor)
+    return uncp.UnitaryNCP(64, 16, output_size)(input_tensor)
 
 
 def get_matrix_exponential_unitary_rnn_output(output_size, input_tensor):
-    return tf.keras.layers.RNN(meurnn.MatrixExponentialUnitaryRNN(100, output_size))(input_tensor)
+    return tf.keras.layers.RNN(meurnn.MatrixExponentialUnitaryRNN(64, output_size))(input_tensor)
 
 
 def get_lstm_output(output_size, input_tensor):
     return tf.keras.layers.Dense(output_size)(
-        tf.keras.layers.LSTM(160)(get_concat_inputs(input_tensor)))
+        tf.keras.layers.LSTM(64)(get_concat_inputs(input_tensor)))
 
 
 def get_gru_output(output_size, input_tensor):
     return tf.keras.layers.Dense(output_size)(
-        tf.keras.layers.GRU(100)(get_concat_inputs(input_tensor)))
+        tf.keras.layers.GRU(80)(get_concat_inputs(input_tensor)))
 
 
 def get_transformer_output(output_size, input_tensor):
-    return transformer.Transformer(token_amount=1, token_size=output_size, d_model=32, num_heads=2, d_ff=200,
+    return transformer.Transformer(token_amount=1, token_size=output_size, d_model=16, num_heads=2, d_ff=64,
                                    num_layers=2, dropout_rate=0.1, attention=transformer.MultiHeadAttention)(input_tensor)
 
 
 def get_recurrent_network_attention_transformer_output(output_size, input_tensor):
-    return transformer.Transformer(token_amount=1, token_size=output_size, d_model=32, num_heads=2, d_ff=128,
-                                   num_layers=2, dropout_rate=0.1, attention=mat.RecurrentNetworkAttention)(input_tensor)
+    return transformer.Transformer(token_amount=1, token_size=output_size, d_model=8, num_heads=1, d_ff=64,
+                                   num_layers=1, dropout_rate=0.1, attention=mat.RecurrentNetworkAttention)(input_tensor)
 
 
 def get_recurrent_network_augmented_transformer_output(output_size, input_tensor):
-    return transformer.Transformer(token_amount=1, token_size=output_size, d_model=24, num_heads=2, d_ff=96,
-                                   num_layers=2, dropout_rate=0.1, attention=rnat.MultiHeadRecurrentAttention)(input_tensor)
+    return transformer.Transformer(token_amount=1, token_size=output_size, d_model=16, num_heads=2, d_ff=64,
+                                   num_layers=1, dropout_rate=0.1, attention=rnat.MultiHeadRecurrentAttention)(input_tensor)
 
 
 def get_neural_circuit_policies_output(output_size, input_tensor):
-    return ncp.NeuralCircuitPolicies(100, output_size)(input_tensor)
+    return ncp.NeuralCircuitPolicies(64, output_size)(input_tensor)
 
 
 def get_memory_augmented_transformer_output(output_size, input_tensor):
