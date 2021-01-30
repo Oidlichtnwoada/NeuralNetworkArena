@@ -59,7 +59,7 @@ def get_unitary_rnn_output(output_size, input_tensor):
 
 
 def get_unitary_ncp_output(output_size, input_tensor):
-    return uncp.UnitaryNCP(64, 16, output_size)(input_tensor)
+    return uncp.UnitaryNCP(64, 32, output_size)(input_tensor)
 
 
 def get_matrix_exponential_unitary_rnn_output(output_size, input_tensor):
