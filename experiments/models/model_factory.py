@@ -50,7 +50,7 @@ def get_ode_lstm_output(output_size, input_tensor):
 
 
 def get_differentiable_neural_computer_output(output_size, input_tensor):
-    return tf.keras.layers.RNN(dnc.DNC(output_size, 64, 16, 8, 2))(input_tensor)
+    return tf.keras.layers.RNN(dnc.DNC(output_size, 128, 8, 8, 2))(input_tensor)
 
 
 def get_unitary_rnn_output(output_size, input_tensor):
