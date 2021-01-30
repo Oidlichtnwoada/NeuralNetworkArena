@@ -2,6 +2,7 @@ import tensorflow as tf
 
 import experiments.models.model_factory as model_factory
 import experiments.models.transformer as transformer
+import experiments.models.unitary_rnn as urnn
 
 
 @tf.keras.utils.register_keras_serializable()
@@ -77,8 +78,9 @@ class RecurrentNetworkAttention(tf.keras.layers.Layer):
         # save the dimension and the heads of the transformer
         self.dim = dim
         self.heads = heads
-        # create a memory layer
-        self.memory_layer = tf.keras.layers.RNN(MemoryAugmentedTransformerCell(heads=self.heads, output_size=self.dim, embedding_size=8, feed_forward_size=16))
+        # create the rnn layers
+        self.rnn_layers = [tf.keras.layers.RNN(urnn.EUNNCell(self.dim)) for _ in range(self.heads)]
+        self.dense_layer = tf.keras.layers.Dense(self.dim)
 
     def call(self, inputs, **kwargs):
         # split inputs tuple to the arguments
@@ -89,6 +91,8 @@ class RecurrentNetworkAttention(tf.keras.layers.Layer):
         # concatenate queries and values together and reshape it to a single batch dimension
         memory_layer_input = tf.reshape(tf.concat([duplicated_queries, duplicated_values], -1), (-1, values.shape[1], 2 * self.dim))
         # accumulate information with memory layer
-        accumulated_inputs = self.memory_layer(memory_layer_input)
+        accumulated_inputs = tf.concat([rnn_layer(memory_layer_input) for rnn_layer in self.rnn_layers], -1)
+        # merge outputs of multiple heads to one single representation
+        transformed_inputs = self.dense_layer(accumulated_inputs)
         # reshape the output to the right batch size and the right query dimension
-        return tf.reshape(accumulated_inputs, (-1, queries.shape[1], self.dim)), None
+        return tf.reshape(transformed_inputs, (-1, queries.shape[1], self.dim)), None
