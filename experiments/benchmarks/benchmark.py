@@ -12,10 +12,13 @@ import tensorflow as tf
 
 import experiments.models.model_factory as model_factory
 
+BENCHMARK_NAMES = ['cell', 'activity', 'add', 'memory', 'mnist', 'walker']
+
 
 class Benchmark(abc.ABC):
     def __init__(self, name, parser_configs):
         self.name = name
+        assert self.name in BENCHMARK_NAMES
         self.args = self.get_args(parser_configs)
         self.saved_model_dir, self.tensorboard_dir, self.supplementary_data_dir, self.result_dir, self.visualization_dir = self.create_directories()
         self.input_data, self.output_data, self.output_size = self.get_data_and_output_size()
