@@ -82,7 +82,7 @@ def get_transformer_output(output_size, input_tensor):
 
 
 def get_recurrent_network_attention_transformer_output(output_size, input_tensor):
-    return transformer.Transformer(token_amount=1, token_size=output_size, d_model=32, num_heads=1, d_ff=128,
+    return transformer.Transformer(token_amount=1, token_size=output_size, d_model=32, num_heads=1, d_ff=64,
                                    num_layers=1, dropout_rate=0.1, attention=mat.RecurrentNetworkAttention)(input_tensor)
 
 
