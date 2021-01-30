@@ -18,7 +18,7 @@ class MnistBenchmark(benchmark.Benchmark):
         input_data = np.reshape(np.concatenate((data[0][0], data[1][0])), (-1, 98, 8))
         time_data = np.ones_like(input_data)
         output_data = np.concatenate((data[0][1], data[1][1]))[..., np.newaxis]
-        return (input_data[:max_samples], time_data[:max_samples]), (output_data[:max_samples],), 17
+        return (input_data[:max_samples], time_data[:max_samples]), (output_data[:max_samples],), 10
 
 
 MnistBenchmark()
