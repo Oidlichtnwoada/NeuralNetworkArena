@@ -1,3 +1,7 @@
+"""
+code taken from https://github.com/mlech26l/ode-lstms/blob/master/node_cell.py (slightly modified)
+"""
+
 import numpy as np
 import tensorflow as tf
 

@@ -1,3 +1,7 @@
+"""
+code taken from https://github.com/mlech26l/ode-lstms/blob/master/node_cell.py (slightly modified)
+"""
+
 import tensorflow as tf
 
 import experiments.models.ct_rnn as ct_rnn

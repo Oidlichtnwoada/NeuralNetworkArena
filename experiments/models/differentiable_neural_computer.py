@@ -1,7 +1,6 @@
-# -*- coding: utf-8 -*-
-# pylint: disable=W0221
 """
 Differentiable Neural Computer model definition.
+code taken from https://github.com/willsq/tf-DNC/tree/master/dnc (slightly modified)
 
 Reference:
     http://www.nature.com/nature/journal/vaop/ncurrent/full/nature20101.html

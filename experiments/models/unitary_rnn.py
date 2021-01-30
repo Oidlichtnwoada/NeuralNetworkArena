@@ -1,3 +1,7 @@
+"""
+code taken from https://github.com/jingli9111/EUNN-tensorflow/blob/master/eunn.py (heavily modified)
+"""
+
 import math
 
 import numpy as np
