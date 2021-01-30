@@ -91,7 +91,7 @@ class RecurrentNetworkAttention(tf.keras.layers.Layer):
         # concatenate queries and values together and reshape it to a single batch dimension
         memory_layer_input = tf.reshape(tf.concat([duplicated_queries, duplicated_values], -1), (-1, values.shape[1], 2 * self.dim))
         # accumulate information with memory layer
-        accumulated_inputs = tf.concat([rnn_layer(memory_layer_input) for rnn_layer in self.rnn_layers], -1)
+        accumulated_inputs = tf.concat([tf.math.real(rnn_layer(memory_layer_input)) for rnn_layer in self.rnn_layers], -1)
         # merge outputs of multiple heads to one single representation
         transformed_inputs = self.dense_layer(accumulated_inputs)
         # reshape the output to the right batch size and the right query dimension
