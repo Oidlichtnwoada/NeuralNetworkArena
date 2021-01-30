@@ -15,10 +15,10 @@ class MnistBenchmark(benchmark.Benchmark):
     def get_data_and_output_size(self):
         max_samples = self.args.max_samples
         data = tf.keras.datasets.mnist.load_data()
-        input_data = np.reshape(np.concatenate((data[0][0], data[1][0])), (-1, 784))[..., np.newaxis]
+        input_data = np.reshape(np.concatenate((data[0][0], data[1][0])), (-1, 98, 8))
         time_data = np.ones_like(input_data)
         output_data = np.concatenate((data[0][1], data[1][1]))[..., np.newaxis]
-        return (input_data[:max_samples], time_data[:max_samples]), (output_data[:max_samples],), 10
+        return (input_data[:max_samples], time_data[:max_samples]), (output_data[:max_samples],), 17
 
 
 MnistBenchmark()
