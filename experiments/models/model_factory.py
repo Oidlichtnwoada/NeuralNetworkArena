@@ -8,6 +8,7 @@ import experiments.models.memory_augmented_transformer as mat
 import experiments.models.memory_cell as memory_cell
 import experiments.models.neural_circuit_policies as ncp
 import experiments.models.ode_lstm as ode_lstm
+import experiments.models.recurrent_network_attention as rna
 import experiments.models.recurrent_network_augmented_transformer as rnat
 import experiments.models.transformer as transformer
 import experiments.models.unitary_ncp as uncp
@@ -83,7 +84,7 @@ def get_transformer_output(output_size, input_tensor):
 
 def get_recurrent_network_attention_transformer_output(output_size, input_tensor):
     return transformer.Transformer(token_amount=1, token_size=output_size, d_model=32, num_heads=1, d_ff=64,
-                                   num_layers=1, dropout_rate=0.1, attention=mat.RecurrentNetworkAttention)(input_tensor)
+                                   num_layers=1, dropout_rate=0.1, attention=rna.RecurrentNetworkAttention)(input_tensor)
 
 
 def get_recurrent_network_augmented_transformer_output(output_size, input_tensor):
