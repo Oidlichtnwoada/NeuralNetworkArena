@@ -55,7 +55,7 @@ def get_differentiable_neural_computer_output(output_size, input_tensor):
 
 def get_unitary_rnn_output(output_size, input_tensor):
     return tf.keras.layers.Dense(output_size)(
-        tf.math.real(tf.keras.layers.RNN(urnn.EUNNCell(128, 4))(input_tensor)))
+        tf.math.real(tf.keras.layers.RNN(urnn.EUNNCell(128, 32))(input_tensor)))
 
 
 def get_unitary_ncp_output(output_size, input_tensor):
@@ -63,7 +63,7 @@ def get_unitary_ncp_output(output_size, input_tensor):
 
 
 def get_matrix_exponential_unitary_rnn_output(output_size, input_tensor):
-    return tf.keras.layers.RNN(meurnn.MatrixExponentialUnitaryRNN(64, output_size))(input_tensor)
+    return tf.keras.layers.RNN(meurnn.MatrixExponentialUnitaryRNN(128, output_size))(input_tensor)
 
 
 def get_lstm_output(output_size, input_tensor):
