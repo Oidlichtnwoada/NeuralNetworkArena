@@ -21,4 +21,4 @@ for benchmark_name in benchmark.BENCHMARK_NAMES:
             if benchmark_name != 'cell' and model_argument == 'memory_cell':
                 continue
             subprocess.run([f'{args.python_executable_name}', '-m', f'experiments.benchmarks.{benchmark_name}_benchmark',
-                            '--model', f'{model_argument}', '--result_folder_name', f'{args.result_folder_name}'])
+                            '--model', f'{model_argument}', '--result_folder_name', f'{args.result_folder_name}'], check=True)
