@@ -1,5 +1,8 @@
 import tensorflow as tf
 
+import experiments.models.recurrent_network_attention as rna
+import experiments.models.recurrent_network_augmented_transformer as rnat
+
 
 def compute_padding_mask(signals):
     # mask the input away if all vector entries are zero
@@ -247,7 +250,15 @@ class Transformer(tf.keras.layers.Layer):
         self.flatten_output = flatten_output
         self.mask_zero_inputs = mask_zero_inputs
         self.dropout_rate = dropout_rate
-        self.attention = attention
+        self.attention_type = attention
+        if self.attention_type == 'mha':
+            self.attention = MultiHeadAttention
+        elif self.attention_type == 'rna':
+            self.attention = rna.RecurrentNetworkAttention
+        elif self.attention_type == 'rnat':
+            self.attention = rnat.MultiHeadRecurrentAttention
+        else:
+            raise NotImplementedError
         # used layers
         self.encoder = Encoder(self.d_model, self.num_heads, self.d_ff, self.num_layers, self.mask_zero_inputs, self.dropout_rate, self.attention)
         self.decoder = Decoder(self.d_model, self.num_heads, self.d_ff, self.num_layers, self.token_amount, self.token_size, self.mask_zero_inputs, self.dropout_rate, self.attention)
@@ -274,7 +285,7 @@ class Transformer(tf.keras.layers.Layer):
             'd_ff': self.d_ff,
             'num_layers': self.num_layers,
             'dropout_rate': self.dropout_rate,
-            'attention': self.attention,
+            'attention': self.attention_type,
             'flatten_output': self.flatten_output,
             'mask_zero_inputs': self.mask_zero_inputs
         })
