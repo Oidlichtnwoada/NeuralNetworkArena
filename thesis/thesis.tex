@@ -26,7 +26,7 @@
 
 % Define convenience functions to use the author name and the thesis title in the PDF document properties.
 \newcommand{\authorname}{Hannes Brantner} % The author name without titles.
-\newcommand{\thesistitle}{Capturing Long-Term Dependencies in Neural Regulatory Networks} % The title of the thesis. The English version should be used, if it exists.
+\newcommand{\thesistitle}{Comparing Machine Learning Models using Long-Term Dependency and Physical System Benchmarks} % The title of the thesis. The English version should be used, if it exists.
 
 % Set PDF document properties
 \hypersetup{
@@ -52,10 +52,10 @@
 %  {title before name}{name}{title after name}{gender}
 %  where both titles are optional (i.e. can be given as empty brackets {}).
 \setauthor{}{\authorname}{BSc}{male}
-\setadvisor{Univ.-Prof. Dipl.-Ing. Dr.rer.nat.}{Radu Grosu}{BSc}{male}
+\setadvisor{Dipl.-Ing. Dr.rer.nat.}{Radu Grosu}{BSc}{male}
 
 % For bachelor and master theses:
-\setfirstassistant{Dipl.-Ing.}{Mathias Lechner}{BSc}{male}
+\setfirstassistant{Dipl.-Ing. Dr.}{Ramin Hasani}{BSc}{male}
 %\setsecondassistant{Pretitle}{Forename Surname}{Posttitle}{male}
 %\setthirdassistant{Pretitle}{Forename Surname}{Posttitle}{male}
 
@@ -68,7 +68,7 @@
 
 % Required data.
 \setregnumber{01614466}
-\setdate{31}{01}{2021} % Set date with 3 arguments: {day}{month}{year}.
+\setdate{31}{04}{2021} % Set date with 3 arguments: {day}{month}{year}.
 \settitle{\thesistitle}{\thesistitle} % Sets English and German version of the title (both can be English or German). If your title contains commas, enclose it with additional curvy brackets (i.e., {{your title}}) or define it as a macro as done with \thesistitle.
 %\setsubtitle{Optional Subtitle of the Thesis}{Optionaler Untertitel der Arbeit} % Sets English and German version of the subtitle (both can be English or German).
 
@@ -111,7 +111,12 @@
 %\end{danksagung*}
 
     \begin{acknowledgements*}
-%\todo{Enter your text here.}
+        At first, I have to thank Ramin for providing me great support throughout my work on the thesis.
+        He cared about me and was always pointing me to state-of-the-art literature, as he wanted to push me forward.
+        I also have to thank Prof. Grosu for participating in numerous online meetings and for sharing his in-depth knowledge in the machine learning domain.
+        Furthermore, I want to thank Mathias Lechner for giving me first-class support on questions I had regarding various machine learning models.
+        I have to point out that he was always willing to help me and provided his responses incredibly fast.
+        Last but not least, I have to thank my parents for providing me with mental and financial support throughout my whole study journey.
     \end{acknowledgements*}
 
 %\begin{kurzfassung}
@@ -119,7 +124,14 @@
 %\end{kurzfassung}
 
     \begin{abstract}
-%\todo{Enter your text here.}
+        The diversity of machine learning models has rapidly increased in recent years as research in the machine learning domain flourishes.
+        This thesis tries to give an overview of machine learning models that are capable of dealing with regularly sampled time-series data without specifying a given history length that should be taken into account by the model.
+        Therefore, all models presented in this thesis are either derivatives of the recurrent neural network or the transformer \cite{Transformer} architecture.
+        Furthermore, new machine learning models are introduced that try to improve on the given transformer and unitary recurrent neural network \cite{EfficientUnitaryRNNs} architecture.
+        After the introduction of all models, they are all benchmarked against five benchmarks and compared thoroughly.
+        These benchmarks try to determine the model's capabilities to capture long-term dependencies and the ability to model physical systems.
+        Moreover, a time-continuous memory cell is introduced that is capable of storing a data bit over a large number of time steps without losing the stored information.
+        This memory cell is built using the LTC network \cite{LTCNetworks} architecture.
     \end{abstract}
 
 % Select the language of the thesis, e.g., english or naustrian.
@@ -134,41 +146,117 @@
 
     \chapter{Introduction}
 
+    \section{Machine Learning Terms}
+    A machine learning model is a mathematical parametrized function that gets an input and produces an output.
+    For example, the machine learning model GPT-3 proposed in \cite{GPT-3} has 175 billion scalar parameters.
+    This thesis will use imitation learning to optimally set the parameters of machine learning models.
+    This means that for each input, there is an associative expected output provided that the model should return by applying its function to the input.
+    Of course when the model's function is applied to the input with the initial state of the model's parameters, the returned model output will differ from the desired output in almost all cases.
+    The measure that quantifies this error between model output and expected output is called a loss function and has a scalar return value.
+    A sample loss function can be constructed as easy as computing the mean of all squared errors between the model output and the expected output.
+    For each input sample, the loss function describes the error the model makes by applying its function and this error is only dependent on the parameters of the model.
+    In the general case, a computer scientist wants to find the global minimum of that function with respect to all machine learning model parameters.
+    As this is a problem that cannot be solved analytically in most cases, it is approximated by using gradient descent \cite{GradientDescent}.
+    This method incrementally changes each parameter depending on the gradient of the loss function with respect to each parameter in lock step.
+    By denoting the loss function with $L$, the learning rate with $\alpha$, the old whole parameter set with $p$, the old single scalar parameter with $p_i$ and the new single scalar parameter with $p_i'$, the formula to update the individual parameters $p_i$ in a single gradient descent step can be given as follows:
+    \begin{align} 
+        \label{gradient_descent_update}
+        \forall p_i:~p_i' &= p_i - \alpha * \frac{\partial{L}}{\partial{p_i}}(p)
+    \end{align}
+    It is essential to note that the model as well as the loss measure must be deterministic functions for the gradient to exist.
+    This update rule ensures that if the loss function increases with increasing $p_i$, therefore if the computed gradient of the loss function is larger than zero, a decrease of the parameter will happen that leads to a decreasing loss function result.
+    The opposite case holds as well and this is why there is a minus sign in \ref{gradient_descent_update}.
+    The learning rate $\alpha$ determines how large in magnitude the update to the parameters should be at each gradient descent step.
+    A too small learning rate will lead to slow convergence, a too large learning rate will lead to divergence.
+    Therefore, a too large learning rate is far more dangerous than a too small one.
+    Convergence means that the parameter updates have led to a local minimum of the loss function.
+    There are no guarantees that this is the global minimum. Divergence means that the loss function diverges towards infinity.
+    A local minimum or convergence can be reached by applying the gradient descent update rule to as many inputs as needed to set the loss function derivative to nearly zero. 
 
     \section{Problem Statement}
-
+    As the sheer amount of different machine learning models can be overwhelming, the task was to fix a distinct application domain and compare the most influential machine learning models in this domain with suitable benchmarks.
+    Benchmarks are just large input data sets with associative expected outputs.
+    Additionally, ideas for possible improvements in existing architectures should be implemented and benchmarked against the already existing ones.
+    All benchmarked models should be implemented in the same machine learning framework and the benchmark suite should be extensible and reusable for other machine learning research projects.
+    The whole implementation work done for this thesis should be made accessible for everyone by open-sourcing all the code.
+    As mentioned in the abstract, all the models covered in this thesis are either derivatives of the recurrent neural network or the transformer \cite{Transformer} architecture.
+    The benchmarks used in this thesis either test the models for their capabilities to capture long-term dependencies or their ability to model physical systems.
+    
+    \section{How to better model Physical Systems} \label{physical_systems}
+    Physical systems are guided by differential equations. The relation between system state $x$, system input $u$ and system output $y$ is given by the state derivative function $f$ and the output function $h$, both of which depend on the absolute time $t$, as follows:
+    \begin{align} 
+        \label{physical_system_equations_state}
+        \dot x(t) &= f(x(t),u(t),t) \\
+        \label{physical_system_equations_output}
+        y(t) &= h(x(t),u(t),t)
+    \end{align}
+    This form of system description is applicable to all physical systems in our daily surroundings, most of them are even time-invariant. 
+    This means the functions $f$ and $h$ do not depend on the absolute time $t$.
+    For example, a mechanical pendulum will now approximately behave the same as in one year, as its dynamics do not depend on the absolute time $t$.
+    The system description given in \ref{physical_system_equations_state} and \ref{physical_system_equations_output} proposes, that machine learning models that are built in a similar fashion and whose state is also determined by a differential equation, should be pretty capable of modelling the input-output relation of physical systems.
+    When the benchmarked models are introduced in more detail, it can be seen that all continuous-time machine learning models use a comparable structure in terms of parameterizing the state derivative and the output function.
+    
+    \section{Sampled Physical Systems} \label{sampled_physical_systems}
+    As the evaluation of the current state $x$ at point in time $t'$ with initial state $x_0$ given the dynamics from \ref{physical_systems} can be computationally very expensive or even infeasible, sampling was introduced to avoid solving a complex differential equation.
+    Therefore, the whole system is only observed at equidistant successive time instants, values belonging to this time instant are denoted with a subscript index $k \in \mathbb{Z}$, and the system is now called discrete.
+    Discrete systems are guided by difference equations. The relation between system state $x$, system input $u$ and system output $y$ is given by the next state function $f$ and the output function $h$, both of which depend on the time instant $k$, as follows:
+    \begin{align} 
+        \label{discrete_system_equations_state}
+        x_{k+1} &= f(x_k,u_k,k) \\
+        \label{discrete_system_equations_output}
+        y_k &= h(x_k,u_k,k)
+    \end{align} 
+    It must be noted that $x$ and $y$ are time series in discrete systems and no more functions like in the case of continuous-time physical systems.
+    This slightly off-topic explanation is necessary, as vanilla recurrent neural networks are built using the same principle. 
+    The system equations \ref{discrete_system_equations_state} and \ref{discrete_system_equations_output} require a regularly (equidistantly) sampled input $x$.
+    A similar argument as before in \ref{physical_systems} proposes now that a machine learning model with a similar structure, which gets a regularly sampled input of a physical system, should also be pretty capable of modelling the input-output relation of this sampled physical system.
+    The corresponding machine learning models are then called discrete-time machine learning models.
+    
+    \section{Why capturing Long-Term Dependencies is difficult}
+    The difficulty will be outlined solely on the example of vanilla recurrent neural networks (RNNs).
+    How transformer-based and advanced RNN architectures tackle the problem will be discussed later.
+    Vanilla recurrent neural networks are discrete-time machine learning models. 
+    Its dynamics are given in a similar fashion to the equations that govern sampled physical systems \ref{sampled_physical_systems}.
+    The current state vector $h_{t}$ and the next input vector $x_{t+1}$ determine the next state vector $h_{t+1}$ and output vector $y_{t+1}$ deterministically.
+    In this model all the past inputs are implicitly encoded in the current state vector.
+    This entails a big challenge for computer scientists, as computers only allow states of finite size and finite precision, unlike our physical environment, which results in an information bottleneck in the state vector.
+    The next state of a vanilla recurrent neural network $h_{t+1}$ and its output $y_{t}$ is typically computed by equations like the two proposed in \cite[p. 2]{UnitaryRNNs} by using a non-linear bias-parametrized activation function $\sigma$, three matrices ($W$, $V$ and $U$) and the output bias vector $b_o$:
+    \begin{align}
+        \label{rnn_state_update}
+        h_{t+1} &= \sigma(W*h_t + V*x_{t+1}) \\
+        \label{rnn_output}
+        y_{t} &= U*h_{t} + b_o
+    \end{align}
+    Without the time shift on the input in the next state equation, the equations are pretty similar to the ones describing sampled physical systems.
 
     \section{Aim of the Work}
-
+    This work should help to objectively compare various machine learning models used to process regularly sampled time-series data.
+    It should outline the weaknesses and strengths of the benchmarked models and determine their primary domain of use.
+    Moreover, as there are many models benchmarked, their relative expressivity across various application domains can be compared reasonably well.
+    Another aim is to provide an overview of what architectures are currently available and how they can be implemented.
+    Furthermore, the implemented benchmark suite should be reusable for future projects in the machine learning domain.
 
     \section{Methodological Approach}
-
+    The first part of this thesis was to determine the most influential models for processing time-series data.
+    Some of the models that were benchmarked against each other in this thesis were taken from \cite{ODELSTM}, even though this paper focuses primarily on irregularly sampled time-series.
+    The other models were implemented according to the following architectures: Long Short-Term Memory \cite{LSTM}, Differentiable Neural Computer \cite{DNC}, Unitary Recurrent Neural Network \cite{EfficientUnitaryRNNs}, Transformer \cite{Transformer} and Neural Circuit Policies \cite{NCP}.
+    These nine models are then complemented by five models that were newly introduced.
+    All these models are benchmarked against each other.
+    Additionally, a time-continuous memory cell architecture was introduced.
+    This architecture has its own benchmark test and was not benchmarked against all other fully-fledged machine learning models as it was only a proof-of-concept implementation.
+    All mentioned models have been implemented in the machine learning framework Tensorflow \cite{Tensorflow}.
 
     \section{State of the Art}
+    The whole field of sequence modelling started with recurrent neural networks.
+    
 
 %\todo{Enter your text here.}
 
 
-    \chapter{Architecture}
+    \chapter{Models}
 
 
-    \section{Continuous Flip-Flop}
-
-
-    \section{Memory Layer}
-
-
-    \section{Transformer with Memory Layer}
-
-
-    \chapter{Experiments}
-    All models and benchmarks can be found under: \\
-    \url{https://github.com/Oidlichtnwoada/LongTermDependenciesLearning}
-
-
-    \section{Models}
-
-    \subsection{Differentiable Neural Computer} \label{Differentiable Neural Computer}
+    \section{Differentiable Neural Computer} \label{Differentiable Neural Computer}
     This model defines a memory-augmented neural network architecture, that consists of a controller, read and write heads and obviously an external memory that is not parameterized by the neural network parameter.
     Furthermore, the external memory was structured in rows, where each memory row has a specific length.
     The architecture was taken from \cite{DNC} and is an enhancement to the Neural Turing Machine firstly introduced in \cite{NTM}.
@@ -178,7 +266,8 @@
     These weight vectors are then normalized using a softmax function that takes each argument to the power of an emitted number to sharpen the weights.
     Some improvements of the Differentiable Neural Computer include a memory management system that is able to allocate and free memory in the external memory to avoid overwriting of important information and a memory use link matrix that allows the model to track its memory operations through time.
 
-    \subsection{Memory Cell} \label{Memory Cell}
+
+    \section{Memory Cell} \label{Memory Cell}
     The Memory Cell is a simple RNN consisting of two LTC neurons as described in \cite{LTCNetworks} and used in \cite{NCP}.
     However the leakage term was removed from the ordinary differential equation describing the state dynamics, as a fading potential would mean losing information stored in the memory cell over time.
     It has a 2-dimensional input, the input voltage for each of the two neurons delivered by a synapse, and a 1-dimensional output, which is just the potential of the first neuron.
@@ -199,18 +288,21 @@
     However, if the potentials are not bounded, this would mean even an excitatory synapse can deliver a negative current or analogously an inhibitory synapse can deliver a positive current.
     The bounded dynamics of LTC networks is no longer valid, as the leakage term was removed from the state dynamics equation.
 
-    \subsection{Memory Cell NCP} \label{Memory Cell NCP}
+
+    \section{Memory Cell NCP} \label{Memory Cell NCP}
     This is a wiring that was written for the keras-ncp Python package derived from \cite{NCP} that implements the memory cell architecture from the previous section in a parallel manner, however with a leakage current term in the state dynamics.
     However results have shown that it is not really able to store information over a long time horizon.
 
-    \subsection{Memory Layer} \label{Memory Layer}
+
+    \section{Memory Layer} \label{Memory Layer}
     This model implements the architecture of the memory cell, in a parallelized manner. It is therefore also an RNN and includes an input and output control, which are simply multi-layer perceptrons.
     The input control gets the current step RNN inputs and the current memory state as input and transforms this information to an input current to each memory cell without passing it through a synaptic non-linearity.
     One neuron in each memory cell gets the unmodified input from the input control, the other neuron gets the negated input current as input.
     The output of the whole architecture is then computed by passing the potentials of every first neuron in each memory cell through the output control, that generated the final RNN output.
     This model also performs not as well as expected.
 
-    \subsection{Memory Layer Attention} \label{Memory Layer Attention}
+
+    \section{Memory Layer Attention} \label{Memory Layer Attention}
     To possibly improve the Transformer architecture described in \cite{Transformer}, a new mechanism instead of multi-head attention must be implemented.
     Therefore, memory layer attention was created which simply concatenates every query vector with each value vector and feeds all concatenated vectors per query as a sequence to an RNN architecture.
     As an RNN architecture, the predescribed memory layer RNN is used. The output of the RNN is then the new representation of the query vector at the input of the memory layer attention.
@@ -218,7 +310,8 @@
     A similar approach was taken in the Reformer architecture \cite{Reformer}, which is a computationally more efficient transformer.
     This approach was not thoroughly tested as the basic building block, the memory layer RNN does not work as expected.
 
-    \subsection{Transformer} \label{Transformer}
+
+    \section{Transformer} \label{Transformer}
     This model implements the transformer architecture firstly introduced in \cite{Transformer}. The input and output embedding were replaced with a fully connected layer, as this model should also work with vector sized input.
     The linear layer at the output of the transformer was also replaced with a fully connected layer, which emits an output token of the specified token size.
     Instead of stopping the transformer architecture when the stop token was emitted by the decoder layer, this architecture stops after a specified amount of tokens.
@@ -227,28 +320,33 @@
     These are then used to build a cumulative sum to generate the absolute positions. If you just want to use the regularly sampled mode, just provide only $1$s for the intervals.
     This architecture performs very well if a reasonably sized model with enough parameters is chosen.
 
-    \subsection{Recurrent Transformer} \label{Recurrent Transformer}
+
+    \section{Recurrent Transformer} \label{Recurrent Transformer}
     This is a slightly modified version of the transformer model \ref{Transformer}.
     It does not simply add the weighted value vectors up in the multi-head attention mechanism, but instead passes the weighted value vectors through an RNN, whose final output vector represents the added weighted values vectors in the ordinary multi-head attention.
     This architecture also performs reasonably well in the benchmarks.
 
-    \subsection{Neural Circuit Policies} \label{Neural Circuit Policies}
+
+    \section{Neural Circuit Policies} \label{Neural Circuit Policies}
     This model is a specifically connected LTC network \cite{LTCNetworks}, firstly described in \cite{NCP}.
     It is very demanding in computational resources and does not perform very well on the benchmarks.
 
-    \subsection{Unitary RNN} \label{Unitary RNN}
+
+    \section{Unitary RNN} \label{Unitary RNN}
     Unitary RNNs were firstly introduced in \cite{UnitaryRNNs} and made learning long-term dependencies with RNNs possible by keeping gradient sizes stable, even if backpropagation occurs to a distant past state.
     It is achieved by parameterizing the weight matrix of the hidden state in the next state equation in a way, that it stays a unitary matrix.
     This matrix can be constructed out of real and complex numbers, the whole unitary matrix space of size $N^2$ was efficiently parameterized by \cite{EfficientUnitaryRNNs}.
     With this approach, it can be shown that distant past inputs have the same influence on the current state as current inputs in terms of their gradient size, which only differs by a constant.
 
-    \subsection{Unitary RNN} \label{Unitary RNN}
+
+    \section{Unitary RNN} \label{Unitary RNN}
     Unitary RNNs were firstly introduced in \cite{UnitaryRNNs} and made learning long-term dependencies with RNNs possible by keeping gradient sizes stable, even if backpropagation occurs to a distant past state.
     It is achieved by parameterizing the weight matrix of the hidden state in the next state equation in a way, that it stays a unitary matrix.
     This matrix can be constructed out of real numbers, which was done in \cite{UnitaryRNNs}, but it can also be extended to the complex domain, which was done in \cite{EfficientUnitaryRNNs}.
     With this approach, it can be shown that distant past inputs have the same influence on the current state as current inputs in terms of their gradient size, which only differs by a constant.
 
-    \subsection{Enhanced Unitary RNN} \label{Enhanced Unitary RNN}
+
+    \section{Enhanced Unitary RNN} \label{Enhanced Unitary RNN}
     This model uses the time domain input to compute a frequency domain input, both are fed concatenated as input vector $i_t$ to the RNN as input.
     My intuition was that some tasks are easier to solve in the frequency domain, whereas some tasks are easier to solve in the time domain.
     The state equation of the RNN can be expressed as follows, where $W_1$ and $W_2$ are unitary matrices and $\sigma(z) = max(0,|z|+b)*\frac{z}{|z|}$ (parameterized modrelu activation function defined in \cite{UnitaryRNNs}):
@@ -263,9 +361,10 @@
     However, the results were not as good as expected because gradients were not stable.
 
 
-    \section{Benchmarks}
+    \chapter{Benchmarks}
 
-    \subsection{Walker}
+
+    \section{Walker}
     This benchmark evaluates how well a model can predict a dynamical, physical system's behavior and was taken from \cite{LongTermDependenciesIrregularTimeSeries}.
     The training data is acquired simulation data of the \texttt{Walker2d-v2} OpenAI gym \cite{OpenAIGym} controlled by a pre-trained policy.
     The objective was to learn the kinematic simulation of the physics engine in an auto-regressive fashion using imitation learning.
@@ -289,7 +388,8 @@
         \end{tabular}
     \end{table}
 
-    \subsection{Memory}
+
+    \section{Memory}
     This benchmark evaluates how well a model can be trained to incorporate long-term dependencies in its predictions.
     The structure of this benchmark was taken from \cite{UnitaryRNNs}, who also tested their recurrent neural network with this long-term dependency benchmark.
     The training data only contains integers from $0$ to $N-1$. The first ten input symbols of each input sequence are randomly sampled integers from $0$ to $N-3$ (i.i.d. uniform).
@@ -314,7 +414,8 @@
         \end{tabular}
     \end{table}
 
-    \subsection{Cell}
+
+    \section{Cell}
     This is a very small benchmark that tries to find the right parameter and input ranges for the memory cell \ref{Memory Cell}.
     This benchmark should make clear if a memory cell is able to switch its state multiple times and keep information over a long period of time.
     It is directly implemented in the same file as the memory cell itself.
@@ -338,6 +439,9 @@
     Furthermore, the benchmarks alternates the symbol that should be saved first, half of the time it is a $0$, half of the time it is a $1$.
     Moreover, the memory cell state is switched again two times after the first input by providing two additional inputs, which represent the negated current memory cell potential, to check if the cell is able to switch its state.
     This results can be easily viewed when executing the memory cell Python script, they are not interesting since the memory cell does not learn anything.
+
+
+    \chapter{Results}
 
 
     \chapter{Summary}

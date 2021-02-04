@@ -427,19 +427,19 @@
     english=Declaration of Authorship,
     naustrian=Erkl\"arung zur Verfassung der Arbeit]{StatementChapter}%
 \CreatePolylingual[
-    english={I hereby declare that I have written this Master Thesis
-    independently, that I have completely specified the utilized
-    sources and resources and that I have definitely marked all parts
-    of the work - including tables, maps and figures - which belong
-    to other works or to the internet, literally or extracted, by
-    referencing the source as borrowed.},
-    naustrian={Hiermit erkl\"are ich, dass ich diese Arbeit
-    selbst\"andig verfasst habe, dass ich die verwendeten Quellen
-    und Hilfsmittel vollst\"andig angegeben habe und dass ich die
-    Stellen der Arbeit -- einschlie{\ss}lich Tabellen, Karten und
-    Abbildungen --, die anderen Werken oder dem Internet im Wortlaut
-    oder dem Sinn nach entnommen sind, auf jeden Fall unter Angabe
-    der Quelle als Entlehnung kenntlich gemacht habe.}]{Statement}%
+english={I hereby declare that I have written this Master Thesis
+independently, that I have completely specified the utilized
+sources and resources and that I have definitely marked all parts
+of the work - including tables, maps and figures - which belong
+to other works or to the internet, literally or extracted, by
+referencing the source as borrowed.},
+naustrian={Hiermit erkl\"are ich, dass ich diese Arbeit
+selbst\"andig verfasst habe, dass ich die verwendeten Quellen
+und Hilfsmittel vollst\"andig angegeben habe und dass ich die
+Stellen der Arbeit -- einschlie{\ss}lich Tabellen, Karten und
+Abbildungen --, die anderen Werken oder dem Internet im Wortlaut
+oder dem Sinn nach entnommen sind, auf jeden Fall unter Angabe
+der Quelle als Entlehnung kenntlich gemacht habe.}]{Statement}%
 \CreatePolylingual[
     english=Bachelor of Science,
     naustrian=Bachelor of Science]{Bdeg}%
@@ -541,8 +541,8 @@
 \newcommand{\vutinfth@header@titlepage}{%
     \setlength{\unitlength}{1mm}%
     \begin{picture}
-        (74, 11)%
-            {\includegraphics[height=\vutinfth@logo@height]{Logo-schwarz.pdf}}
+    (74, 11)%
+    {\includegraphics[height=\vutinfth@logo@height]{Logo-schwarz.pdf}}
     \end{picture}\hfill
 }%
 \newcommand{\vutinfth@footer@titlepage}{%
@@ -764,7 +764,7 @@
         {\vutinfth@Large{\bfseries\vutinfth@person@author@fullname}}\par
         \smallskip
         {\vutinfth@large\vutinfth@polylingual@Registrationnumber\
-        \vutinfth@data@regnumber}\par
+            \vutinfth@data@regnumber}\par
         }%
         \vutinfth@bigskip\vutinfth@bigskip
         \ifgraduate{\ifphd{\vspace*{-8mm}}}%
@@ -818,50 +818,58 @@
 }%
 \newenvironment{acknowledgements}{%
     \selectlanguage{english}%
+
+
     \chapter{Acknowledgements}%
-    }{%
+}{%
     \cleardoublepage
 }%
 \newenvironment{acknowledgements*}{%
     \selectlanguage{english}%
     \chapter*{Acknowledgements}%
-    }{%
+}{%
     \cleardoublepage
 }%
 \newenvironment{danksagung}{%
     \selectlanguage{naustrian}%
+
+
     \chapter{Danksagung}%
-    }{%
+}{%
     \cleardoublepage
 }%
 \newenvironment{danksagung*}{%
     \selectlanguage{naustrian}%
     \chapter*{Danksagung}%
-    }{%
+}{%
     \cleardoublepage
 }%
 \renewenvironment{abstract}{%
     \selectlanguage{english}%
+
+
     \chapter{Abstract}%
-    }{%
+}{%
     \cleardoublepage
 }%
 \newenvironment{abstract*}{%
     \selectlanguage{english}%
     \chapter*{Abstract}%
-    }{%
+}{%
     \cleardoublepage
 }%
 \newenvironment{kurzfassung}{%
     \selectlanguage{naustrian}%
+
+
     \chapter{Kurzfassung}%
-    }{%
+}{%
     \cleardoublepage
 }%
 \newenvironment{kurzfassung*}{%
     \selectlanguage{naustrian}%
     \chapter*{Kurzfassung}%
-    }{%
+}{%
     \cleardoublepage
 }%
 \makepagestyle{vutinfth@pagestyle@default}%
