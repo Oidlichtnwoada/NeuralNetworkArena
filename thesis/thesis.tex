@@ -23,6 +23,7 @@
 \usepackage{hyperref}  % Enables cross linking in the electronic document version. This package has to be included second to last.
 \usepackage[acronym,toc]{glossaries} % Enables the generation of glossaries and lists fo acronyms. This package has to be included last.
 \usepackage{float}
+\usepackage{amsfonts,amsthm, graphicx, trfsigns, physics}
 
 % Define convenience functions to use the author name and the thesis title in the PDF document properties.
 \newcommand{\authorname}{Hannes Brantner} % The author name without titles.
@@ -154,6 +155,7 @@
     Of course when the model's function is applied to the input with the initial state of the model's parameters, the returned model output will differ from the desired output in almost all cases.
     The measure that quantifies this error between model output and expected output is called a loss function and has a scalar return value.
     A sample loss function can be constructed as easy as computing the mean of all squared errors between the model output and the expected output.
+    The model output is also often denoted as the prediction of the model.
     For each input sample, the loss function describes the error the model makes by applying its function and this error is only dependent on the parameters of the model.
     In the general case, a computer scientist wants to find the global minimum of that function with respect to all machine learning model parameters.
     As this is a problem that cannot be solved analytically in most cases, it is approximated by using gradient descent \cite{GradientDescent}.
@@ -227,7 +229,29 @@
         \label{rnn_output}
         y_{t} &= U*h_{t} + b_o
     \end{align}
-    Without the time shift on the input in the next state equation, the equations are pretty similar to the ones describing sampled physical systems.
+    Without the time shift on the input in the next state equation \ref{rnn_state_update}, the equations are pretty similar to the ones describing sampled physical systems.
+    The following inequality from \cite[p. 2]{UnitaryRNNs} using norms shows the relation between the loss derivative, a recent state $h_T$ and a state from the distant past $h_t$ where $T \gg t$.
+    The notation is kept similar to the examples before. A subscript $2$ after a vector norm denotes the Euclidean norm and a subscript $2,ind$ after a matrix norm denotes the spectral norm:
+    \begin{align}
+        \label{gradient_formula}
+        \left\Vert \pdv{L}{h_t} \right\Vert_2 \leq \left\Vert \pdv{L}{h_T} \right\Vert_2 * \left\Vert W \right\Vert_{2,ind}^T * \prod^{T-1}_{k=t} \left\Vert diag(\sigma'(W*h_k + V*x_{k+1})) \right\Vert_{2,ind}
+    \end{align}
+    This inequality contains all essential parts to understand why capturing long-term dependencies with vanilla recurrent neural networks is difficult.
+    Some problems that machine learning tries to solve require incorporating input data from the distant past to make good predictions in the present.
+    As these inputs are implicitly encoded in the states of the distant past, $\left\Vert \pdv{L}{h_t} \right\Vert_2$ should not decay to zero or grow unboundedly to effectively tune the parameters using the gradient descent update rule shown above in \ref{gradient_descent_update}.
+    This ensures that distant past inputs influence the loss function reasonably and makes it feasible to incorporate the knowledge to minimize the loss function.
+    As known the spectral norm of the diagonal matrix in \ref{gradient_formula} is just the largest magnitude out of all diagonal entries.
+    Therefore, if the norm of the diagonal matrix is close to zero over multiple time steps $k$, also the desired loss gradient will decay towards zero.
+    Otherwise, if the norm of the diagonal matrix is much larger than one over multiple time steps $k$, the desired loss gradient may grow unboundedly.
+    Using this knowledge it is now clear that a suitable activation function must have a derivative of one in almost all cases to counteract the above described problems.
+    A good fit would be a rectified linear unit (relu) activation function with an added bias term.
+    The relu activation function with a bias $b$ can simply be discribed by the function $max(0,x+b)$. The $max$ function should be applied element-wise.
+    As the requirements for the activation function candidates are clear now, the next thing to discuss is the norm of the matrix $W$.
+    If $\left\Vert W \right\Vert_{2,ind} > 1$, $\left\Vert \pdv{L}{h_t} \right\Vert$ may grow unboundedly, making it difficult to apply the gradient descent technique to optimize parameters.
+    If $\left\Vert W \right\Vert_{2,ind} < 1$, $\left\Vert \pdv{L}{h_t} \right\Vert$ will decay to $0$, making it impossible to apply the gradient descent technique to optimize parameters.
+    These problems are identical to the problems regarding the norm of the diagonal matrix and also have the same implications.
+    The first case is calles the exploding gradient problem and the second case is called the vanishing gradient problem for given reasons.
+    Both phenomena are explained in more detail in \cite{LongTermDependenciesGradientDescent}.
 
     \section{Aim of the Work}
     This work should help to objectively compare various machine learning models used to process regularly sampled time-series data.
@@ -242,14 +266,34 @@
     The other models were implemented according to the following architectures: Long Short-Term Memory \cite{LSTM}, Differentiable Neural Computer \cite{DNC}, Unitary Recurrent Neural Network \cite{EfficientUnitaryRNNs}, Transformer \cite{Transformer} and Neural Circuit Policies \cite{NCP}.
     These nine models are then complemented by five models that were newly introduced.
     All these models are benchmarked against each other.
-    Additionally, a time-continuous memory cell architecture was introduced.
-    This architecture has its own benchmark test and was not benchmarked against all other fully-fledged machine learning models as it was only a proof-of-concept implementation.
-    All mentioned models have been implemented in the machine learning framework Tensorflow \cite{Tensorflow}.
+    Additionally, a time-continuous memory cell architecture should be introduced.
+    This architecture must have its own benchmark test and should not be benchmarked against all other fully-fledged machine learning models as it is only a proof-of-concept implementation.
+    All mentioned models should be implemented in the machine learning framework Tensorflow \cite{Tensorflow}.
+    After the implementation of all models, an extensible benchmark suite had to be implemented to compare all implemented models.
+    A basic benchmark framework should be implemented, which automatically trains a given model and saves all relevant information regarding the training process including generating plots to visualize the data.
+    All that should be needed to implement a new benchmark is to specify the input, the expected output data, the loss function and the required output vector size of the model.
+    The benchmarks regarding person activity classification, sequential MNIST classification and kinematic physics simulation were taken from \cite{ODELSTM} and were modified slightly to be compatible with the benchmark framework.
+    The other two benchmark regarding the copying memory and the adding problem were taken from \cite{UnitaryRNNs}, but were also slightly modified to fit the benchmark framework's needs.
+    The sixth benchmark that had to be implemented was the cell benchmark that should check if the memory cell is able to store information over a large number of time steps.
+    When this step is also done, all benchmarks should be run on all applicable models and then the results should be thoroughly compared to filter out the strengths and weaknesses of the diverse models.
+    Only after that a summary should be written to concisely summarize the most important discoveries and fallacies that were made.
 
     \section{State of the Art}
-    The whole field of sequence modelling started with recurrent neural networks.
-    
+    The whole field of sequence modeling started with recurrent neural networks.
+    More and more modern machine learning architectures exploit the fact that continuous-time models are very well suited for tasks related to dynamical physical systems as explained in \ref{physical_systems}.
+    A few examples for such models would be the CT-GRU \cite{CTGRU}, the LTC network \cite{LTCNetworks} and the ODE-LSTM architecture \cite{ODELSTM}.
+    But there are also some older architectures that exploit continuous-time dynamics in machine learning models like the CT-RNN architecture \cite{CTRNN}.
+    The other problem described in the previous chapters is the hard task of capturing lon-term dependencies in time-series.
+    One solution for the problem was proposed in \cite{UnitaryRNNs}, which introduced the Unitary RNN architecture.
+    This architecture in principle just uses the vanilla RNN architecture described above, but with the difference that the matrix $W$ fulfills $\left\Vert W \right\Vert_{2,ind} = 1$ to tackle the vanishing and exploding gradient problem.
+    This idea was later refined by \cite{EfficientUnitaryRNNs}.
+    The vanishing gradient problem was also tackled by the LSTM architecture \cite{LSTM} using a mechanism called gating. 
+    This mechanism changes the next state computation of the vanilla RNN.
+    Another possible mitigation to the vanishing gradient problem is the transformer architecture proposed in \cite{Transformer} using a mechanism called attention.
+    In principle the transformer architecture model has access to all past inputs at a single time-step and directs its attention to the inputs most relevant for solving the required task.
+    This eliminates the need to backpropagate the error through multiple time-steps, which keeps the number of backpropagation steps low. 
 
+    
 %\todo{Enter your text here.}
 
 
