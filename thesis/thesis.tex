@@ -356,6 +356,103 @@
     \chapter{Benchmarks}
 
     \section{Benchmark Framework}
+    \subsection{Setup}
+    A single code base to run and evaluate the diverse set of benchmarks and models was inevitable. 
+    Otherwise, the whole project would have been unmanageable.
+    As the implementation of all models occurred in the \texttt{Python} programming language \cite{Python3} using the framework Tensorflow \cite{Tensorflow}, also the benchmark framework used the same set of tools.  
+    Therefore, a benchmark base class was created in the file \texttt{benchmark.py}, which is available under the URL \url{https://github.com/Oidlichtnwoada/NeuralNetworkArena/blob/master/experiments/benchmarks/benchmark.py}.
+    The creation of a new benchmark is as easy as subclassing the benchmark base class \texttt{Benchmark}.
+    For instructions how to call the newly created class, please consulate the \texttt{README.md} file given under the URL \url{https://github.com/Oidlichtnwoada/NeuralNetworkArena/blob/master/README.md}.
+    After subclassing the base class, the new class has to correctly call the superclass constructor and overwrite the abstract method \texttt{get\_data\_and\_output\_size}.
+    Furthermore, the new benchmark's name should be added to the \texttt{BENCHMARK\_NAMES} list constant.
+    The superclass constructor only has two arguments: \texttt{name} and \texttt{parser\_configs}. 
+    The first argument is just the name of the new benchmark passed as a string.
+    The second argument should be a tuple of individual parser configs. 
+    A parser config is itself a tuple consisting of the argument name, the argument default value and the argument type.
+    This argument determines which values should be settable and usable when calling the benchmark from the command line.
+    There are at least three parser configs required that set the loss name, the loss config and the metric name.
+    A sample \texttt{parser\_configs} argument would be: \texttt{(('-{}-loss\_name', 'SparseCategoricalCrossentropy', str), ('-{}-loss\_config', {'from\_logits': True}, dict), ('-{}-metric\_name', 'SparseCategoricalAccuracy', str))}.
+    If loss config or metric name is not applicable to the benchmark, simply set the default loss config to \texttt{\{\}} or the default metric name to \texttt{''}.
+    Furthermore, if the benchmark needs additional parameters, just extend the \texttt{parser\_configs} parameter to also include the desired command line arguments.
+    This feature is used by all individual benchmark implementations. 
+    After calling the superclass constructor all command line arguments configured through \texttt{parser\_configs} will be available by their names as properties of \texttt{self.args} without the double hyphen.
+    For example the loss name can be accessed by \texttt{self.args.loss\_name}.
+    If some parameters were set through the command line, they will have the corresponding value, otherwise the configured default values will be applied.
+    After that the benchmark base class will create paths for some required directories. 
+    There are five directories required during benchmark execution: a saved model directory (will be created to save the models together with their best weights during training), a TensorBoard directory (will be created to save TensorBoard logs for eventual later evaluation), a supplementary data directory (already present in the repo to pass input data to the benchmark), a result directory (will be created to save csv files with relevant information about the training process) and a visualization directory (will be created to save visualizations created after each training of a model).
+    All these paths start in the root folder of the repository called \texttt{NeuralNetworkArena}. 
+    The structure how these paths continue is the same for all five kinds of folders.
+    For the next step in path creation, the individual name for the required folder kind will be appended to the root folder.
+    These names can be passed as a command argument when calling the individual benchmark classes. 
+    For a more in detail description of these command line parameters just call an implemented benchmark class with the \texttt{-{}-h} command line parameter as described in the \texttt{README.md} file.
+    Then the name of the individual benchmarks is added to the path, such that each benchmark has its own five subfolders.
+    Then the benchmark base class calls its \texttt{get\_data\_and\_output\_size} method that should have been implemented by the subclass.
+    The function should return a tuple of inputs, a tuple of expected outputs and an output vector size of the machine learning model.
+    The input and output tuple should only contain numpy arrays \cite{numpy}. The output tuple must have size exactly one.
+    The input tuple must have size at least one.
+    The benchmark base class has also support for time inputs to the models.
+    Please make sure that the time input is the last entry in the input tuple.
+    There is also the command line argument called \texttt{use\_time\_input}. 
+    If you want to use time input, then make sure you have this argument set to true.
+    Otherwise, if the input tuple has a dimension larger than one, the last entry will be discarded from the input tuple, as it is assumed to be the time input.
+    The benchmark suite works currently only for benchmarks which provide time-series input data and only expect a model output after the last input data in the time-series.
+    For people familiar with the Tensorflow framework \cite{Tensorflow} this is equivalent to setting \texttt{return\_sequences=False} in an RNN model.
+    All input arrays in the input tuple should have the shape \texttt{(SAMPLE\_AMOUNT, SEQUENCE\_LENGTH, INPUT\_DIMENSION)}.
+    Of course the input dimension can vary between different inputs. Time data should have an input dimension of one. 
+    The single output array present in the output tuple should have the shape \texttt{(SAMPLE\_AMOUNT, OUTPUT\_DIMENSION)}.
+    The sample amount should match between input and output data to be valid input to the benchmark framework.
+    All the constraints on the shapes will be checked by the framework and then all individual samples are shuffled such that corresponding input and output data are at the same indices in their arrays.
+    Then tensors are created with the same shape as the inputs in the input tuple excluding the first dimension that denotes the sample amount.
+    These are required to later use the Functional API of the Tensorflow framework \cite{Tensorflow}.
+    They are created by specifying a fixed batch size, which helps the machine learning framework to better optimize the computational graph for the corresponding model.
+    The default batch size is set to $128$ and can be changed by a command line parameter.
+    After that, the whole samples are divided into test, validation and training samples. The amount of test and validation samples can be set via command line parameters, which default to $10\%$ each. 
+    It is ensured that each individual sample set is exactly divisible by the batch size, as the computational graph was optimized by only allowing inputs of a fixed batch size as described above.
+    After all the setup work is done, the folder paths to the result, the saved model and the TensorBoard directory will be augmented with the model name that is currently under test and which was passed via a command line parameter.
+    Then the TensorBoard directory for that model will be deleted, as each training run creates a significant amount of log files.
+    After that, the TensorBoard, the result, the saved model and visualization directory will be created if they do not already exist. 
+    Then it will be checked if the passed model name is present in the list constant \texttt{MODEL\_ARGUMENTS} in the file \texttt{model\_factory.py}.
+    When this check is passed, the benchmark framework either loads a saved model with the corresponding model name or it creates a new one using the model output functions in the predescribed model factory depending on the command line parameter \texttt{use\_saved\_model}.
+    These output functions get an output vector size and the tensor inputs and create an output tensor that contains all the information about the operations in between.
+    By knowing the input and the output tensors, the Tensorflow \cite{Tensorflow} Functional API can be incorporated to create a machine learning model.
+    If the model is newly created and not loaded from a saved one, the model is also compiled using a customizable optimizer, learning rate, loss, loss config and metric.
+    These can be changed by command line parameters.
+    The default optimizer and learning rate used throughout all benchmarks in this thesis are the Adam optimizer \cite{Adam} and a learning rate of $10^{-3}$.
+    The three remaining parameters also discussed in the previous subsection must be passed such that it is conforming with the requirements of the functions \texttt{tf.keras.optimizers.get} and \texttt{tf.keras.losses.get}.
+    A debug mode can also be enabled via the command line which puts the newly created model in eager execution mode making it easier to debug the model. Furthermore, the model will be called on a single batch of inputs without invoking the model's \texttt{fit} method. This happens only in debug mode.
+    In any case a model ready to train should now have been constructed and all the models characteristics including input and output shape will then be printed to the command line enabling to check if all the dimensions match the expectations.
+    \subsection{Training}
+    After printing available information of the model to the command line a unix timestamp is retrieved from the system to keep track of the total training duration.
+    Then the training is ultimately started by invoking the model's \texttt{fit} method. This method takes the training and validation sample set, the batch size, the number of epochs and a tuple of callbacks as arguments.
+    The number of epochs can also be configured in the command line, but throughout the thesis it is left to the default value of $128$.
+    The \texttt{fit} method calls the machine learning model function for each batch of inputs in the training sample set. After that the model is validated on the validation sample set.
+    This means the loss function is computed on the validation data, which is data that the model is not trained on.
+    Validating the model should help to determine how well the model will perform on actual test data, which is also data that the model is not trained on. 
+    If the loss function results for training and validation data are similar, it is said that the model generalizes well.
+    When the validation step is finished the training loop proceeds with the next epoch and starts the same cycle again by providing the first batch of inputs from the training sample set.
+    This cycle is repeated as often as the set value of the epochs.
+    The callbacks are invoked after each completed epoch. There were five callbacks added: a ModelCheckpoint callback (saves the model with the best validation loss), an EarlyStopping callback (terminates training if the validation loss has not improved for a configurable number of epochs), a TerminateOnNan callback (terminates the training when a nan loss is encountered), a ReduceLROnPlateau callback (multiplies the learning rate by a configurable factor after no improvement of the validation loss for a configurable number of epochs) and a TensorBoard callback (saves TensorBoard log data for eventual later inspection).
+    The default number of epochs used in this thesis for the EarlyStopping callback is $5$.
+    Another important callback is the TerminateOnNan callback, which terminates the training loop if the loss evaluates to nan.
+    This can for example happen when the loss function diverges towards infinity, therefore if the exploding gradient problem appears. 
+    It may also be the case that there is a division through zero somewhere in the computational graph, which may also lead to a nan loss.
+    The term nan just stands for \texttt{not a number}.
+    As all benchmarked models are trained until convergence in this thesis, the ReduceLROnPlateau callback is especially important.
+    The corresponding default parameters are a learning rate factor of $10^{-1}$ and a default number of epochs equal to $2$, both of which are used throughout all benchmark invocations.
+    Furthermore, all these parameters are configurable by passing alternative values in the command line.
+    After the training loop has terminated, another unix timestamp is taken to compute the total training duration.
+    \subsection{Evaluation}
+    The model is then evaluated using the parameters that led to the smallest validation loss during the whole training loop.
+    Evaluation means that the model function is applied to the test sample set inputs and the resulting loss function result on that inputs is saved.
+    The created model also provides an \texttt{evaluate} function, which takes the test sample set a batch size and another callback tuple as arguments.
+    The only callback passed in the tuple is the TensorBoard callback already used in the \texttt{fit} method invocation.
+    \subsection{Data Processing}
+    The return values of the \texttt{fit} and \texttt{evaluate} method invocations now contain information about the means of the loss function results and of the metric function results on training, validation and test sample set.
+    The means for the training and validation sample set are available for each training epoch together with the currently applied learning rate.
+    All of that information is automatically accumulated in a single csv file per model for the training and the testing process. 
+    The testing results of all models are also merged in a single csv containing all model results for a single benchmark.
+    Data that was generated during training is automatically visualized by the benchmark base class and will be presented in a future chapter that discusses the benchmark results in more detail.
+    Of course all generated files will be stored in their respective directories.
 
     \section{Activity Benchmark}
 
