@@ -22,6 +22,7 @@ class CellBenchmark(benchmark.Benchmark):
         cell_switches = self.args.cell_switches
         samples = self.args.samples
         model_input = np.zeros((samples, (cell_switches + 1) * memory_length, 2))
+        time_input = np.ones((samples, (cell_switches + 1) * memory_length, 1))
         model_output = np.zeros((samples, (cell_switches + 1) * memory_length, 2))
         for i in range(cell_switches + 1):
             even = int(i % 2 == 0)
@@ -34,7 +35,7 @@ class CellBenchmark(benchmark.Benchmark):
             model_input[1::2, i * memory_length, odd] = memory_low_symbol
             model_output[1::2, i * memory_length:(i + 1) * memory_length, 0] = odd * memory_high_symbol
             model_output[1::2, i * memory_length:(i + 1) * memory_length, 1] = even * memory_high_symbol
-        return (model_input,), (model_output,), 2
+        return (model_input, time_input), (model_output,), 2
 
 
 CellBenchmark()

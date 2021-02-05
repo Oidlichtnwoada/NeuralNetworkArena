@@ -23,9 +23,10 @@ class AddBenchmark(benchmark.Benchmark):
         marker_sequences[row_indices, random_indices[:samples]] = 1
         marker_sequences[row_indices, random_indices[samples:] + sequence_length // 2] = 1
         input_sequences = np.concatenate((number_sequences, marker_sequences), -1)
+        time_sequences = np.ones((samples, sequence_length, 1))
         filtered_input_sequences = np.where(marker_sequences, number_sequences, 0)
         output_data = np.sum(filtered_input_sequences, 1)
-        return (input_sequences,), (output_data,), 1
+        return (input_sequences, time_sequences), (output_data,), 1
 
 
 AddBenchmark()
