@@ -41,20 +41,54 @@ def feed_forward_network(d_model, d_ff):
     ])
 
 
+def split_heads(qkv, num_heads, d_qkv):
+    # split queries, key or values into num_heads - permutation necessary to compute right dot product
+    return tf.transpose(tf.reshape(qkv, (-1, qkv.shape[1], num_heads, d_qkv)), perm=[0, 2, 1, 3])
+
+
 class MultiHeadAttention(tf.keras.layers.Layer):
     def __init__(self, d_model, num_heads):
         super().__init__()
         # parameters
         self.d_model = d_model
         self.num_heads = num_heads
-        # set size of queries, keys and values to d_model / num_heads
-        self.mha = tf.keras.layers.MultiHeadAttention(self.num_heads, self.d_model)
+        # used layers
+        self.query_generator_network = tf.keras.layers.Dense(self.num_heads * self.d_model)
+        self.key_generator_network = tf.keras.layers.Dense(self.num_heads * self.d_model)
+        self.value_generator_network = tf.keras.layers.Dense(self.num_heads * self.d_model)
+        self.mha_output_generator_network = tf.keras.layers.Dense(self.d_model)
 
     def call(self, inputs, **kwargs):
         # split inputs tuple to the arguments
         query_gen_input, key_gen_input, value_gen_input, mask = inputs
-        # return mha attention output using the predefined layer
-        return self.mha(query_gen_input, value_gen_input, key_gen_input, attention_mask=mask, return_attention_scores=True)
+        # bring mask to format where 1 denotes no attention and insert head dimension
+        if mask is not None:
+            mask = tf.expand_dims(1 - mask, 1)
+        # generate queries, keys and values
+        queries = self.query_generator_network(query_gen_input)
+        keys = self.key_generator_network(key_gen_input)
+        values = self.value_generator_network(value_gen_input)
+        # split queries, keys and values to the right amount of heads
+        queries_heads = split_heads(queries, self.num_heads, self.d_model)
+        keys_heads = split_heads(keys, self.num_heads, self.d_model)
+        values_heads = split_heads(values, self.num_heads, self.d_model)
+        # compute the attention logits from each query to each key
+        attention_logits = tf.matmul(queries_heads, keys_heads, transpose_b=True)
+        # scale the attention logits
+        scaled_attention_logits = attention_logits / tf.math.sqrt(tf.cast(self.d_model, dtype=tf.float32))
+        # set attention logits to very small value for input positions in mask (if present)
+        if mask is not None:
+            scaled_attention_logits -= tf.where(mask == 1, tf.ones_like(mask) * float('inf'), mask)
+        # compute the attention weight to each value per query
+        attention_weights = tf.nn.softmax(scaled_attention_logits)
+        # compute dot product attention
+        dpa = tf.matmul(attention_weights, values_heads)
+        # transpose dpa matrix such that the heads dimension is behind input dimension
+        reshaped_dpa = tf.transpose(dpa, perm=[0, 2, 1, 3])
+        # merge heads to single value dimension
+        concatenated_dpa = tf.reshape(reshaped_dpa, (-1, reshaped_dpa.shape[1], self.num_heads * self.d_model))
+        # transform concatenated dpa to vectors of size d_model
+        return self.mha_output_generator_network(concatenated_dpa), attention_weights
 
 
 class EncoderLayer(tf.keras.layers.Layer):
