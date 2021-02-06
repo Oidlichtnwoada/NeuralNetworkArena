@@ -207,13 +207,13 @@
         \label{discrete_system_equations_output}
         y_k &= h(x_k,u_k,k)
     \end{align} 
-    It must be noted that $x$ and $y$ are time series in discrete systems and no more functions like in the case of continuous-time physical systems.
+    It must be noted that $x$ and $y$ are time-series in discrete systems and no more functions like in the case of continuous-time physical systems.
     This slightly off-topic explanation is necessary, as vanilla recurrent neural networks are built using the same principle. 
     The system equations \ref{discrete_system_equations_state} and \ref{discrete_system_equations_output} require a regularly (equidistantly) sampled input $x$.
     A similar argument as before in \ref{physical_systems} proposes now that a machine learning model with a similar structure, which gets a regularly sampled input of a physical system, should also be pretty capable of modelling the input-output relation of this sampled physical system.
     The corresponding machine learning models are then called discrete-time machine learning models.
     
-    \section{Why capturing Long-Term Dependencies is difficult}
+    \section{Why capturing Long-Term Dependencies is difficult} \label{long_term_difficult}
     The difficulty will be outlined solely on the example of vanilla recurrent neural networks (RNNs).
     How transformer-based and advanced RNN architectures tackle the problem will be discussed later.
     Vanilla recurrent neural networks are discrete-time machine learning models. 
@@ -454,12 +454,70 @@
     Data that was generated during training is automatically visualized by the benchmark base class and will be presented in a future chapter that discusses the benchmark results in more detail.
     Of course all generated files will be stored in their respective directories.
 
-    \section{Activity Benchmark}
-
-    \section{Add Benchmark}
+    \section{Activity Benchmark} \label{activity}
+    As described in the benchmark base class, all benchmarks feature time-series data where the model output is only used after the last time step to compute the loss function.
+    This benchmark uses a slightly modified person activity recognition dataset from the UCI repository \cite{UCI}.
+    The mentioned dataset was distributed under the \url{https://archive.ics.uci.edu/ml/machine-learning-databases/00196/ConfLongDemo_JSI.txt}.
+    The target function to learn is to map a sequence of measurements from four inertial sensors worn on the person's arms and feet to an activity classification.
+    This benchmark should test a model's capability to model dynamical physical systems and understand what motion patterns belong to which class.
+    At each time step only the measurement of a single inertial sensor is presented as input to the model.
+    The model can differ between the individual sensors as the modified dataset of person activity has a one-hot encoding to mark the sensor from which the current measurement is coming.
+    All benchmarks feature an additional time input, where the time interval since the last input is passed on to the model if the feature is activated.
+    However, this thesis has not used an additional time input for any benchmark.
+    All the measurements used for this dataset were stored in the file \texttt{activity.csv} located in the supplementary data folder described in the benchmark framework section.
+    The dataset is annotated with an activity classification for each time step, this benchmark however only requires the model to predict the classification corresponding to the last measurement data received.
+    As the benchmark is a classification task a categorical crossentropy loss was used that was computed from the output logits of the model.
+    A categorical accuracy metric is used in this benchmark better judge how accurate the model predicts the activity class annotation corresponding to the last measurement input.
+    Each model had an output vector size of seven, as there were seven different activity classes with their respective indices in brackets: lying ($0$), sitting on a chair ($1$), standing up ($2$), walking ($3$), falling ($4$), on all fours ($5$) and sitting on the ground ($6$).
+    The processing of the UCI dataset was similarly done as in \cite{ODELSTM}.
+    The benchmark had a configurable sequence length, maximum sample amount and sample distance.
+    For this thesis, a sequence length of $64$, a maximum sample amount of $40000$ and a sample distance of $4$ was used.
+    This means that each model gets a history of $64$ measurements before it has to predict the activity corresponding to the last measurement.
+    The maximum sample amount should bound the number of samples and in the case of $40000$ and a sample distance of $4$, there were enough entries in the dataset file, so the benchmark was run with $40000$ samples in total.
+    The sample distance is the indices offset in the dataset file between two drawn sample sequences.
+    A model will get a sequence of $64$ input vectors of size seven that look like: $[0,0,0,1,4.3,1.8,0.9]$.
+    The first four entries in that vector represent the one-hot encoding that describes from which one of the four sensors the measurement data was taken.
+    The remaining three entries contain the x, y and z coordinate of the corresponding sensor.
+    The required output vector has just one entry as it is just the index of the corresponding activity class with the mapping as described above.
+    As this is a sparse class encoding, the framework has to extend this output value to a one-hot encoding to apply a cross-entropy loss between the extended one-hot encoding and the output vector of our model after a softmax function was applied.
+    The softmax function is necessary to convert the so called output logits to an output probability for each class.
+    The results of this benchmark are presented in a later chapter.
+    The implementation of this benchmark can be found under \url{https://github.com/Oidlichtnwoada/NeuralNetworkArena/blob/master/experiments/benchmarks/activity_benchmark.py}.
+    
+    \section{Add Benchmark} \label{add}
+    This benchmark uses a the same structure as the add benchmark introduced used in \cite{UnitaryRNNs}.
+    Data for this benchmark is generated randomly at each instantiation of the benchmark.
+    The target function to learn is to simply add two numbers that are marked in a much longer stream of numbers.
+    At each time step a number together with a marker bit is presented as input vector to the model.
+    As in the Activity Benchmark \ref{activity}, the sequence length and the sample amount are also configurable.
+    For all models a sequence length of $100$ and a sample amount of $100000$ was used.
+    As described above, the input vector has size two.
+    The second entry is set to one only in one input vector of the first and last $50$ input vectors.
+    Their distribution is uniformly across the whole first and second half of the time-series.
+    In all other input vectors this second entry is set to zero. 
+    The first entry of all input vectors is filled with random numbers taken independently and uniformly from the interval $[0,1)$.
+    A single input vector out of the $100$ input vector each model gets during the benchmark looks like: $[0.5,1]$.
+    In this example the random number is $0.5$ and it is marked, as the second entry is one.
+    As described there are only two marked numbers and the expected output vector has size one and is simply the addition of both marked numbers.
+    This benchmark simply uses the mean squared error loss function, as the smaller the mean square error is, the more similar the expected and the model output will be.
+    Furthermore, there is no metric used in this benchmark.
+    As this benchmark uses an increased sequence length of $100$ and as described the error signal is only provided after the last input vector, the model will be only able to learn this function when it is able to capture long-term dependencies.
+    This means the model function must be designed in a way such that the gradient does not vanish or explode during backpropagation through the model's function.
+    These problems was discussed in detail in chapter \ref{long_term_difficult}.
+    When the model is not able to capture these long-term dependencies, therefore it is not able to store seen marked values in its state, the model will be forced to learn the naive memory-less strategy of always predicting one.
+    This is the case as the expectation of each individual number out of the two marked ones is clearly $0.5$, as they were drawn uniformly from the given interval.
+    An addition of both expectation values reveals the output of the memory-less strategy.
+    As also pointed out in \cite[p. 6]{UnitaryRNNs}, this naive strategy will lead to a mean squared error of $\frac{1}{6}$.
+    This can be verified as the mean squared error when constantly predicting the mean is equal to the variance of the distribution.
+    As both random numbers were picked independently of each other, the variance of the distribution of the sum of both random numbers is just the sum of their individual variances.
+    The distribution from which the random numbers are drawn has variance $\frac{1}{12}$.
+    Therefore, adding this value to itself proves the mean square error of the memory-less strategy.
+    For this benchmark, the model output vector size is simply one, as it should just contain the sum of both marked numbers.
+    The results of this benchmark are presented in a later chapter.
+    The implementation of this benchmark can be found under \url{https://github.com/Oidlichtnwoada/NeuralNetworkArena/blob/master/experiments/benchmarks/add_benchmark.py}.
 
     \section{Walker Benchmark}
-    This benchmark evaluates how well a model can predict a dynamical, physical system's behavior and was taken from \cite{LongTermDependenciesIrregularTimeSeries}.
+    This benchmark evaluates how well a model can predict a dynamical, physical system's behavior and was taken from \cite{ODELSTM}.
     The training data is acquired simulation data of the \texttt{Walker2d-v2} OpenAI gym \cite{OpenAIGym} controlled by a pre-trained policy.
     The objective was to learn the kinematic simulation of the physics engine in an auto-regressive fashion using imitation learning.
     To increase the task difficulty, the simulation data was acquired from different training stages of the pre-trained policy (between 500 and 1200 Proximal Policy Optimization iterations) and 1\% of actions were overwritten by random actions.
