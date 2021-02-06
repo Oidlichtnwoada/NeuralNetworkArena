@@ -18,7 +18,7 @@ class MemoryAugmentedTransformerCell(tf.keras.layers.AbstractRNNCell):
         self.input_embedding = tf.keras.layers.Dense(self.embedding_size)
         self.memory_embedding = tf.keras.layers.Dense(self.embedding_size)
         self.heads = heads
-        self.attention = tf.keras.layers.MultiHeadAttention(self.heads, self.embedding_size)
+        self.attention = transformer.MultiHeadAttention(self.embedding_size, self.heads)
         self.feed_forward_size = feed_forward_size
         self.feed_forward_layer = transformer.feed_forward_network(self.embedding_size, self.feed_forward_size)
         self.layer_normalization = tf.keras.layers.LayerNormalization(epsilon=1E-6)
@@ -45,7 +45,7 @@ class MemoryAugmentedTransformerCell(tf.keras.layers.AbstractRNNCell):
         embedded_inputs = self.input_embedding(tf.expand_dims(inputs, -2))
         augmented_inputs = tf.concat((embedded_inputs, embedded_memory_contents), -2) + self.positional_encoding
         augmented_inputs = self.dropout_layer(augmented_inputs)
-        attention_output = self.dropout_layer(self.attention(augmented_inputs, augmented_inputs)) + augmented_inputs
+        attention_output = self.dropout_layer(self.attention((augmented_inputs, augmented_inputs, augmented_inputs, None))[0]) + augmented_inputs
         normed_attention_output = self.layer_normalization(attention_output)
         feed_forward_output = self.dropout_layer(self.feed_forward_layer(normed_attention_output)) + normed_attention_output
         normed_feed_forward_output = self.layer_normalization(feed_forward_output)
