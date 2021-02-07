@@ -43,6 +43,7 @@ class Benchmark(abc.ABC):
         parser.add_argument('--test_data_percentage', default=0.1, type=float)
         parser.add_argument('--no_improvement_lr_patience', default=2, type=int)
         parser.add_argument('--no_improvement_abort_patience', default=5, type=int)
+        parser.add_argument('--min_delta', default=1E-4, type=float)
         parser.add_argument('--saved_model_folder_name', default='saved_models', type=str)
         parser.add_argument('--tensorboard_folder_name', default='tensorboard', type=str)
         parser.add_argument('--supplementary_data_folder_name', default='supplementary_data', type=str)
@@ -223,9 +224,9 @@ class Benchmark(abc.ABC):
             epochs=self.args.epochs,
             validation_data=(self.validation_input_data, self.validation_output_data),
             callbacks=(tf.keras.callbacks.ModelCheckpoint(model_save_location, save_best_only=True),
-                       tf.keras.callbacks.EarlyStopping(patience=self.args.no_improvement_abort_patience),
+                       tf.keras.callbacks.EarlyStopping(patience=self.args.no_improvement_abort_patience, min_delta=self.args.min_delta),
                        tf.keras.callbacks.TerminateOnNaN(),
-                       tf.keras.callbacks.ReduceLROnPlateau(patience=self.args.no_improvement_lr_patience),
+                       tf.keras.callbacks.ReduceLROnPlateau(patience=self.args.no_improvement_lr_patience, min_delta=self.args.min_delta),
                        tf.keras.callbacks.TensorBoard(log_dir=tensorboard_save_location)))
         training_end = time.time()
         training_duration = training_end - training_start
