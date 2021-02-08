@@ -583,30 +583,25 @@
     The implementation of this benchmark can be found under \url{https://github.com/Oidlichtnwoada/NeuralNetworkArena/blob/master/experiments/benchmarks/mnist_benchmark.py}.
 
     \section{Cell Benchmark} \label{cell}
-    This is a very small benchmark that tries to find the right parameter and input ranges for the memory cell \ref{Memory Cell}.
-    This benchmark should make clear if a memory cell is able to switch its state multiple times and keep information over a long period of time.
-    It is directly implemented in the same file as the memory cell itself.
-    The memory cell in the current test setup has no more recurrent, excitatory synapses.
-    As discussed in our meeting the state of a memory cell is now only changed through four synapses, two per neuron.
-    One synapse per neuron delivers the input via a synaptic activation and the other synapse ensures the opposite potentials of both neurons.
-    The synaptic current can be computed by $g_{syn}(V_{pre}) * (E_{pre,post} - V_{post})$.
-    I have found out that the LTC equations are not suited at all to build a memory cell, as a $1$ input should deliver a big current and a $0$ input should lead to a big negative current, no matter what the potential of the postsynaptic neuron is.
-    However with the current equations, this is not possible to achieve, since the non-linear synaptic conductance is always positive and therefore the sign of the current cannot be determined by the input.
-    Therefore, the underlying equations must be changed.
-    The same argument holds for the mutual inhibitory synapses. The higher potential neuron should send a negative current to the other neuron, whereas the lower potential neuron should send a positive current to the higher potential neuron.
-    These things are not possible with the current setup, and therefore need to be changed.
-    The memory cell receives only a single input that will be passed untouched to the first neuron's synaptic activation, but the second neuron will get the negated input to its synaptic activation for the input.
-    The negation is currently implemented using the function $f(x) = 1-x$.
-    This input is only passed at the specific time step, when the input current provider needs to save something, otherwise both neurons in the memory cell get no input and should therefore hold their state.
-    All memory cells are initialized to all contain zeros.
-    As the output of the memory cell is the potential of the first neuron, this means that all first neurons in the memory cells have starting potential $0$ and all second neurons have starting potential $1$.
-    The benchmark now feeds sparse inputs as described before to the memory cell, and requires the cell to hold the state from the last non-sparse input.
-    This time horizon is the memory length of the memory cell, the amount of time it can save information.
-    The benchmark not only checks the potential of the first neuron, but also the potential of the second neuron to be in the required range.
-    Furthermore, the benchmarks alternates the symbol that should be saved first, half of the time it is a $0$, half of the time it is a $1$.
-    Moreover, the memory cell state is switched again two times after the first input by providing two additional inputs, which represent the negated current memory cell potential, to check if the cell is able to switch its state.
-    This results can be easily viewed when executing the memory cell Python script, they are not interesting since the memory cell does not learn anything.
-
+    This benchmark evaluates if the newly introduced memory cell architecture is able to store a single bit of information repeatedly including switching the memory state.
+    Furthermore, it should be checked if the memory state vanishes or if it successfully persists over a long time horizon.
+    This requires the ability to capture long-term dependencies as the input is provided sparsely to the model as described below.
+    The benchmark has a configurable memory high symbol, memory low symbol, memory length, amount of cell switches and amount of samples that are generated at each invocation of the benchmark.
+    The memory high and low symbol represent the expected output symbol when either memory state is active but the memory high symbol is also used as input symbol to sparsely activate a specific memory state, all other inputs are then set to the memory low symbol.
+    The memory high symbol was picked to $1$, the memory low symbol was picked to $0$, the memory length was picked to $128$, the amount of cell switches was set to $2$ and the sample amount was set to $10000$.
+    As the memory cell is a bistable memory element, there are two memory states that can be activated sparsely.
+    The input vector at each time step has size $2$. If both entries are $0$, the current memory state should be kept.
+    Otherwise, if a single entry is $1$ and the other entry is $0$, the corresponding memory state should be activated.
+    The first part of the input sequence is constructed by activating any of the memory states sparsely as described above and the succeeding $127$ vectors are all-zero vectors.
+    This sub sequence now has length $128$. The next sequence is built like the first one, but it activates the opposite cell state at the first time step, which corresponds to a cell switch.
+    There are $2$ further sub sequences of this kind. The final input sequence is then the concatenation of all three sub sequences and has length $384$.
+    In half of the samples either memory state is activated first in the concatenated sequence.
+    The required model output vector is also given as a sequence of vectors of size $2$, therefore the error signal is provided at each time step.
+    The output sequence can be easily built from the input sequence by continuing to set its entry to $1$ at the corresponding index until a new sparsely input is provided to the model.
+    Therefore, the model may get the input sequence consisting of the following vectors: $[1,0],[0,0],[0,0],...,[0,1],[0,0],[0,0]$ and is required to produce the following vectors of the expected output sequence: $[1,0],[1,0],[1,0],...,[0,1],[0,1],[0,1]$.
+    The sparse activation of the memory cell should lead to a permanent storage of the activation, until a new sparse input is provided to the model.
+    As described above the model output vector size is $2$ and a mean squared error loss without a metric was used, as more similar vectors lead to a better prediction.
+    
     \chapter{Results}
 
     \chapter{Summary}
