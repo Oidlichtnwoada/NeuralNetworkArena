@@ -439,6 +439,8 @@
     The term nan just stands for \texttt{not a number}.
     As all benchmarked models are trained until convergence in this thesis, the ReduceLROnPlateau callback is especially important.
     The corresponding default parameters are a learning rate factor of $10^{-1}$ and a default number of epochs equal to $2$, both of which are used throughout all benchmark invocations.
+    The EarlyStopping and the ReduceLROnPlateau do not see an improvement if the absolute change in the validation loss is less than $0.0001$.
+    This minimum delta can also be configured via the command line, but this thesis uses the default value throughout all benchmarks.
     Furthermore, all these parameters are configurable by passing alternative values in the command line.
     After the training loop has terminated, another unix timestamp is taken to compute the total training duration.
     \subsection{Evaluation}
@@ -466,7 +468,7 @@
     However, this thesis has not used an additional time input for any benchmark.
     All the measurements used for this dataset were stored in the file \texttt{activity.csv} located in the supplementary data folder described in the benchmark framework section.
     The dataset is annotated with an activity classification for each time step, this benchmark however only requires the model to predict the classification corresponding to the last measurement data received.
-    As the benchmark is a classification task a categorical crossentropy loss was used that was computed from the output logits of the model.
+    As the benchmark is a classification task a categorical cross-entropy loss was used that was computed from the output logits of the model.
     A categorical accuracy metric is used in this benchmark better judge how accurate the model predicts the activity class annotation corresponding to the last measurement input.
     Each model had an output vector size of seven, as there were seven different activity classes with their respective indices in brackets: lying ($0$), sitting on a chair ($1$), standing up ($2$), walking ($3$), falling ($4$), on all fours ($5$) and sitting on the ground ($6$).
     The processing of the UCI dataset was similarly done as in \cite{ODELSTM}.
@@ -516,36 +518,50 @@
     The results of this benchmark are presented in a later chapter.
     The implementation of this benchmark can be found under \url{https://github.com/Oidlichtnwoada/NeuralNetworkArena/blob/master/experiments/benchmarks/add_benchmark.py}.
 
-    \section{Walker Benchmark}
+    \section{Walker Benchmark} \label{walker}
     This benchmark evaluates how well a model can predict a dynamical, physical system's behavior and was taken from \cite{ODELSTM}.
     The training data is acquired simulation data of the \texttt{Walker2d-v2} OpenAI gym \cite{OpenAIGym} controlled by a pre-trained policy.
-    The objective was to learn the kinematic simulation of the physics engine in an auto-regressive fashion using imitation learning.
+    The objective was to learn the kinematic simulation of the MuJoCo physics engine \cite{MuJoCo} in an auto-regressive fashion using imitation learning.
     To increase the task difficulty, the simulation data was acquired from different training stages of the pre-trained policy (between 500 and 1200 Proximal Policy Optimization iterations) and 1\% of actions were overwritten by random actions.
-    Furthermore, frame-skips were introduced by removing 10\% of all time-steps to get irregularly sampled training data.
-    Moreover, the training data was divided into equally long sequences.
-    For non-recurrent models, the input per time-step was the whole training sequence, but future values were zero-padded to ensure the model is only able to derive future predictions from past values.
-    The model needs to predict the simulation state in the next time-step.
-    Mean squared error was used as loss function when training the models.
-    Further results of recurrent neural network models doing this benchmark can be found in \cite{LatentODEsIrregularlySampled}.
-    The results are presented in the following table:
+    Furthermore, the benchmark implements eventual frame-skips that would create an irregularly sampled time-series. 
+    This feature was not used in this thesis as it covers only regularly sampled time-series.
+    The benchmark had a configurable sequence length, a maximum sample amount and a sample distance just like the Activity Benchmark \ref{activity}.
+    Throughout the thesis a sample length of $64$, a maximum sample amount of $50000$ and a sample distance of $4$ was used.
+    All parameters have the same meaning as before.
+    As there were enough training data provided in \texttt{.npy} files by the creators of \cite{ODELSTM}, the benchmark had $50000$ different samples available that are partitioned in training, validation and test samples.
+    The acquired simulation data can be downloaded from \url{https://pub.ist.ac.at/~mlechner/datasets/walker.zip}.
+    The input sequence consists of input vectors of size $17$, which contains the current state of the physics engine at this specific time step.
+    These values represent the angles of the joints and the absolute position of the bipedal robot.
+    The function to learn for this benchmark is to predict the physics engine's state in the next time step by giving the machine learning model a history of the past $64$ physic engine's states.
+    Therefore, the model output vector size was set to $17$ and the expected output data were also vectors of size $17$.
+    As both vectors have the same size and the more similar they are, the better the prediction is, a mean squared error loss was used.
+    There was no metric used for this benchmark.
+    The results of this benchmark are presented in a later chapter.
+    The implementation of this benchmark can be found under \url{https://github.com/Oidlichtnwoada/NeuralNetworkArena/blob/master/experiments/benchmarks/walker_benchmark.py}.
 
-    \section{Memory Benchmark}
-    This benchmark evaluates how well a model can be trained to incorporate long-term dependencies in its predictions.
-    The structure of this benchmark was taken from \cite{UnitaryRNNs}, who also tested their recurrent neural network with this long-term dependency benchmark.
-    The training data only contains integers from $0$ to $N-1$. The first ten input symbols of each input sequence are randomly sampled integers from $0$ to $N-3$ (i.i.d. uniform).
-    Then the following symbols are copies of the integer $N-2$ in the amount of the tested memory length $T$ minus $1$.
-    After that follows a marker, which is a single integer $N-1$.
-    Then the remaining ten symbols are again copies of the integer $N-2$.
-    The expected output sequence starts with $T+10$ copies of $N-2$ followed by the ten randomly sampled symbols from the start of the input sequence.
-    Each tested model must produce an output vector of size $N$ per time-step to a apply a sparse categorical cross-entropy loss directly from the model output logits.
-    The loss was weighted such that the loss given by each of the last ten output vectors has the same weight as all previous output vectors combined, as it is easily to optimize to predict only the same class for a long interval.
-    Clearly, a model can only solve this task if it is able to store information over a time period in the same size of the memory length.
-    The baseline for this benchmark's mean categorical entropy loss per batch can be set to $\frac{10\log(N-2)}{T+20}$, as a memory-less strategy can perfectly predict the first $T+10$ symbols of the required output sequence and then it predicts the remaining $10$ symbols randomly from $0$ to $N-3$ (i.i.d. uniform).
-    The results are presented in the following table, where $N$ was $10$, $T$ was $100$ and the baseline therefore was $0.173$:
+    \section{Memory Benchmark} \label{memory}
+    This benchmark evaluates how well a model can capture long-term dependencies by letting the model recall past seen categories exactly.
+    It is a slightly changed version of the copying memory problem described in \cite{UnitaryRNNs}.
+    Input data of the benchmark input is randomly created at each invocation of the benchmark.
+    There is a configurable memory length to test for, a length of the sequence to memorize, an amount of categories and an amount of samples that are randomly generated.
+    Throughout the thesis a memory length of $100$, a sequence length of $1$, a category amount of $10$ and a sample amount of $100000$ were used.
+    Each single input vector sequence is created by concatenating three sub sequences.
+    The first sequence is the sequence to memorize of length $1$.
+    It contains category indices sampled uniformly from $0$ to $9$.
+    The second sequence is then just a sequence of the filler symbol $10$ repeated $100$ times.
+    The third sequence is just the index of the category in the sequence to memorize that the model should recall, which is also sampled uniformly from all available indices in the sequence.
+    This sequence is obviously of length $1$ and always filled with $0$ in the case of the predescribed setup.
+    In total this makes up for a total sequence length of $102$ and a vector size of $1$ per time step. 
+    The expected output category is encoded sparsely as in the Activity Benchmark \ref{activity} and contains a category index from $0$ to $9$ that matches the category at the index the model got at the last time step in the sequence to memorize.
+    The output vector size of the model is $10$ and each output logit represents a  single category.
+    As this is a classification problem, a categorical cross-entropy loss was used between the output logits of the model passed through a softmax function and the one-hot encoding extension of the sparsely encoded expected category index.
+    To better visualize how good a model can actually recall the category, a sparse categorical accuracy metric was added to this benchmark.
+    The results of this benchmark are presented in a later chapter.
+    The implementation of this benchmark can be found under \url{https://github.com/Oidlichtnwoada/NeuralNetworkArena/blob/master/experiments/benchmarks/memory_benchmark.py}.
 
-    \section{MNIST Benchmark}
+    \section{MNIST Benchmark} \label{mnist}
 
-    \section{Cell Benchmark}
+    \section{Cell Benchmark} \label{cell}
     This is a very small benchmark that tries to find the right parameter and input ranges for the memory cell \ref{Memory Cell}.
     This benchmark should make clear if a memory cell is able to switch its state multiple times and keep information over a long period of time.
     It is directly implemented in the same file as the memory cell itself.
