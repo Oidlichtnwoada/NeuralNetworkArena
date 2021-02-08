@@ -297,6 +297,38 @@
     \chapter{Models}
 
     \section{LSTM}
+    The LSTM (Long Short-Term Memory) recurrent neural network architecture is a discrete-time machine learning model as introduced in \ref{sampled_physical_systems}.
+    The model not only has an ordinary (hidden) state vector, but also a cell state vector which should store information over a longer time horizon than the hidden state vector.
+    This thesis uses the open-source LSTM implementation provided by the Keras library \cite{Keras} which is based on the original LSTM paper \cite{LSTM} as well on its successor paper \cite{LSTM_forget} that introduces a forget mechanism for the LSTM.
+    The function the LSTM model is applying to its inputs to produce the outputs is given as follows with inputs denoted as $x_t$ and outputs which equals the hidden states denoted as $h_t$:
+    \begin{align}
+    \label{forget_gate} f_t &= \sigma_s(W_f*x_t + U_f*h_{t-1} + b_f) \\
+    \label{input_gate} i_t &= \sigma_s(W_i*x_t + U_i*h_{t-1} + b_i) \\
+    \label{output_gate} o_t &= \sigma_s(W_o*x_t + U_o*h_{t-1} + b_o) \\
+    \label{cell_input} \tilde{c}_t &= \sigma_h(W_c*x_t + U_c*h_{t-1} + b_c) \\
+    \label{cell_state} c_t &= f_t * c_{t-1} + i_t * \tilde{c}_t \\
+    \label{hidden_state} h_t &= o_t * \sigma_h(c_t)
+    \end{align}
+    The function $\sigma_s$ denotes the sigmoid function and the the function $\sigma_h$ denotes the hyperbolic tangent function.
+    The term $f_t$ \ref{forget_gate} is the forget gate's activation vector, $i_t$ \ref{input_gate} is the input gate's activation vector, $o_t$ \ref{output_gate} is the output gate's activation vector, $\tilde{c}_t$ \ref{cell_input} is the cell input activation vector, $c_t$ \ref{cell_state} is the cell state vector and $h_t$ \ref{hidden_state} is the hidden state vector or also called output vector of the LSTM model.
+    Matrices are denoted with capital letters and vectors are denoted with lower case letters. 
+    The LSTM model has a configurable state size. The multiplication sign between two vectors denotes a scalar product and it denotes matrix multiplication between matrices and vectors.
+    This convention is used throughout this thesis.
+    Dimensions of matrices are picked such that the resulting vector has the required state size which is configurable.
+    The bias vectors denoted with $b$ also have the required state dimension.
+    The matrices denoted by $W$ map the input vector in each time step and the matrices denoted by $U$ map the hidden state vector at each time step to a resulting vector.
+    The structure of the model allows it to capture long-term dependencies as by setting $f_t$ equal to one and $i_t$ equal to zero in some common vector indices, only the previous cell state is used to build the next cell state in these next cell state vector entries.
+    This will lead to $\frac{\partial{c_{t,i}}}{\partial{c_{t-1,i}}} = 1$, as this clearly approximates the identity function for a specific index $i$ in the cell state vector.
+    Backpropagation to activations in the distant past is feasible using this model function as gradients are not vanishing or exploding when the parameters of the model are learnt properly.
+    This mechanism is called the constant error carrousel as described in \cite[p. 7]{LSTM}.
+    LSTMs can incorporate this mechanism to store essential information from the distant past, which may be useful to make accurate predictions in the future.
+    Furthermore, the model can also decide to forget the previous cell state completely, if the current input vector makes the stored cell state obsolete in the corresponding application.
+    This is done by learning to set the forget gate's activation vector close to zero and the cell input activation vector is then used to fill the cell state again if the input gate's activation vector is set accordingly.
+    The output gate's activation vector determines which portion of the cell state is used to build the hidden state or output vector of the LSTM model. 
+    Throughout the thesis an LSTM model with a fixed state vector size of $64$ was used. As mentioned in the benchmark framework section, each model must support an arbitrary output vector size.
+    This is accomplished by postprocessing the hidden state outputs of the LSTM by a dense layer with the required amount of output neurons and without an activation function.
+    The output $y$ of a dense layer without an activation function and input vector $x$ can simply be given by: $y = W*x + b$.
+    In this notation $W$ is a matrix such that it maps the input vector $x$ to the required output size and $b$ is just a bias vector like in the functions describing the LSTM model.
 
     \section{GRU}
 
