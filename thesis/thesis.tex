@@ -300,7 +300,7 @@
     The LSTM (Long Short-Term Memory) recurrent neural network architecture is a discrete-time machine learning model as introduced in \ref{sampled_physical_systems}.
     The model not only has an ordinary (hidden) state vector, but also a cell state vector which should store information over a longer time horizon than the hidden state vector.
     This thesis uses the open-source LSTM implementation provided by the Keras library \cite{Keras} which is based on the original LSTM paper \cite{LSTM} as well on its successor paper \cite{LSTM_forget} that introduces a forget mechanism for the LSTM.
-    The function the LSTM model is applying to its inputs to produce the outputs is given as follows with inputs denoted as $x_t$ and outputs which equals the hidden states denoted as $h_t$ \cite[p. 6-9]{LSTM}:
+    The function the LSTM model is applying to its inputs to produce the outputs is given as follows with inputs denoted as $x_t$ and outputs which equals the hidden states denoted as $h_t$ \cite[p. 4-8]{LSTM_forget}:
     \begin{align}
     \label{forget_gate} f_t &= \sigma_s(W_f*x_t + U_f*h_{t-1} + b_f) \\
     \label{input_gate} i_t &= \sigma_s(W_i*x_t + U_i*h_{t-1} + b_i) \\
