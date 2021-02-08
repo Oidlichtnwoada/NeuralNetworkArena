@@ -462,6 +462,7 @@
     The mentioned dataset was distributed under the \url{https://archive.ics.uci.edu/ml/machine-learning-databases/00196/ConfLongDemo_JSI.txt}.
     The target function to learn is to map a sequence of measurements from four inertial sensors worn on the person's arms and feet to an activity classification.
     This benchmark should test a model's capability to model dynamical physical systems and understand what motion patterns belong to which class.
+    The ability to capture long-term dependencies is not tested with this benchmark as the most recent input vectors should be enough to make good predictions.
     At each time step only the measurement of a single inertial sensor is presented as input to the model.
     The model can differ between the individual sensors as the modified dataset of person activity has a one-hot encoding to mark the sensor from which the current measurement is coming.
     All benchmarks feature an additional time input, where the time interval since the last input is passed on to the model if the feature is activated.
@@ -525,6 +526,8 @@
     To increase the task difficulty, the simulation data was acquired from different training stages of the pre-trained policy (between 500 and 1200 Proximal Policy Optimization iterations) and 1\% of actions were overwritten by random actions.
     Furthermore, the benchmark implements eventual frame-skips that would create an irregularly sampled time-series. 
     This feature was not used in this thesis as it covers only regularly sampled time-series.
+    Only if the model understands the dynamics that are guided by differential equations, it will be able to produce accurate predictions.
+    The ability to capture long-term dependencies is not tested with this benchmark as the most recent input vectors should be enough to make good predictions.
     The benchmark had a configurable sequence length, a maximum sample amount and a sample distance just like the Activity Benchmark \ref{activity}.
     Throughout the thesis a sample length of $64$, a maximum sample amount of $50000$ and a sample distance of $4$ was used.
     All parameters have the same meaning as before.
@@ -555,11 +558,29 @@
     The expected output category is encoded sparsely as in the Activity Benchmark \ref{activity} and contains a category index from $0$ to $9$ that matches the category at the index the model got at the last time step in the sequence to memorize.
     The output vector size of the model is $10$ and each output logit represents a  single category.
     As this is a classification problem, a categorical cross-entropy loss was used between the output logits of the model passed through a softmax function and the one-hot encoding extension of the sparsely encoded expected category index.
-    To better visualize how good a model can actually recall the category, a sparse categorical accuracy metric was added to this benchmark.
+    To better visualize how good a model can actually recall the category, a categorical accuracy metric was added to this benchmark.
+    It must be pointed out that a model is only capable of recalling the category seen in the first input vector if the gradient does not vanish or explode, as the error signal is only provided after the last time step.
     The results of this benchmark are presented in a later chapter.
     The implementation of this benchmark can be found under \url{https://github.com/Oidlichtnwoada/NeuralNetworkArena/blob/master/experiments/benchmarks/memory_benchmark.py}.
 
     \section{MNIST Benchmark} \label{mnist}
+    This benchmark evaluates how well a model can capture long-term dependencies, as for correct classification the model needs to incorporate input vectors from the distant past, which will be described below.
+    The idea to incorporate this benchmark was taken from \cite{ODELSTM}, which also features an event-based sequential MNIST classification problem.
+    Input sequences for this benchmark were constructed from the MNIST dataset of the Keras framework \cite{Keras}.
+    The MNIST dataset contains images of hand-drawn digits of size $28$ by $28$ pixels where each pixel is encoded by a single integer from $0$ to $255$.
+    All images are in grey-scale and a higher integer represents a darker pixel.
+    The images were vectorized to a vector of size $784$ and then split up to a sequence of vector chunks of size $8$, which results in an input sequence length of $98$.
+    The expected output class index is just the digit the current image is representing.
+    Furthermore, the benchmark has a configurable maximum amount of samples, which was set to $70000$.
+    As the MNIST dataset had enough image samples, all specified $70000$ samples were used.
+    A long-term memory of seen input chunks is indeed necessary to produce an accurate category prediction, as digits like $1$, $4$ and $9$ may be indistinguishable when only considering the most recent seen input chunks.
+    This corresponds to classifying the image only based on a lower fraction of the image visible to the model, where the upper fraction was cut away.
+    A model that yields accurate results must not suffer from the vanishing or exploding gradient problem, as only then the whole picture can be taken into account for classification. 
+    The model output vector size was set to $10$, as each output logit should represent a single digit.
+    As the expected output digit is encoded sparsely, the same procedure as in the Memory Benchmark \ref{memory} is applied to compute the categorical cross-entropy loss.
+    The performance of the models was also measured by using a categorical accuracy metric, which produces a more human-interpretable result than the chosen loss function.
+    The results of this benchmark are presented in a later chapter.
+    The implementation of this benchmark can be found under \url{https://github.com/Oidlichtnwoada/NeuralNetworkArena/blob/master/experiments/benchmarks/mnist_benchmark.py}.
 
     \section{Cell Benchmark} \label{cell}
     This is a very small benchmark that tries to find the right parameter and input ranges for the memory cell \ref{Memory Cell}.
