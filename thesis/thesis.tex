@@ -330,7 +330,7 @@
     This is accomplished by postprocessing the hidden state outputs of the LSTM by a dense layer with the required amount of output neurons and without an activation function.
     The output $y$ of a dense layer without an activation function and input vector $x$ can simply be given by: $y = W*x + b$.
     In this notation $W$ is a matrix such that it maps the input vector $x$ to the required output size and $b$ is just a bias vector like in the functions describing the LSTM model.
-    Training the LSTM model from the Keras library is optimized as it uses a fast cuDNN \cite{cuDNN} implementation.
+    Training the LSTM model from the Keras library is fast as it uses an optimized cuDNN \cite{cuDNN} implementation.
 
     \section{GRU} \label{gru}
     The GRU (Gated Recurrent Unit) recurrent neural network architecture is a discrete-time machine learning model as introduced in \ref{sampled_physical_systems}.
@@ -363,7 +363,7 @@
     Furthermore, also the reset mechanism works differently in the GRU architecture as the reset vector only operates on the previous step hidden state vector when computing the next state candidate activation vector.
     Throughout the thesis a GRU model with a fixed state vector size of $80$ was used. As mentioned in the benchmark framework section, each model must support an arbitrary output vector size.
     This is accomplished by postprocessing the hidden state outputs with a dense layer just like in the case of the LSTM architecture \ref{lstm}.
-    Training the GRU model from the Keras library is optimized as it uses a fast cuDNN \cite{cuDNN} implementation.
+    Training the GRU model from the Keras library is fast as it uses an optimized cuDNN \cite{cuDNN} implementation.
  
     \section{CT-RNN}
 
