@@ -23,7 +23,7 @@
 \usepackage{hyperref}  % Enables cross linking in the electronic document version. This package has to be included second to last.
 \usepackage[acronym,toc]{glossaries} % Enables the generation of glossaries and lists fo acronyms. This package has to be included last.
 \usepackage{float}
-\usepackage{amsfonts,amsthm, graphicx, trfsigns, physics}
+\usepackage{amsfonts,amsthm, graphicx, trfsigns, physics, xparse, mleftright}
 
 % Define convenience functions to use the author name and the thesis title in the PDF document properties.
 \newcommand{\authorname}{Hannes Brantner} % The author name without titles.
@@ -159,7 +159,7 @@
     In the general case, a computer scientist wants to find the global minimum of that function with respect to all machine learning model parameters.
     As this is a problem that cannot be solved analytically in most cases, it is approximated by using gradient descent \cite{GradientDescent}.
     This method incrementally changes each parameter depending on the gradient of the loss function with respect to each parameter in lock step.
-    By denoting the loss function with $L$, the learning rate with $\alpha$, the old whole parameter set with $p$, the old single scalar parameter with $p_i$ and the new single scalar parameter with $p_i'$, the formula to update the individual parameters $p_i$ in a single gradient descent step can be given as follows:
+    By denoting the loss function with $L$, the learning rate with $\alpha$, the old whole parameter set with $p$, the old single scalar parameter with $p_i$ and the new single scalar parameter with $p_i'$, the formula to update the individual parameters $p_i$ in a single gradient descent step can be given as follows \cite{GradientDescent}:
     \begin{align} 
         \label{gradient_descent_update}
         \forall p_i:~p_i' &= p_i - \alpha * \frac{\partial{L}}{\partial{p_i}}(p)
@@ -173,6 +173,16 @@
     Convergence means that the parameter updates have led to a local minimum of the loss function.
     There are no guarantees that this is the global minimum. Divergence means that the loss function diverges towards infinity.
     A local minimum or convergence can be reached by applying the gradient descent update rule to as many inputs as needed to set the loss function derivative to nearly zero. 
+    As at the differentiation of the loss function, which can be represented as a computational graph with lots of nested functions, with respect to the individual model parameters involves lots of applications of the chain rule, the machine learning term for repeatedly applying the chain rule is backpropagation.
+    If these nested functions correspond to applying the same machine learning model function across multiple input time steps as done in recurrent neural networks, then this backpropagation procedure can also be called backpropagation through time as introduced in \cite{GradientDescent}.
+    The chain rule for differentiating $z(y(x_0))$ with respect to $x$ for $x=x_0$ where $z$ and $y$ are both functions in a single variable is given by:
+    \begin{align}
+    \label{chain_rule}
+    \frac{dz}{dx} \Bigr\rvert_{x=x_0} = \frac{dz}{dy} \Bigr\rvert_{y=y(x_0)} * \frac{dy}{dx} \Bigr\rvert_{x=x_0}
+    \end{align}
+    This reveals that a machine learning framework has to compute all partial derivatives of all functions present in the above mentioned computational graph.
+    Furthermore, it must keep track of the so called activations which are denoted by $y(x_0)$ in the above formula \ref{chain_rule}, as otherwise the gradient of the loss function with respect to the parameters cannot be computed.
+    As this can use lots of memory during backpropagation, reversible layers were introduced by \cite{ReversibleLayer} where intermediate activations can be computed from the output vector of that layer which makes storing intermediate activations obsolete.
 
     \section{Problem Statement}
     As the sheer amount of different machine learning models can be overwhelming, the task was to fix a distinct application domain and compare the most influential machine learning models in this domain with suitable benchmarks.
@@ -296,6 +306,11 @@
 
     \chapter{Models}
 
+    \section{Model Factory}
+    As all the benchmarks require variants of the same models with different output vector sizes, a model factory function was implemented that is capable of producing an output tensor given the model's name, the output vector size and the input tensor tuple.
+    This function was called \texttt{get\_model\_output\_by\_name} and can be found under \url{https://github.com/Oidlichtnwoada/NeuralNetworkArena/blob/master/experiments/models/model_factory.py}.
+    This mechanism of creating the output tensor including the internal computational graph of the Tensorflow library \cite{Tensorflow} is called the Functional API.
+
     \section{LSTM} \label{lstm}
     The LSTM (Long Short-Term Memory) recurrent neural network architecture is a discrete-time machine learning model as introduced in \ref{sampled_physical_systems}.
     The model not only has an ordinary (hidden) state vector, but also a cell state vector which should store information over a longer time horizon than the hidden state vector.
@@ -331,6 +346,7 @@
     The output $y$ of a dense layer without an activation function and input vector $x$ can simply be given by: $y = W*x + b$.
     In this notation $W$ is a matrix such that it maps the input vector $x$ to the required output size and $b$ is just a bias vector like in the functions describing the LSTM model.
     Training the LSTM model from the Keras library is fast as it uses an optimized cuDNN \cite{cuDNN} implementation.
+    The LSTM model implementation used in this thesis is exposed under the \texttt{get\_lstm\_output} function defined in the file \url{https://github.com/Oidlichtnwoada/NeuralNetworkArena/blob/master/experiments/models/model_factory.py}.
 
     \section{GRU} \label{gru}
     The GRU (Gated Recurrent Unit) recurrent neural network architecture is a discrete-time machine learning model as introduced in \ref{sampled_physical_systems}.
@@ -364,8 +380,54 @@
     Throughout the thesis a GRU model with a fixed state vector size of $80$ was used. As mentioned in the benchmark framework section, each model must support an arbitrary output vector size.
     This is accomplished by postprocessing the hidden state outputs with a dense layer just like in the case of the LSTM architecture \ref{lstm}.
     Training the GRU model from the Keras library is fast as it uses an optimized cuDNN \cite{cuDNN} implementation.
+    The LSTM model implementation used in this thesis is exposed under the \texttt{get\_gru\_output} function defined in the file \url{https://github.com/Oidlichtnwoada/NeuralNetworkArena/blob/master/experiments/models/model_factory.py}.
  
     \section{CT-RNN}
+    The CT-RNN (continuous-time recurrent neural network) was first proposed in \cite{CTRNN} and is a continuous-time machine learning model \ref{physical_systems}.
+    This thesis uses an implementation taken from the repository of the paper \cite{ODELSTM} which can be found under the url \url{https://github.com/mlech26l/ode-lstms}.
+    The CT-RNN has a configurable hidden state vector size and its output vector is equal to its hidden state vector at each time step.
+    The hidden state vector is parametrized as follows \cite[p. 2]{CTRNN} with the same notation as introduced in \ref{lstm}:
+    \begin{align}
+    \label{paper_ct_rnn_function}
+    \dot h(t) = -\frac{h(t)}{\tau} + W * \sigma_s(h(t)) + i(t)
+    \end{align}
+    The division between $h(t)$ and the vector $\tau$ is understood element-wise. As the input has not in general the same dimension as the hidden state vector, the input is preprocessed by mapping it to the right dimension with a matrix multiplication.
+    Furthermore, the implementation used for benchmarking has a tanh activation function as it is applied at a different position in the formula to allow for negative activations.
+    There is also an additional bias vector $b$ and scaling vector $\alpha$ introduced whose multiplication is to understood element-wise.
+    The derivative in the CT-RNN implementation used for benchmarking is given by:
+    \begin{align}
+    \label{used_ct_rnn_function}
+    \dot h(t) = -\frac{h(t)}{\tau} + \alpha * \sigma_h(W_h * h(t) + W_i * i(t) + b)
+    \end{align}
+    The idea of parameterizing the derivative or change of the hidden vector or activation rather than computing a completely new hidden vector or activation was extensively reused in recent research.
+    For example ResNets \cite{ResNet} used the idea in a discrete-time model and Neural ODEs \cite{NeuralODEs} reused it in a continuous-time model which features a similar model function as the CT-RNN.
+    As the benchmark input samples are only regularly sampled vectors and not a function $i(t)$ as needed by the CT-RNN model function \ref{used_ct_rnn_function}, each input sample is held constantly for $1$ time unit to form the input function.
+    This mechanism is used for all continuous-time models throughout this thesis.
+    Therefore, the input function is defined on the interval $[0,T]$ where $T$ is the input sequence length.
+    The output of the CT-RNN after consuming the whole input function $i(t)$ from time $0$ to time $T$ is then given by the hidden state vector $h(T)$ at time $T$.
+    There is also the possibility to evaluate the hidden state at intermediate time points, for example at $T-1$, which equals $h(T-1)$.
+    With this mechanism any continuous-time model can also map an input vector sequence to an output vector sequence.
+    If additional timing information is available about the input vectors, for example the time interval between two input vector samples, it can be used as time to hold this specific input constantly in the input function.
+    This leads to an irregularly sampled time series where time-continuous models are exceptionally well suited as machine learning models, as discrete-time models \ref{sampled_physical_systems} implicitly model a regularly sampled continuous-time system.
+    This statement was also shown to be valid by \cite{ODELSTM}.
+    The initial state of the CT-RNN is given by $h(0)$, which is picked to the all-zero vector.
+    To compute the final hidden state $h(T)$, the ODE (ordinary differential equation) from \ref{used_ct_rnn_function} must be solved given the initial condition $h(0)$.
+    This can be done by incorporating ODE solvers which simply compute $h(T)$ by approximately integrating $\dot h(t)$ with guarantees on the error bound.
+    Then $h(T)$ is given by $h(0) + \int_0^T{\dot h(t)}~dt$. 
+    In all continuous-time models implementations the ODE solver is called at each time step computing the next step hidden state $h(t+1)$ as $h(t) + \int_t^{t+1}{\dot h(t)}~dt$.
+    Examples for ODE solvers are the explicit Euler method, the RK4 (Runge-Kutta $4^{th}$ order) method or the Dormand-Prince method.
+    The Dormand-Prince method is the default ODE solver used in the \texttt{ode45} solver of MATLAB \cite{MATLAB}.
+    All of these are members of explicit methods and the Runge-Kutta methods to solve ODEs. Explicit methods calculate the state at a later time only from the state at the current time.
+    There are also implicit methods, which find a solution by solving an equation involving both the state at the current time and the state at the next time.
+    Implicit methods are primarily used for stiff ODEs, which are characterized that small numerical deviations or errors can lead to a huge change in the output.
+    For the CT-RNN implementation, the RK4 method was used to solve the ODE. The hidden state vector size was picked to $128$ and the number of unfolds was set to $3$.
+    The number of unfolds determines how often an ODE solver is called on a single input sample. This means that instead of integrating the whole interval of length $1$ at each time step, the ODE solver integrates an interval of length $\frac{1}{3}$ three times, which yields more accurate results.
+    Computing the loss gradient with respect to the model parameters is still possible for continuous-time models as the ODE solvers are just functions themselves which can be differentiated.
+    The ODE solver can also be run as a black-box without knowing its internal operations as shown in \cite{NeuralODEs}.
+    Then the gradients with respect to the functions applied by the ODE solver can be computed by the adjoint sensitivity method \cite{AdjointSensitivityMethod}.
+    As pointed out by \cite[p. 3]{LTCNetworks} this memory-efficient procedure however comes with numerical errors as it forgets the forward-time computational trajectories.
+    The CT-RNN model implementation used in this thesis is exposed under the \texttt{get\_ct\_rnn\_output} function defined in the file \url{https://github.com/Oidlichtnwoada/NeuralNetworkArena/blob/master/experiments/models/model_factory.py}.
+    The in-detail implementation is provided in the file \url{https://github.com/Oidlichtnwoada/NeuralNetworkArena/blob/master/experiments/models/ct_rnn.py}.
 
     \section{CT-GRU}
 
@@ -666,6 +728,8 @@
     Therefore, the model may get the input sequence consisting of the following vectors: $[1,0],[0,0],[0,0],...,[0,1],[0,0],[0,0]$ and is required to produce the following vectors of the expected output sequence: $[1,0],[1,0],[1,0],...,[0,1],[0,1],[0,1]$.
     The sparse activation of the memory cell should lead to a permanent storage of the activation, until a new sparse input is provided to the model.
     As described above the model output vector size is $2$ and a mean squared error loss without a metric was used, as more similar vectors lead to a better prediction.
+    The results of this benchmark are presented in a later chapter.
+    The implementation of this benchmark can be found under \url{https://github.com/Oidlichtnwoada/NeuralNetworkArena/blob/master/experiments/benchmarks/cell_benchmark.py}.
     
     \chapter{Results}
 

@@ -1,5 +1,8 @@
 {
     "cSpell.words": [
-        "MNIST"
+        "Dormand",
+        "Kutta",
+        "MNIST",
+        "Runge"
     ]
 }
