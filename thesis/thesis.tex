@@ -182,7 +182,7 @@
     \end{align}
     This reveals that a machine learning framework has to compute all partial derivatives of all functions present in the above mentioned computational graph.
     Furthermore, it must keep track of the so called activations which are denoted by $y(x_0)$ in the above formula \ref{chain_rule}, as otherwise the gradient of the loss function with respect to the parameters cannot be computed.
-    As this can use lots of memory during backpropagation, reversible layers were introduced by \cite{ReversibleLayer} where intermediate activations can be computed from the output vector of that layer which makes storing intermediate activations obsolete.
+    As this can use lots of memory, reversible layers were introduced by \cite{ReversibleLayer} where intermediate activations can be computed from the output vector of that layer which makes storing intermediate activations obsolete.
 
     \section{Problem Statement}
     As the sheer amount of different machine learning models can be overwhelming, the task was to fix a distinct application domain and compare the most influential machine learning models in this domain with suitable benchmarks.
@@ -310,6 +310,7 @@
     As all the benchmarks require variants of the same models with different output vector sizes, a model factory function was implemented that is capable of producing an output tensor given the model's name, the output vector size and the input tensor tuple.
     This function was called \texttt{get\_model\_output\_by\_name} and can be found under \url{https://github.com/Oidlichtnwoada/NeuralNetworkArena/blob/master/experiments/models/model_factory.py}.
     This mechanism of creating the output tensor including the internal computational graph of the Tensorflow library \cite{Tensorflow} is called the Functional API.
+    All models were parametrized such that they have around $20000$ trainable parameters. 
 
     \section{LSTM} \label{lstm}
     The LSTM (Long Short-Term Memory) recurrent neural network architecture is a discrete-time machine learning model as introduced in \ref{sampled_physical_systems}.
@@ -382,25 +383,28 @@
     Training the GRU model from the Keras library is fast as it uses an optimized cuDNN \cite{cuDNN} implementation.
     The LSTM model implementation used in this thesis is exposed under the \texttt{get\_gru\_output} function defined in the file \url{https://github.com/Oidlichtnwoada/NeuralNetworkArena/blob/master/experiments/models/model_factory.py}.
  
-    \section{CT-RNN}
+    \section{CT-RNN} \label{ctrnn}
     The CT-RNN (continuous-time recurrent neural network) was first proposed in \cite{CTRNN} and is a continuous-time machine learning model \ref{physical_systems}.
     This thesis uses an implementation taken from the repository of the paper \cite{ODELSTM} which can be found under the url \url{https://github.com/mlech26l/ode-lstms}.
     The CT-RNN has a configurable hidden state vector size and its output vector is equal to its hidden state vector at each time step.
     The hidden state vector is parametrized as follows \cite[p. 2]{CTRNN} with the same notation as introduced in \ref{lstm}:
     \begin{align}
     \label{paper_ct_rnn_function}
-    \dot h(t) = -\frac{h(t)}{\tau} + W * \sigma_s(h(t)) + i(t)
+    \dot h(t) &= -\frac{h(t)}{\tau} + W * \sigma_s(h(t)) + i(t)
     \end{align}
-    The division between $h(t)$ and the vector $\tau$ is understood element-wise. As the input has not in general the same dimension as the hidden state vector, the input is preprocessed by mapping it to the right dimension with a matrix multiplication.
+    The division between $h(t)$ and the vector $\tau$ is understood element-wise. The vector $\tau$ is also called the time constant as it is the time constant of the exponential decay of the hidden state vector over time.
+    As the input has not in general the same dimension as the hidden state vector, the input is preprocessed by mapping it to the right dimension with a matrix multiplication.
     Furthermore, the implementation used for benchmarking has a tanh activation function as it is applied at a different position in the formula to allow for negative activations.
     There is also an additional bias vector $b$ and scaling vector $\alpha$ introduced whose multiplication is to understood element-wise.
     The derivative in the CT-RNN implementation used for benchmarking is given by:
     \begin{align}
     \label{used_ct_rnn_function}
-    \dot h(t) = -\frac{h(t)}{\tau} + \alpha * \sigma_h(W_h * h(t) + W_i * i(t) + b)
+    \dot h(t) &= -\frac{h(t)}{\tau} + \alpha * \sigma_h(W_h * h(t) + W_i * i(t) + b)
     \end{align}
     The idea of parameterizing the derivative or change of the hidden vector or activation rather than computing a completely new hidden vector or activation was extensively reused in recent research.
     For example ResNets \cite{ResNet} used the idea in a discrete-time model and Neural ODEs \cite{NeuralODEs} reused it in a continuous-time model which features a similar model function as the CT-RNN.
+    In discrete-time models residual connections are added which help backpropagation in a deep machine learning architecture as they are just representing the identity function which is easily differentiable.
+    For more information on residual connections consult the corresponding paper \cite{ResNet}.
     As the benchmark input samples are only regularly sampled vectors and not a function $i(t)$ as needed by the CT-RNN model function \ref{used_ct_rnn_function}, each input sample is held constantly for $1$ time unit to form the input function.
     This mechanism is used for all continuous-time models throughout this thesis.
     Therefore, the input function is defined on the interval $[0,T]$ where $T$ is the input sequence length.
@@ -429,7 +433,51 @@
     The CT-RNN model implementation used in this thesis is exposed under the \texttt{get\_ct\_rnn\_output} function defined in the file \url{https://github.com/Oidlichtnwoada/NeuralNetworkArena/blob/master/experiments/models/model_factory.py}.
     The in-detail implementation is provided in the file \url{https://github.com/Oidlichtnwoada/NeuralNetworkArena/blob/master/experiments/models/ct_rnn.py}.
 
-    \section{CT-GRU}
+    \section{CT-GRU} \label{ctgru}
+    The CT-GRU (continuous-time gated recurrent unit) recurrent neural network architecture is a continuous-time machine learning model firstly introduced in \cite{CTGRU}.
+    The implementation of the CT-GRU architecture used in this thesis was taken from the repository of \cite{ODELSTM}.
+    It shares many concepts with the GRU architecture \ref{gru}, but the update gate \ref{update_gate} and reset gate \ref{reset_gate} operate on multiple hidden state vectors stored across various time scales.
+    This is done because some information may become obsolete very quickly, whereas some other information may also be very important in the longer term.
+    These rates of information decay are referred to as time scales.
+    The time scales are represented using time constants and the amount of time scales was fixed to $8$ in this thesis.
+    Therefore, the update gate is then called storage scale and the reset gate is then called retrieval scale as they operate not only on a single hidden vector, but across hidden vectors stored across multiple time scales.
+    They can be thought of as multi-dimensional gates.
+    As the amount of time scales is fixed, input data that matches a certain time scale not present in the fixed set must be approximated using a combination of the available time scales.
+    This is indeed possible with small error when the time scale to approximate is in a certain range as pointed out in \cite[p. 5-6]{CTGRU}.
+    Then the half life of the combination of exponentials approximately matches the half life of the corresponding exponential to the correct time scale.
+    A good match for time constants $\tau_i$ representing the various time scales is the set of constants where $\tau_0=1$ and $\tau_{i+1} = \sqrt{10} * \tau_{i}$.
+    This set was also used in the benchmarked implementation.
+    The explicit time input called $\Delta t_k$ of this model was not used as interval to integrate an ODE, but instead as time duration of exponential decay between two input vectors.
+    As all benchmarks do not provide time inputs and the input vectors of the benchmarks are regularly sampled, $\Delta t_k$ was set to constant $1$.
+    The function the GRU model is applying to its input vectors to produce the output vectors or hidden state vectors is given as follows with inputs denoted as $x_k$ and outputs which equals the hidden states denoted as $h_k$ \cite[p. 7]{CTGRU}:
+    \begin{align}
+    \label{retrieval_scale}
+    \ln{\tau_k^R} &= W^R*x_k + U^R*h_{k-1} + b^R \\
+    \label{retrieval_weighting}
+    r_{ki} &= softmax_i(-(\ln{\tau_k^R-\ln{\tau_i}})^2) \\
+    \label{relevant_event_signals}
+    q_k &= \sigma_h(W^Q*x_k + U^Q*(\sum_i {r_{ki} *_{ew} \tilde{h}_{k-1,i}}) + b^Q) \\
+    \label{storage_scale}
+    \ln{\tau_k^S} &= W^S*x_k + U^S*h_{k-1} + b^S \\
+    \label{storage_weighting}
+    s_{ki} &= softmax_i(-(\ln{\tau_k^S-\ln{\tau_i}})^2) \\
+    \label{state_update}
+    \tilde{h}_{ki} &= [(1 - s_{ki}) *_{ew} \tilde{h}_{k-1,i} + s_{ki} *_{ew} q_k] * e^{-\frac{\Delta t_k}{\tau_i}} \\
+    \label{state_output}
+    h_k &= \sum_i{\tilde{h}_{ki}}
+    \end{align}
+    Multiplication which are meant to be understood element-wise are denoted with a subscript $ew$, otherwise the notation is kept the same as in the previous models.
+    The equations \ref{retrieval_scale} and \ref{retrieval_weighting} determine the retrieval scale and compute the weighting for each time scale.
+    The equations \ref{storage_scale} and \ref{storage_weighting} determine the storage scale and compute the weighting for each time scale.
+    The retrival scale vector $r_{ki}$ is the multi-dimensional equivalent to the reset vector of the GRU architecture and the storage scale vector $s_{ki}$ is the multi-dimensional equivalent to the update vector of the GRU architecture.
+    Equation \ref{relevant_event_signals} describes how the next candidate hidden state vector $s_k$ is computed.
+    Finally, equation \ref{state_update} describes how the hidden state for each time scale is updated and equation \ref{state_output} describes how the output vector $h_k$ is computed out of the multi-dimensional hidden state vector.
+    It can be said that the CT-GRU architecture is a GRU model with multi-dimensional state and exponential decay of its state between input vector observations with different time constants.
+    Most of the features discussed for the GRU model are also applicable for the CT-GRU architecture.
+    It should also be able to learn long-term dependencies as time scales featuring a large time constant have little decay on their corresponding hidden state and then simply the argument used in the GRU architecture \ref{gru} can also be applied here.
+    As other models, the CT-GRU has a configurable hidden state vector size, which was picked to $32$ throughout this thesis.
+    The CT-GRU model implementation used in this thesis is exposed under the \texttt{get\_ct\_gru\_output} function defined in the file \url{https://github.com/Oidlichtnwoada/NeuralNetworkArena/blob/master/experiments/models/model_factory.py}.
+    The in-detail implementation is provided in the file \url{https://github.com/Oidlichtnwoada/NeuralNetworkArena/blob/master/experiments/models/ct_gru.py}.
 
     \section{ODE-LSTM}
 

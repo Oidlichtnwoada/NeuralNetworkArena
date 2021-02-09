@@ -3,6 +3,7 @@
         "Dormand",
         "Kutta",
         "MNIST",
-        "Runge"
+        "Runge",
+        "exponentials"
     ]
 }
