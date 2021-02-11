@@ -479,7 +479,28 @@
     The CT-GRU model implementation used in this thesis is exposed under the \texttt{get\_ct\_gru\_output} function defined in the file \url{https://github.com/Oidlichtnwoada/NeuralNetworkArena/blob/master/experiments/models/model_factory.py}.
     The in-detail implementation is provided in the file \url{https://github.com/Oidlichtnwoada/NeuralNetworkArena/blob/master/experiments/models/ct_gru.py}.
 
-    \section{ODE-LSTM}
+    \section{ODE-LSTM} \label{odelstm}
+    The ODE-LSTM recurrent neural network architecture is a continuous-time machine learning model firstly introduced in \cite{ODELSTM}.
+    The implementation of the ODE-LSTM architecture used in this thesis was taken from the repository of its original paper \cite{ODELSTM}.
+    The idea behind this model is to combine the abilitiy of the LSTM architecture to capture long-term dependencies and the ability of CT-RNNs to accurately model dynamical physical systems, even if an irregularly sampled time-series is provided to the model as input.
+    As in this thesis, only regularly sampled time-series are used, the continous time model is always fed with the time input $1$ as mentioned in the \ref{ctrnn} section. 
+    This should be no problem as the ability to model dynamical physical systems generalizes to any time input very well.
+    Similar to the LSTM architecture, the ODE-LSTM has two state vectors: one hidden state vector $h_i$ and one cell state vector $c_i$. Both vectors are initialized to the all-zero vector.
+    The function the ODE-LSTM model is applying to its input vectors to produce the output vectors or hidden state vectors is given as follows with inputs denoted as $x_i$ and outputs denoted as $h_i$ \cite[p. 5]{ODELSTM}:
+    \begin{align}
+    (c_i,h_i') &= LSTM(x_i, (c_{i-1}, h_{i-1})) \\
+    h_i &= CTRNN(h_i', (h_{i-1}))
+    \end{align}
+    The function $LSTM$ denotes one model function step of the LSTM model \ref{lstm} starting from the given state $(c_{i-1}, h_{i-1})$ for input $x_i$.
+    The function $CTRNN$ denotes one model function step of the CT-RNN model \ref{ctrnn} starting from the given state $(h_{i-1})$ for input $x_i$, the input is set to $1$ for each time step.
+    Implementation-wise, the CTRNN model function call was done to the implementation as described in \ref{ctrnn}.
+    The LSTM model function was implemented from scratch and no library modules were used. 
+    As only the hidden state vector of the LSTM architecture is postprocessed by the CT-RNN model, the cell state stays untouched, which enables the architecture to learn long-term dependencies by using the same argument as in \ref{lstm}.
+    By the postprocessing of the hidden state vector which controls the LSTM's gates, the gating dynamics become dependent on the time input as well \cite[p. 4]{ODELSTM}.
+    Of course also the ODE-LSTM architecture has a configurable hidden state vector size which was picked to $64$.
+    The CT-RNN was initialized by the same hidden vector size, the number of unfolds were set to $4$ and the explicit Euler method was used as an ODE solver.
+    The ODE-LSTM model implementation used in this thesis is exposed under the \texttt{get\_ode\_lstm\_output} function defined in the file \url{https://github.com/Oidlichtnwoada/NeuralNetworkArena/blob/master/experiments/models/model_factory.py}.
+    The in-detail implementation is provided in the file \url{https://github.com/Oidlichtnwoada/NeuralNetworkArena/blob/master/experiments/models/ode_lstm.py}.
 
     \section{Neural Circuit Policies (NCP)}
 
