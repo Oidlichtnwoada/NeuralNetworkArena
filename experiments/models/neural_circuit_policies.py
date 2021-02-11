@@ -4,8 +4,8 @@ import tensorflow as tf
 
 @tf.keras.utils.register_keras_serializable()
 class NeuralCircuitPolicies(tf.keras.layers.Layer):
-    def __init__(self, units, output_size, inter_neuron_percentage=0.6, sensory_fanout=4, inter_fanout=4,
-                 recurrent_command_synapses=4, motor_fanin=6, return_sequences=False, **kwargs):
+    def __init__(self, units, output_size, inter_neuron_percentage=0.6, sensory_fanout=2, inter_fanout=2,
+                 recurrent_command_synapses=None, motor_fanin=2, return_sequences=False, **kwargs):
         super().__init__(**kwargs)
         self.units = units
         self.inter_neuron_percentage = inter_neuron_percentage
@@ -14,7 +14,7 @@ class NeuralCircuitPolicies(tf.keras.layers.Layer):
         self.motor_neurons = output_size
         self.sensory_fanout = sensory_fanout
         self.inter_fanout = inter_fanout
-        self.recurrent_command_synapses = recurrent_command_synapses
+        self.recurrent_command_synapses = 2 * self.command_neurons if recurrent_command_synapses is None else recurrent_command_synapses
         self.motor_fanin = motor_fanin
         self.return_sequences = return_sequences
         self.rnn = tf.keras.layers.RNN(

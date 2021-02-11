@@ -13,12 +13,11 @@ class UnitaryNCP(tf.keras.layers.Layer):
         self.output_size = output_size
         self.return_sequences = return_sequences
         self.urnn = tf.keras.layers.RNN(urnn.EUNNCell(units_urnn), return_sequences=True)
-        self.ncp = ncp.NeuralCircuitPolicies(units_ncp, self.output_size, return_sequences=self.return_sequences)
+        self.ncp = ncp.NeuralCircuitPolicies(units_ncp, self.output_size, recurrent_command_synapses=0, return_sequences=self.return_sequences)
 
     def call(self, inputs, **kwargs):
         urnn_output = self.urnn(inputs)
-        urnn_output_real = tf.concat((tf.math.real(urnn_output), tf.math.imag(urnn_output)), -1)
-        ncp_output = self.ncp(urnn_output_real)
+        ncp_output = self.ncp(tf.math.real(urnn_output))
         return ncp_output
 
     def get_config(self):
