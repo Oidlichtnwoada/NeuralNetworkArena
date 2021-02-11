@@ -10,7 +10,7 @@ class CellBenchmark(benchmark.Benchmark):
                           ('--memory_low_symbol', 0, int),
                           ('--memory_length', 128, int),
                           ('--cell_switches', 2, int),
-                          ('--samples', 10_000, int),
+                          ('--samples', 40_000, int),
                           ('--loss_name', 'MeanSquaredError', str),
                           ('--loss_config', {}, dict),
                           ('--metric_name', '', str)))

@@ -11,7 +11,7 @@ class WalkerBenchmark(benchmark.Benchmark):
                          (('--skip_percentage', 0.1, float),
                           ('--frame_skip', False, bool),
                           ('--sequence_length', 64, int),
-                          ('--max_samples', 50_000, int),
+                          ('--max_samples', 40_000, int),
                           ('--sample_distance', 4, int),
                           ('--loss_name', 'MeanSquaredError', str),
                           ('--loss_config', {}, dict),

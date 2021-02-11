@@ -7,7 +7,7 @@ class AddBenchmark(benchmark.Benchmark):
     def __init__(self):
         super().__init__('add',
                          (('--sequence_length', 100, int),
-                          ('--samples', 100_000, int),
+                          ('--samples', 40_000, int),
                           ('--loss_name', 'MeanSquaredError', str),
                           ('--loss_config', {}, dict),
                           ('--metric_name', '', str)))
