@@ -310,7 +310,10 @@
     As all the benchmarks require variants of the same models with different output vector sizes, a model factory function was implemented that is capable of producing an output tensor given the model's name, the output vector size and the input tensor tuple.
     This function was called \texttt{get\_model\_output\_by\_name} and can be found under \url{https://github.com/Oidlichtnwoada/NeuralNetworkArena/blob/master/experiments/models/model_factory.py}.
     This mechanism of creating the output tensor including the internal computational graph of the Tensorflow library \cite{Tensorflow} is called the Functional API.
-    All models were parametrized such that they have around $20000$ trainable parameters. 
+    Most of the models were parametrized such that they have roughly $20000$ trainable parameters in the Walker Benchmark \ref{walker} as this benchmark features the largest input and output vector size of all benchmarks. 
+    The exceptions of the parameter cound are the Unitary RNN model \ref{urnn}, the NCP model \ref{ncp}, the Unitary NCP model \ref{uncp}, the Recurrent Network Augmented Transformer \ref{rnaut} and the Recurrent Network Attention Transformer \ref{rnatt}.
+    All these models' computational graphs lead to high computation cost during backpropagation which leads to training durations up to a whole day for a single benchmark. 
+    This was unnacceptable and therefore their parameter count was reduced, such that at least some results can be presented for these models.
 
     \section{LSTM} \label{lstm}
     The LSTM (Long Short-Term Memory) recurrent neural network architecture is a discrete-time machine learning model as introduced in \ref{sampled_physical_systems}.
@@ -318,14 +321,13 @@
     This thesis uses the open-source LSTM implementation provided by the Keras library \cite{Keras} which is based on the original LSTM paper \cite{LSTM} as well on its successor paper \cite{LSTM_forget} that introduces a forget mechanism for the LSTM.
     The function the LSTM model is applying to its inputs to produce the outputs is given as follows with inputs denoted as $x_t$ and outputs which equals the hidden states denoted as $h_t$ \cite[p. 4-8]{LSTM_forget}:
     \begin{align}
-    \label{forget_gate} f_t &= \sigma_s(W_f*x_t + U_f*h_{t-1} + b_f) \\
-    \label{input_gate} i_t &= \sigma_s(W_i*x_t + U_i*h_{t-1} + b_i) \\
-    \label{output_gate} o_t &= \sigma_s(W_o*x_t + U_o*h_{t-1} + b_o) \\
-    \label{cell_input} \tilde{c}_t &= \sigma_h(W_c*x_t + U_c*h_{t-1} + b_c) \\
+    \label{forget_gate} f_t &= sigmoid(W_f*x_t + U_f*h_{t-1} + b_f) \\
+    \label{input_gate} i_t &= sigmoid(W_i*x_t + U_i*h_{t-1} + b_i) \\
+    \label{output_gate} o_t &= sigmoid(W_o*x_t + U_o*h_{t-1} + b_o) \\
+    \label{cell_input} \tilde{c}_t &= tanh(W_c*x_t + U_c*h_{t-1} + b_c) \\
     \label{cell_state} c_t &= f_t * c_{t-1} + i_t * \tilde{c}_t \\
-    \label{hidden_state} h_t &= o_t * \sigma_h(c_t)
+    \label{hidden_state} h_t &= o_t * tanh(c_t)
     \end{align}
-    The function $\sigma_s$ denotes the sigmoid function and the the function $\sigma_h$ denotes the hyperbolic tangent function.
     The term $f_t$ \ref{forget_gate} is the forget gate's activation vector, $i_t$ \ref{input_gate} is the input gate's activation vector, $o_t$ \ref{output_gate} is the output gate's activation vector, $\tilde{c}_t$ \ref{cell_input} is the cell input activation vector, $c_t$ \ref{cell_state} is the cell state vector and $h_t$ \ref{hidden_state} is the hidden state vector or also called output vector of the LSTM model.
     The initial hidden state $h_0$ and the initial cell state $c_0$ are picked to the all-zero vector.
     Matrices are denoted with capital letters and vectors are denoted with lower case letters. 
@@ -357,12 +359,11 @@
     This leads to a smaller parameter count of a GRU model with the same hidden state vector size as an LSTM model.
     The function the GRU model is applying to its inputs to produce the outputs is given as follows with inputs denoted as $x_t$ and outputs which equals the hidden states denoted as $h_t$ \cite[p. 4]{GRU}:
     \begin{align}
-    \label{update_gate} z_t &= \sigma_s(W_z*x_t + U_z*h_{t-1} + b_z) \\
-    \label{reset_gate} r_t &= \sigma_s(W_r*x_t + U_r*h_{t-1} + b_r) \\
-    \label{candidate_activation_vector} \tilde{h}_t &= \sigma_h(W_h*x_t + U_h*(r_t * h_{t-1}) + b_h) \\
+    \label{update_gate} z_t &= sigmoid(W_z*x_t + U_z*h_{t-1} + b_z) \\
+    \label{reset_gate} r_t &= sigmoid(W_r*x_t + U_r*h_{t-1} + b_r) \\
+    \label{candidate_activation_vector} \tilde{h}_t &= tanh(W_h*x_t + U_h*(r_t * h_{t-1}) + b_h) \\
     \label{output_vector} h_t &= (1 - z_t) * h_{t-1} + z_t * \tilde{h}_t \\
     \end{align}
-    The function $\sigma_s$ denotes the sigmoid function and the the function $\sigma_h$ denotes the hyperbolic tangent function.
     The term $z_t$ \ref{update_gate} is the update gate vector, $r_t$ \ref{reset_gate} is reset gate vector, $\tilde{h}_t$ \ref{candidate_activation_vector} is the candidate activation vector and $h_t$ is the hidden state or output vector of the GRU model.
     The initial hidden state $h_0$ is picked to the all-zero vector.
     The notation of operations, matrices and vectors stays the same as for the LSTM architecture \ref{lstm}.
@@ -390,7 +391,7 @@
     The hidden state vector is parametrized as follows \cite[p. 2]{CTRNN} with the same notation as introduced in \ref{lstm}:
     \begin{align}
     \label{paper_ct_rnn_function}
-    \dot h(t) &= -\frac{h(t)}{\tau} + W * \sigma_s(h(t)) + i(t)
+    \dot h(t) &= -\frac{h(t)}{\tau} + W * sigmoid(h(t)) + i(t)
     \end{align}
     The division between $h(t)$ and the vector $\tau$ is understood element-wise. The vector $\tau$ is also called the time constant as it is the time constant of the exponential decay of the hidden state vector over time.
     As the input has not in general the same dimension as the hidden state vector, the input is preprocessed by mapping it to the right dimension with a matrix multiplication.
@@ -399,7 +400,7 @@
     The derivative in the CT-RNN implementation used for benchmarking is given by:
     \begin{align}
     \label{used_ct_rnn_function}
-    \dot h(t) &= -\frac{h(t)}{\tau} + \alpha * \sigma_h(W_h * h(t) + W_i * i(t) + b)
+    \dot h(t) &= -\frac{h(t)}{\tau} + \alpha * tanh(W_h * h(t) + W_i * i(t) + b)
     \end{align}
     The idea of parameterizing the derivative or change of the hidden vector or activation rather than computing a completely new hidden vector or activation was extensively reused in recent research.
     For example ResNets \cite{ResNet} used the idea in a discrete-time model and Neural ODEs \cite{NeuralODEs} reused it in a continuous-time model which features a similar model function as the CT-RNN.
@@ -456,7 +457,7 @@
     \label{retrieval_weighting}
     r_{ki} &= softmax_i(-(\ln{\tau_k^R-\ln{\tau_i}})^2) \\
     \label{relevant_event_signals}
-    q_k &= \sigma_h(W^Q*x_k + U^Q*(\sum_i {r_{ki} *_{ew} \tilde{h}_{k-1,i}}) + b^Q) \\
+    q_k &= tanh(W^Q*x_k + U^Q*(\sum_i {r_{ki} *_{ew} \tilde{h}_{k-1,i}}) + b^Q) \\
     \label{storage_scale}
     \ln{\tau_k^S} &= W^S*x_k + U^S*h_{k-1} + b^S \\
     \label{storage_weighting}
@@ -502,23 +503,64 @@
     The ODE-LSTM model implementation used in this thesis is exposed under the \texttt{get\_ode\_lstm\_output} function defined in the file \url{https://github.com/Oidlichtnwoada/NeuralNetworkArena/blob/master/experiments/models/model_factory.py}.
     The in-detail implementation is provided in the file \url{https://github.com/Oidlichtnwoada/NeuralNetworkArena/blob/master/experiments/models/ode_lstm.py}.
 
-    \section{Neural Circuit Policies (NCP)}
+    \section{Neural Circuit Policies (NCP)} \label{ncp}
+    Neural Circuit Policies were used in the paper \cite{NCP} which shows the high expressivity of the architecture in the domain of autonomous driving.
+    The architecture is a subset of all LTC (Liquid Time-Constant) Networks that were introduced in \cite{LTCFormulas} and further discussed in \cite{LTCNetworks}.
+    An LTC Network consists of biologically inspired neurons with leakage that are interconnected using chemical synapses with non-linear activations.
+    LTC Networks model the cell membrane as integrator and are therefore a continous-time machine learning model.
+    Neural Circuit Policies were derived from the neuron interconnection structure of the Caenorhabditis elegans nematode \cite[p. 3]{NCP} which trims the space of all possible LTC networks.
+    The state of each neuron $i$ with incoming chemical synapses from neurons $j$ is given as its potential $V_i$ and the ODE that describes the dynamics of a single neuron's potential is given by \cite[p. 1-2]{LTCFormulas}:
+    \begin{align}
+    \label{ltc_formula}
+    \dot{V_i}(t) &= \frac{1}{C_i} * (I_{leak,i} + \sum_j{I_{syn,ji}}) \\
+    \label{leakage_current}
+    I_{leak,i} &= G_{leak,i} * (E_{leak,i} - V_i(t)) \\
+    \label{synaptic_current}
+    I_{syn,ji} &= [G_{syn,ji} * sigmoid(\sigma_{ji}*(V_j(t)-\mu_{ji}))] * (E_{ji} - V_i(t))
+    \end{align}
+    By reordering terms in equation \ref{ltc_formula}, it can be shown that the time constant $\tau$ as used in the equation \ref{paper_ct_rnn_function} in the CT-RNN architecture is varying with time.
+    The capacitance of a neuron $i$ is denoted as $C_i$ and the whole equation will be more familiar when the capacitance is brought to the left hand side which yields $C_i * \dot{V_i}(t) = I_{leak,i} + \sum_j{I_{syn,ji}}$.
+    This is just the differential equation describing the behavior of an electrical conductance.
+    All the currents on the right hand side as given in the leakage current equation \ref{leakage_current} and in the chemical synaptic current equation \ref{synaptic_current} are written according to Ohm's law $I = \frac{U}{R}$.
+    By using the conductance $G$ instead of the resistance $R$ which is just the reciprocal value, the equation yields $I = G * U$, exactly the form both current equations are using.
+    As the voltage $U$ is given as the potential difference, all terms in equation \ref{leakage_current} and \ref{synaptic_current} should be clear now.
+    Worth mentioning is the non-linear conductance for chemical synaptic currents given as $G_{syn,ji} * sigmoid(\sigma_{ji}*(V_j(t)-\mu_{ji}))$, where the parameter $G_{syn,ji}$ controls the maximum conductance, the parameter $\mu_{ji}$ controls the mean conductance potential and the parameter $\sigma_{ji}$ controls the steepness of the transition between conductance and non-conductance.
+    Note that the non-linear synaptic conductance is only influenced by the presynaptic neuron potential $V_j(t)$.
+    The potentials given by the capital letter $E$ control the targeted potentials for the neuron $i$, therefore if the neuron has reached this potential the corresponding currents will vanish. 
+    The NCP architecture builds its output vector by determining output neurons in the same amount as the output vector size.
+    These neurons are called motor neurons and their vectorized potentials then build the output vector.
+    The input vector entries are fed to neurons as currents by using the chemical synaptic current equation as described in \ref{synaptic_current} and by setting the presynaptic potential equal to the input vector entry.
+    Furthermore, before the input vector is provided to the NCP model and before the output vector is returned from the NCP model, an affine transformation is applied to the input and output vector by mapping both vectors with a dense layer as described in the LSTM section \ref{lstm}.
+    Additionally to motor neurons, NCP models also have inter and command neurons.
+    Inter neurons receive input vector entries as chemical synaptic currents and command neurons are the only neuron type where recurrent connections are allowed.
+    Command neurons also are the only neuron type which has synaptic connections to motor neurons.
+    Therefore, the input vector entries are processed using the inter neurons, which feed the processed information to the command neurons that control the motor neurons and therefore the output vector entries.
+    The procedure to create the synaptic wiring is described in detail in \cite[p. 3]{NCP} and will not be covered in this thesis.
+    The NCP implementation used for benchmarking uses the implementation provided in the repository of the paper \cite{NCP} located under the url \url{https://github.com/mlech26l/keras-ncp}.
+    It was configured with $9$ inter neurons and $7$ command neurons. The amount of motor neurons was picked according to the required output vector size.
+    There were two incoming synapses from input vector entries to inter neurons and two incoming synapses from inter neurons to command neurons.
+    Each motor neuron receives two incoming synapses from command neurons and there were $14$ recurrent synapses in all command neurons.
+    The time input to solve the ODE was set to $1$ per time step and the ODE was solved using the Fused Solver proposed in \cite{LTCNetworks} that fuses explicit and implicit Euler methods.
+    Per time step the ODE was unrolled $6$ times, as there are at least $3$ unrolls necessary until the currents from the input vector reach the command neurons via synapses in each time step.
+    The initial potential of all neurons was picked to $0$.
+    The NCP model implementation used in this thesis is exposed under the \texttt{get\_neural\_circuit\_policies\_output} function defined in the file \url{https://github.com/Oidlichtnwoada/NeuralNetworkArena/blob/master/experiments/models/model_factory.py}.
+    The in-detail implementation is provided in the file \url{https://github.com/Oidlichtnwoada/NeuralNetworkArena/blob/master/experiments/models/neural_circuit_policies.py}.
 
-    \section{Unitary RNN}
+    \section{Unitary RNN} \label{urnn}
 
-    \section{Matrix Exponential Unitary RNN}
+    \section{Matrix Exponential Unitary RNN} \label{meurnn}
 
-    \section{Unitary NCP}
+    \section{Unitary NCP} \label{uncp}
 
-    \section{Transformer}
+    \section{Transformer} \label{transformer}
 
-    \section{Recurrent Network Augmented Transformer}
+    \section{Recurrent Network Augmented Transformer} \label{rnaut}
 
-    \section{Recurrent Network Attention Transformer}
+    \section{Recurrent Network Attention Transformer} \label{rnatt}
 
-    \section{Memory Augmented Transformer}
+    \section{Memory Augmented Transformer} \label{mat}
 
-    \section{Differentiable Neural Computer} \label{Differentiable Neural Computer}
+    \section{Differentiable Neural Computer} \label{dnc}
     This model defines a memory-augmented neural network architecture, that consists of a controller, read and write heads and obviously an external memory that is not parameterized by the neural network parameter.
     Furthermore, the external memory was structured in rows, where each memory row has a specific length.
     The architecture was taken from \cite{DNC} and is an enhancement to the Neural Turing Machine firstly introduced in \cite{NTM}.
@@ -528,7 +570,7 @@
     These weight vectors are then normalized using a softmax function that takes each argument to the power of an emitted number to sharpen the weights.
     Some improvements of the Differentiable Neural Computer include a memory management system that is able to allocate and free memory in the external memory to avoid overwriting of important information and a memory use link matrix that allows the model to track its memory operations through time.
 
-    \section{Memory Cell} \label{Memory Cell}
+    \section{Memory Cell} \label{memory_cell}
     The Memory Cell is a simple RNN consisting of two LTC neurons as described in \cite{LTCNetworks} and used in \cite{NCP}.
     However, the leakage term was removed from the ordinary differential equation describing the state dynamics, as a fading potential would mean losing information stored in the memory cell over time.
     It has a 2-dimensional input, the input voltage for each of the two neurons delivered by a synapse, and a 1-dimensional output, which is just the potential of the first neuron.
