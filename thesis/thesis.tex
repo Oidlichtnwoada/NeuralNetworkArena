@@ -552,6 +552,7 @@
     The Unitary RNN implementation used in this thesis is a modified version of the implementetion provided with the original paper which can be found under the url \url{https://github.com/jingli9111/EUNN-tensorflow/blob/master/eunn.py}.
     The next hidden state vector of a Unitary RNN $h_{t+1}$ which also equals its output vector is computed as given in \cite[p. 2]{EfficientUnitaryRNNs} by using a non-linear bias-parametrized activation function $\sigma$ and two matrices $W$ and $V$:
     \begin{align}
+    \label{urnn_state}
     h_{t+1} &= \sigma(W*h_t + V*x_{t+1})
     \end{align}
     The bias-parametrized activation function $\sigma$ was set to the modrelu function firstly introduced in \cite[p. 4]{UnitaryRNNs}.
@@ -605,12 +606,54 @@
     As the output vector of this machine learning model is complex, the real part of the output was used for further processing as this was also done in benchmarks from the official repository of the paper \cite{EfficientUnitaryRNNs} which can be found under the url \url{https://github.com/jingli9111/EUNN-tensorflow/blob/master/copying_task.py}.
     Also this model has a configurable hidden vector size which must be even and was picked to $128$ throughout the thesis.
     The capacity $L$ was always set to $16$, therefore the matrix $W$ is parameterized as a partial-space unitary matrix.
-    As the output vector size has the be variable, the real part of the output vector of the model was then fed to a dense layer to achive the right output vector dimension.
+    As the output vector size has the be variable, the real part of the output vector of the model was then fed to a dense layer to achieve the right output vector dimension.
     The Unitary RNN model implementation used in this thesis is exposed under the \texttt{get\_unitary\_rnn\_output} function defined in the file \url{https://github.com/Oidlichtnwoada/NeuralNetworkArena/blob/master/experiments/models/model_factory.py}.
     The in-detail implementation is provided in the file \url{https://github.com/Oidlichtnwoada/NeuralNetworkArena/blob/master/experiments/models/unitary_rnn.py}.
     
     \section{Matrix Exponential Unitary RNN} \label{meurnn}
-    This model is an original contribution and very similar in nature to the Unitary RNN \ref{urnn}.
+    This machine learning model is an original contribution and a variant of the Unitary RNN \ref{urnn} architecture.
+    It is therefore also a discrete-time recurrent neural network model with the same model function as specified in \ref{urnn_state} and augments the architecture in various ways.
+    Only the differences between the two architectures will be listed.
+    First, the option to use a trainable initial hidden state vector was added to the architecture which is initialized to the all-zero vector.
+    Furthermore, there was an option added to use an augmented input for the model.
+    This augmented input consists of the concatenation of the regular input vector $x_k$ per time step and its 1D discrete Fourier transform as given by $FFT(x_k)$.
+    As problems in the signal and system theory domain are either easier to solve in the time or the frequency domain, this feature may help to make better predictions in some tasks.
+    Moreover, the DFT matrix used to convert a time-domain vector to the frequency domain is also a unitary matrix, which preserves the energy of the input vector, and is therefore a good fit for this architecture.
+    Both described features are disabled during benchmarking of this model, as they showed no substantial decrease of the final test loss.
+    Another difference to the Unitary RNN architecture \ref{urnn} is the construction of the output vector of the required size.
+    As the imaginary part of the hidden state vector may also convey useful information, the approach from \cite[p. 4]{UnitaryRNNs} was used in the implementation to construct the output vector.
+    With this method the final output vector is constructed by passing a concatenated vector consisting of the real and imaginary part of the hidden state vector which is now solely real through a dense layer to get the right output vector dimension.
+    The last difference is the parametrization of the unitary matrix $W$ used in the model function equation \ref{urnn_state}.
+    As presented in section \ref{urnn} the parametrization is quite involved and therefore the new way of parameterizing the unitary matrix is using an approximated matrix exponential.
+    As any unitary matrix $W$ of dimension $N \times N$ can be written as the matrix exponential of a skew-Hermitian matrix $A$ of dimension $N \times N$ as $W=e^A$, the problem is reduced to parameterizing a skew-Hermitian matrix $A$.
+    This matrix exponential is the matrix generalization of $|e^j|=1$ in the scalar case where $j$ is any imaginary number.
+    The approximated matrix exponential implementation used for this model is exposed under the function \texttt{tf.linalg.expm} in the Tensorflow library \cite{Tensorflow} which uses Padé approximation as desribed in \cite{expm}.
+    The fundamental idea is that $e^A = (e^{2^{-s}A})^{2^s} \approx (r_m(2^{-s}A))^{2^s}$ where $r_m(X)$ is the $[m/m]$ Padé approximant to $e^X$ and the non-negative integers $m$ and $s$ are to be chosen \cite[p. 1]{expm}.
+    An approximation is needed as the matrix exponential $e^A$ is defined by an infinite sum as follows:
+    \begin{align}
+    \label{expm_definition}
+    e^A = \sum_{k=0}^{\infty} \frac{A^k}{k!}
+    \end{align}
+    A skew-Hermitian matrix $A$ fulfills $A^H = -A$ which implies that the individual matrix entries fulfill $a_{ij} = -\overline{a_{ji}}$. 
+    This further implies that the diagonal entries of $A$ are purely imaginary.
+    Therefore, the square skew-Hermitian matrix $A$ can be parameterized by only a lower triangular matrix $T$ with complex entries as all other entries follow by symmetry.
+    The diagonal entries in this matrix $T$ can be parametrized with a real parameters, therefore saving $N$ parameters, but this optimization was not applied in the implementation.
+    The skew-Hermitian matrix $A$ can easily be constructed by the triangular matrix $T$ by the following formula fulfilling all symmetry requirements:
+    \begin{align}
+    \label{skew_hermitian}
+    A = T - T^H
+    \end{align}
+    As in this formula \ref{skew_hermitian} only the diagonal entries overlap after the transposition, the diagonal entries will be purely imaginary as the real parts will cancel themselves.
+    All other entries follow the predescribed symmetry.
+    In this model's implementation the matrix $T$ was parameterized by a vector $v$ of size $N*(N+1)/2$ which equals the number of all non-zero elements in $T$.
+    This vector $v$ was then converted to a triangular matrix by filling a triangular matrix with all the values from $T$.
+    With this method any lower triangular matrix $T$ can be constructed, from which any skew-hermitian matrix $A$ can be constructed, from which any unitary matrix $W$ can be computed by using the matrix exponential.
+    This parameterization allows to parameterize the full-space of unitary matrices. 
+    If a partial-space parametrization is favored to reduce the parameter count of the model, there is a capacity measure $c$ available in the model's implementation which should fulfill $0 \leq c \leq 1$.
+    With this only the first $\lfloor c*N*(N+1)/2 \rfloor$ entries of the vector $v$ will be trainable and the remaining entries will be filled up with zeros.
+    The model used for benchmarking had a hidden vector size of $128$ and the capacity measure $c$ set to $1$, therefore the full space of unitary matrices was parameterizable.
+    The Matrix Exponential Unitary RNN model implementation used in this thesis is exposed under the \texttt{get\_matrix\_exponential\_unitary\_rnn\_output} function defined in the file \url{https://github.com/Oidlichtnwoada/NeuralNetworkArena/blob/master/experiments/models/model_factory.py}.
+    The in-detail implementation is provided in the file \url{https://github.com/Oidlichtnwoada/NeuralNetworkArena/blob/master/experiments/models/matrix_exponential_unitary_rnn.py}.
 
     \section{Unitary NCP} \label{uncp}
 
