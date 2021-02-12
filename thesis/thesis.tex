@@ -554,6 +554,8 @@
     \begin{align}
     h_{t+1} &= \sigma(W*h_t + V*x_{t+1})
     \end{align}
+    The bias-parametrized activation function $\sigma$ was set to the modrelu function firstly introduced in \cite[p. 4]{UnitaryRNNs}.
+    The modrelu function applied to a complex vector $z$ is defined as follows for each vector entry $z_i$: $moderelu(z_i) = max(0, |z_i|+b_i) * \frac{z_i}{|z_i|}$ with a real-valued bias parameter $b_i$ per vector entry.
     The initial hidden state vector $h_0$ was picked to the all-zero vector.
     The difference with this model is that it does not use real parameters which is the standard in machine learning.
     It uses complex parameters which are represented by two single-precision floating-point parameters each. 
@@ -608,6 +610,7 @@
     The in-detail implementation is provided in the file \url{https://github.com/Oidlichtnwoada/NeuralNetworkArena/blob/master/experiments/models/unitary_rnn.py}.
     
     \section{Matrix Exponential Unitary RNN} \label{meurnn}
+    This model is an original contribution and very similar in nature to the Unitary RNN \ref{urnn}.
 
     \section{Unitary NCP} \label{uncp}
 
