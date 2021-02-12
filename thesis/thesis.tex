@@ -656,6 +656,23 @@
     The in-detail implementation is provided in the file \url{https://github.com/Oidlichtnwoada/NeuralNetworkArena/blob/master/experiments/models/matrix_exponential_unitary_rnn.py}.
 
     \section{Unitary NCP} \label{uncp}
+    The Unitary NCP model is a novel discrete-time machine learning model that combines the Unitary RNN model \ref{urnn} and the Neural Circuit Policies model \ref{ncp}, just like the ODE-LSTM model \ref{odelstm} combines the LSTM \ref{lstm} and the CT-RNN \ref{ctrnn} architecture.
+    This combination however is not as tightly coupled as the ODE-LSTM architecture. 
+    This architecture uses a Unitary RNN to preprocess all input vectors of the input sequence $x_k$ to an intermediate sequence by storing the real part of the hidden state vector at each time step without feeding it through a dense layer afterwards.
+    Then this intermediate sequence is fed to the Neural Circuit Policies model, which just treats it as its regular input sequence and maps it to the output vector sequence $o_k$.
+    The Unitary NCP model function is given as follows where $x_k$ is the input vector at time step $k$, $h_{k,unitary}$ is the hidden state vector of the Unitary RNN model, $h_{k,ncp}$ is the state vector of the Neural Circuit Policies model and $o_k$ is the output vector at time step $k$:
+    \begin{align}
+    h_{k+1,unitary} &= UnitaryRNN(x_{k+1}, h_{k,unitary}) \\
+    (h_{k+1,ncp}, o_{k+1}) &= NCP(\Re{h_{k+1,unitary}}, h_{k,ncp})
+    \end{align}
+    The $UnitaryRNN$ function is just a pointer to the corresponding model function described in \ref{urnn_state}.
+    How the NCP model maps the input sequence to an output sequence as meant by the function $NCP$ is described in detail in section \ref{ncp}.
+    The architecture should combine the great expressiveness of the NCP model with the ability to capture long-term dependencies of the Unitary RNN model.
+    The Unitary RNN was configured with a hidden state vector size of $32$ and the capacity was set to $4$. 
+    The NCP model uses $4$ inter and command neurons and no recurrent command synapses, as memory-related tasks should be handled by the Unitary RNN.
+    For details on both architectures, consult their individual sections.
+    The Unitary NCP model implementation used in this thesis is exposed under the \texttt{get\_unitary\_ncp\_output} function defined in the file \url{https://github.com/Oidlichtnwoada/NeuralNetworkArena/blob/master/experiments/models/model_factory.py}.
+    The in-detail implementation is provided in the file \url{https://github.com/Oidlichtnwoada/NeuralNetworkArena/blob/master/experiments/models/unitary_ncp.py}.
 
     \section{Transformer} \label{transformer}
 
