@@ -547,7 +547,66 @@
     The in-detail implementation is provided in the file \url{https://github.com/Oidlichtnwoada/NeuralNetworkArena/blob/master/experiments/models/neural_circuit_policies.py}.
 
     \section{Unitary RNN} \label{urnn}
-
+    The Unitary RNN architecture was first introduced in \cite{UnitaryRNNs} and later refined in \cite{EfficientUnitaryRNNs} and is a discrete-time machine learning model.
+    It uses the same vanilla recurrent neural network model function as discrussed in section \ref{long_term_difficult}.
+    The Unitary RNN implementation used in this thesis is a modified version of the implementetion provided with the original paper which can be found under the url \url{https://github.com/jingli9111/EUNN-tensorflow/blob/master/eunn.py}.
+    The next hidden state vector of a Unitary RNN $h_{t+1}$ which also equals its output vector is computed as given in \cite[p. 2]{EfficientUnitaryRNNs} by using a non-linear bias-parametrized activation function $\sigma$ and two matrices $W$ and $V$:
+    \begin{align}
+    h_{t+1} &= \sigma(W*h_t + V*x_{t+1})
+    \end{align}
+    The initial hidden state vector $h_0$ was picked to the all-zero vector.
+    The difference with this model is that it does not use real parameters which is the standard in machine learning.
+    It uses complex parameters which are represented by two single-precision floating-point parameters each. 
+    The parameter count for each model however is always given in terms of single-precision floating-point parameters.
+    The matrices $W$ and $V$ are parametrized as complex matrices. 
+    Matrix $V$ does not have to follow any particular restrictions, therefore it can be simply parametrized by two real matrices $V_{real}$ and $V_{imag}$ for the real and imaginary part. 
+    As explained in detail in section \ref{long_term_difficult}, a matrix $W$ that fulfills $\left\Vert W \right\Vert_{2,ind} = 1$ and a suitable activation function $\sigma$ would solve the vanishing and exploding gradient problem for the vanilla recurrent neural network architecture and exactly this was done in the case of Unitary RNNs. 
+    Unitary matrices $W$ fulfill the requirement $\left\Vert W \right\Vert_{2,ind} = 1$, as all eigenvalues of unitary matrices have a magnitude of $1$ from which follows that $1$ is always the largest singular value as unitary matrices are square. 
+    As the spectral norm is just the largest singular value, it is proven that unitary matrices fulfill the proposed requirement.
+    The difficulty now is to parametrize unitary matrices efficiently as they are only a subset of all complex matrices and therefore cannot be as simply parametrized as the matrix $V$.
+    The method to parametrize unitary matrices as used in \cite[p. 3]{EfficientUnitaryRNNs} was proposed by \cite{UnitaryMatrixParametrization} and is called square decomposition method. 
+    The core statement is that any unitary matrix of dimension $N \times N$ can be represented by matrix multiplications involving a diagonal matrix $D$ and rotational matrices $R_{ij}$ as follows:
+    \begin{align}
+    W &= D \prod_{i=2}^N \prod_{j=1}^{i-1} R_{ij}.
+    \end{align}
+    The diagonal matrix $D$ has only the entries $e^{iw_j}$ on its diagonal which results in $N$ parameters $w_j$.
+    The matrices $R_{ij}$ which are parameterized by two real parameters $\theta_{ij}$ and $\phi_{ij}$ are defined as $N$-dimensional identity matrices whose four entries at positions given as $(row,column)$ are replaced with given entries as follows:
+    \begin{align}
+    \begin{bmatrix} 
+    (i,i) & (i,j) \\
+    (j,i) & (j,j) 
+    \end{bmatrix} \mapsto 
+    \begin{bmatrix} 
+    e^{i\phi_{ij}}\cos (\theta_{ij})  & -e^{i\phi_{ij}}\sin (\theta_{ij}) \\
+    \sin (\theta_{ij}) & \cos (\theta_{ij}) 
+    \end{bmatrix}
+    \end{align}
+    By reordering and grouping rotational matrices as shown in \cite[p. 4]{EfficientUnitaryRNNs}, the unitary matrix $W$ with even capacity $L$ can also be written as:
+    \begin{align}
+    W = D * F_A^{(1)} * F_B^{(2)} * F_A^{(3)} * F_B^{(4)} * \ldots * F_B^{(L)}
+    \end{align}
+    Whenever the capacity $L$ matches the dimension $N$ of the unitary matrix $W$, this expression spans the entire space of all unitary matrices. 
+    Whenever the capacity $L$ is smaller than the dimension $N$ of the unitary matrix $W$, this expression spans a subspace of the space of all unitary matrices. 
+    The matrices $F_A^{(l)}$ and $F_B^{(l)}$ are constructed as follows where superscript $(l)$ denotes different instances of the same type of rotational matrices when the subscript matches:
+    \begin{align}
+    F_A^{(l)} &= R_{1,2}^{(l)} * R_{3,4}^{(l)} * R_{5,6}^{(l)} * \ldots * R_{N/2-1,N/2}^{(l)} \\
+    F_B^{(l)} &= R_{2,3}^{(l)} * R_{4,5}^{(l)} * R_{6,7}^{(l)} * \ldots * R_{N/2-2,N/2-1}^{(l)}
+    \end{align}
+    Furthermore, each matrix $F$ of the above two types is a general rotational matrix and its mapping performend on a vector $x$ can also be written as \cite[p. 4]{EfficientUnitaryRNNs}:
+    \begin{align}
+    F*x = v_1 *_{ew} x + v_2 *_{ew} permute(x)
+    \end{align}
+    The vectors $v_1$ and $v_2$ are computable from the parameters $\theta_{ij}$ and $\phi_{ij}$ that are used to parameterize the rotational matrices $R_{ij}$ that build the matrix $F$.
+    The permutation given by the function $permute$ is fixed and set only at the first instantiation of the machine learning model. 
+    The formula used to generate both vectors $v_1$ and $v_2$ is given under \cite[p. 4]{EfficientUnitaryRNNs}.
+    As this way of applying the mapping of the $F$ matrices to the input vector avoids matrix multiplications and just uses element-wise multiplications and permutation operations, it is an efficient way to parameterize unitary matrices.
+    As the output vector of this machine learning model is complex, the real part of the output was used for further processing as this was also done in benchmarks from the official repository of the paper \cite{EfficientUnitaryRNNs} which can be found under the url \url{https://github.com/jingli9111/EUNN-tensorflow/blob/master/copying_task.py}.
+    Also this model has a configurable hidden vector size which must be even and was picked to $128$ throughout the thesis.
+    The capacity $L$ was always set to $16$, therefore the matrix $W$ is parameterized as a partial-space unitary matrix.
+    As the output vector size has the be variable, the real part of the output vector of the model was then fed to a dense layer to achive the right output vector dimension.
+    The Unitary RNN model implementation used in this thesis is exposed under the \texttt{get\_unitary\_rnn\_output} function defined in the file \url{https://github.com/Oidlichtnwoada/NeuralNetworkArena/blob/master/experiments/models/model_factory.py}.
+    The in-detail implementation is provided in the file \url{https://github.com/Oidlichtnwoada/NeuralNetworkArena/blob/master/experiments/models/unitary_rnn.py}.
+    
     \section{Matrix Exponential Unitary RNN} \label{meurnn}
 
     \section{Unitary NCP} \label{uncp}
@@ -731,7 +790,7 @@
     The target function to learn is to simply add two numbers that are marked in a much longer stream of numbers.
     At each time step a number together with a marker bit is presented as input vector to the model.
     As in the Activity Benchmark \ref{activity}, the sequence length and the sample amount are also configurable.
-    For all models a sequence length of $100$ and a sample amount of $100000$ was used.
+    For all models a sequence length of $100$ and a sample amount of $40000$ was used.
     As described above, the input vector has size two.
     The second entry is set to one only in one input vector of the first and last $50$ input vectors.
     Their distribution is uniformly across the whole first and second half of the time-series.
@@ -767,9 +826,9 @@
     Only if the model understands the dynamics that are guided by differential equations, it will be able to produce accurate predictions.
     The ability to capture long-term dependencies is not tested with this benchmark as the most recent input vectors should be enough to make good predictions.
     The benchmark had a configurable sequence length, a maximum sample amount and a sample distance just like the Activity Benchmark \ref{activity}.
-    Throughout the thesis a sample length of $64$, a maximum sample amount of $50000$ and a sample distance of $4$ was used.
+    Throughout the thesis a sample length of $64$, a maximum sample amount of $40000$ and a sample distance of $4$ was used.
     All parameters have the same meaning as before.
-    As there were enough training data provided in \texttt{.npy} files by the creators of \cite{ODELSTM}, the benchmark had $50000$ different samples available that are partitioned in training, validation and test samples.
+    As there were enough training data provided in \texttt{.npy} files by the creators of \cite{ODELSTM}, the benchmark had $40000$ different samples available that are partitioned in training, validation and test samples.
     The acquired simulation data can be downloaded from \url{https://pub.ist.ac.at/~mlechner/datasets/walker.zip}.
     The input sequence consists of input vectors of size $17$, which contains the current state of the physics engine at this specific time step.
     These values represent the angles of the joints and the absolute position of the bipedal robot.
@@ -785,7 +844,7 @@
     It is a slightly changed version of the copying memory problem described in \cite{UnitaryRNNs}.
     Input data of the benchmark input is randomly created at each invocation of the benchmark.
     There is a configurable memory length to test for, a length of the sequence to memorize, an amount of categories and an amount of samples that are randomly generated.
-    Throughout the thesis a memory length of $100$, a sequence length of $1$, a category amount of $10$ and a sample amount of $100000$ were used.
+    Throughout the thesis a memory length of $100$, a sequence length of $1$, a category amount of $10$ and a sample amount of $40000$ were used.
     Each single input vector sequence is created by concatenating three sub sequences.
     The first sequence is the sequence to memorize of length $1$.
     It contains category indices sampled uniformly from $0$ to $9$.
@@ -809,8 +868,8 @@
     All images are in grey-scale and a higher integer represents a darker pixel.
     The images were vectorized to a vector of size $784$ and then split up to a sequence of vector chunks of size $8$, which results in an input sequence length of $98$.
     The expected output class index is just the digit the current image is representing.
-    Furthermore, the benchmark has a configurable maximum amount of samples, which was set to $70000$.
-    As the MNIST dataset had enough image samples, all specified $70000$ samples were used.
+    Furthermore, the benchmark has a configurable maximum amount of samples, which was set to $40000$.
+    As the MNIST dataset had enough image samples, all specified $40000$ samples were used.
     A long-term memory of seen input chunks is indeed necessary to produce an accurate category prediction, as digits like $1$, $4$ and $9$ may be indistinguishable when only considering the most recent seen input chunks.
     This corresponds to classifying the image only based on a lower fraction of the image visible to the model, where the upper fraction was cut away.
     A model that yields accurate results must not suffer from the vanishing or exploding gradient problem, as only then the whole picture can be taken into account for classification. 
@@ -826,7 +885,7 @@
     This requires the ability to capture long-term dependencies as the input is provided sparsely to the model as described below.
     The benchmark has a configurable memory high symbol, memory low symbol, memory length, amount of cell switches and amount of samples that are generated at each invocation of the benchmark.
     The memory high and low symbol represent the expected output symbol when either memory state is active but the memory high symbol is also used as input symbol to sparsely activate a specific memory state, all other inputs are then set to the memory low symbol.
-    The memory high symbol was picked to $1$, the memory low symbol was picked to $0$, the memory length was picked to $128$, the amount of cell switches was set to $2$ and the sample amount was set to $10000$.
+    The memory high symbol was picked to $1$, the memory low symbol was picked to $0$, the memory length was picked to $128$, the amount of cell switches was set to $2$ and the sample amount was set to $40000$.
     As the memory cell is a bistable memory element, there are two memory states that can be activated sparsely.
     The input vector at each time step has size $2$. If both entries are $0$, the current memory state should be kept.
     Otherwise, if a single entry is $1$ and the other entry is $0$, the corresponding memory state should be activated.
