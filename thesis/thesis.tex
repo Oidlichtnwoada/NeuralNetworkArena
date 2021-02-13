@@ -679,7 +679,8 @@
     \section{Transformer} \label{transformer}
     \subsection{Introduction}
     The Transformer architecture introduced in \cite{Transformer} is no recurrent neural network architecture in the strict sense like the LSTM \ref{lstm} or the GRU \ref{gru} architecture.
-    However, it has recurrence in its decoder part as explained later.
+    It encodes its input sequence using an encoder, whose output is then decoded to the output sequence by a decoder.
+    However, this model has recurrence in its decoder part as explained later.
     The problem of capturing long-term dependencies as described in \ref{long_term_difficult} originates as the input time-series is provided as one input vector per time step to the machine learning models.
     This results in deep computational graphs for longer time-series which furthermore leads to problems like vanishing or exploding gradients.
     The Transformer architecture overcomes this issue by considering the whole input vector sequence at a single time step for prediction. 
