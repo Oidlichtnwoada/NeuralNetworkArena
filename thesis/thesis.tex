@@ -156,6 +156,8 @@
     A sample loss function can be constructed as easy as computing the mean of all squared errors between the model output and the expected output.
     The model output is also often denoted as the prediction of the model.
     For each input sample, the loss function describes the error the model makes by applying its function and this error is only dependent on the parameters of the model.
+    In practice the loss function is applied to a batch of inputs separately and the arithmetic mean of all scalar loss function return values of the individual input samples is used as loss function to differentiate.
+    The size of this input batch is called batch size.
     In the general case, a computer scientist wants to find the global minimum of that function with respect to all machine learning model parameters.
     As this is a problem that cannot be solved analytically in most cases, it is approximated by using gradient descent \cite{GradientDescent}.
     This method incrementally changes each parameter depending on the gradient of the loss function with respect to each parameter in lock step.
@@ -413,7 +415,7 @@
     There is also the possibility to evaluate the hidden state at intermediate time points, for example at $T-1$, which equals $h(T-1)$.
     With this mechanism any continuous-time model can also map an input vector sequence to an output vector sequence.
     If additional timing information is available about the input vectors, for example the time interval between two input vector samples, it can be used as time to hold this specific input constantly in the input function.
-    This leads to an irregularly sampled time series where time-continuous models are exceptionally well suited as machine learning models, as discrete-time models \ref{sampled_physical_systems} implicitly model a regularly sampled continuous-time system.
+    This leads to an irregularly sampled time-series where time-continuous models are exceptionally well suited as machine learning models, as discrete-time models \ref{sampled_physical_systems} implicitly model a regularly sampled continuous-time system.
     This statement was also shown to be valid by \cite{ODELSTM}.
     The initial state of the CT-RNN is given by $h(0)$, which is picked to the all-zero vector.
     To compute the final hidden state $h(T)$, the ODE (ordinary differential equation) from \ref{used_ct_rnn_function} must be solved given the initial condition $h(0)$.
@@ -675,6 +677,73 @@
     The in-detail implementation is provided in the file \url{https://github.com/Oidlichtnwoada/NeuralNetworkArena/blob/master/experiments/models/unitary_ncp.py}.
 
     \section{Transformer} \label{transformer}
+    \subsection{Introduction}
+    The Transformer architecture introduced in \cite{Transformer} is no recurrent neural network architecture in the strict sense like the LSTM \ref{lstm} or the GRU \ref{gru} architecture.
+    However, it has recurrence in its decoder part as explained later.
+    The problem of capturing long-term dependencies as described in \ref{long_term_difficult} originates as the input time-series is provided as one input vector per time step to the machine learning models.
+    This results in deep computational graphs for longer time-series which furthermore leads to problems like vanishing or exploding gradients.
+    The Transformer architecture overcomes this issue by considering the whole input vector sequence at a single time step for prediction. 
+    Attention mechanisms were used to deal with that much input data at a single time step which means the model learns to weight the input data vectors according to their relevance in solving the required problem.
+    By using this method the computational graph becomes much shallower and easier to backpropagate through, therefore overcoming the unwanted deep computational graphs.
+    \subsection{Encoder}
+    At first the Transformer architecture passes its input vectors on to the encoder.
+    The encoder embeds its input vectors into vectors of length $d_{model}$ which is a hyperparameter of the architecture by passing them through a dense layer.
+    As the embedded input vectors of the input time-series are not labelled with their corresponding time index $k$, the transformer architecture adds a positional encoding vector to each embedded input vector.
+    This positional encoding vector is only dependent on the absolute position in the input time-series of the vector and the hyperparameter $d_{model}$ as described in-detail in \cite[p. 6]{Transformer} and should allow the architecture to infer its absolute position in the input time-series.
+    After adding the positional embedding vectors dropout with a configurable architecture-wide dropout rate $0 \leq r \leq 1$ is applied to all embedded input vectors.
+    Dropout was introduced in \cite{dropout} and randomly sets vector entries to $0$ with a frequency of $r$ and vector entries not set to $0$ are scaled up by $1/(1-r)$.
+    According to \cite[p. 1]{dropout} this helps neural networks to prevent overfitting.
+    The output vectors after dropout are then fed to a configurable amount of encoder layers.
+    Each encoder layer consists of two sub-layers, one multi-head attention layer and one fully-connected feed-forward layer.
+    Dropout is applied to each sub-layer output, whose result is then added to the input creating a residual connection \cite{ResNet}.
+    Then layer normalization \cite{layer_norm} is applied to the sum of both which means the mean $\mu$ and variance $\sigma^2$ of all entries $x$ in a vector are computed and these entries $x$ are then mapped to $\frac{(x-\mu)}{\sigma + \varepsilon}$.
+    The mapped vector entries are then normal distributed with mean $0$ and variance $1$, the $\varepsilon$ in the formula is only added for numerical stability.
+    This whole procedure of postprocessing the sub-layer output to the final outputs $y$ given the inputs $x$ can be also written in pseudocode \cite[p. 3]{Transformer}:
+    \begin{align}
+    y = LayerNormalization(x + Dropout(SubLayer(x)))
+    \end{align}
+    The multi-head attention layer requires three mandatory input arguments (queries, keys and values) and an optional mask.
+    There must be as many keys as values as they are used as a key-value-pair.
+    The number of heads $h$, the dimension of the projected queries and keys $d_k$ and the dimension of the projected values $d_v$ can be configured.
+    All queries, keys and values of the input arguments are mapped through three dense layers for queries, keys and values to the projected query, key and value vectors of the specified dimensions.
+    This procedure is repeated $h$ times with different dense layers but the same input. 
+    By writing the output vectors of this procedure in matrix form as queries $Q$, keys $K$ and values $V$ (vectors in rows), the scaled dot-product attention function output $Y$ can be given as follows \cite[p. 4]{Transformer}:
+    \begin{align}
+    Y = softmax \left( \frac{Q * K^T}{\sqrt{d_k}} \right) * V
+    \end{align}
+    The matrix multiplication of $Q$ and $K^T$ corresponds to computing the scalar product of all combinations between query vectors and key vectors.
+    The scalar product result of a single combination should describe how well the "question" or query matches the "answer" or key.
+    These scalar products are then scaled and after that the softmax function given as $\frac{e^{x_i}}{\sum_j{e^{x_j}}}$ is applied to each row and row entry $x_i$ in the corresponding matrix.
+    This now results in a matrix where the entry in row $i$ and column $j$ corresponds to the attention weight between the query vector in row $i$ and the key vector in row $j$. 
+    All attention weights of a single query vector to all possible key vectors add up to $1$.
+    The final output $Y$ is then computed by doing a matrix multiplication of the attention weight matrix with the value matrix $V$, which equals to computing a new representation for each query according to a weighted sum of value vectors.
+    Therefore, the corresponding key vector to a value vector describes how to access the information present in the value vector.
+    This process can also be thought of as a continuous hash map where the key vector and value vector are the key-value-pairs and the indexing is done with a query vector.
+    As the query and key vector may never be exactly equal, the values are weighted according to their relevance.
+    The output $Y$ of the individual heads are then concatenated together and projected back to output vectors of dimension $d_{model}$ with a dense layer. 
+    The encoder layer uses this multi-head attention mechanism as self-attention which means query, key and value vectors are just the same input vectors each encoder layer gets as input.
+    This process can be thought of exchanging information between all vectors.
+    The second sub-layer in the encoder layer is the fully-connected feed-forward layer, which consists of a dense layer which maps the input vectors to size $d_{ff}$ with a relu activation function and a second dense layer which maps the vector back to size $d_{model}$ without an activation function.
+    This process can be thought of exchanging information within all vectors.
+    This concludes the functions present in the encoder layer.
+    \subsection{Decoder}
+    The output of the last encoder layer is then used in decoder layers of the same amount of encoder layers.
+    The decoder gets a single start vector as input vector which was picked to the all-one vector.
+    All input vectors to the decoder are then embedded, positional encoded and dropout is applied in the same fashion as for input vectors to the encoder.
+    The difference between decoder and encoder layers is that decoder layers have a third sub-layer function added between the two functions of the encoder layer.
+    The third sub-layer function also uses multi-head attention, but the key and value vectors are provided by the output of the encoder whereas the query vectors are provided from the previous sub-layer output.
+    This mechanism is called encoder-decoder attention and it is responsible for transferring information from the input vector sequence to the output vector sequence.
+    The final output vectors of the last decoder layer are then passed through a dense layer which maps the outputs to the required dimension of $token\_size$.
+    The $token\_amount$ parameter determines how often the decoder architecture should be run.
+    After a complete run of the decoder architecture, the output vector of size $token\_size$ corresponding to the last decoder input is concatenated to the list of all decoder inputs and the whole decoder architecture is run again, now with two or more input vectors for the decoder.
+    This is the recurrence of the Transformer model present in the decoder as mentioned before.
+    The output of the Transformer architecture is then a flattened version of all output vectors of the decoder excluding the first start vector.
+    \subsection{Implementation}
+    The implementation used for benchmarking had $token\_amount$ set to $1$ and $token\_size$ set to the required output vector size.
+    The hyperparameter $d_{model}$ was set to $16$, $h$ was set to $2$, $d_{ff}$ was set to $64$, there were $2$ encoder and decoder layers used and the dropout rate was set to $0$.
+    The dimension $d_k$ and $d_v$ were always equal to $d_{model}$ in the benchmarked implementation.
+    The Transformer model implementation used in this thesis is exposed under the \texttt{get\_transformer\_output} function defined in the file \url{https://github.com/Oidlichtnwoada/NeuralNetworkArena/blob/master/experiments/models/model_factory.py}.
+    The in-detail implementation is provided in the file \url{https://github.com/Oidlichtnwoada/NeuralNetworkArena/blob/master/experiments/models/transformer.py}.
 
     \section{Recurrent Network Augmented Transformer} \label{rnaut}
 
