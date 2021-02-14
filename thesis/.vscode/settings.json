@@ -4,6 +4,10 @@
         "Kutta",
         "MNIST",
         "Runge",
-        "exponentials"
+        "backpropagate",
+        "exponentials",
+        "overfitting",
+        "pseudocode",
+        "sublayers"
     ]
 }

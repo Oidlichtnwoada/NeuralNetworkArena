@@ -14,17 +14,21 @@ def get_unitary_matrix(vector):
 
 @tf.keras.utils.register_keras_serializable()
 class MatrixExponentialUnitaryRNN(tf.keras.layers.AbstractRNNCell):
-    def __init__(self, state_size, output_size, use_fft=False, trainable_initial_state=False, **kwargs):
+    def __init__(self, state_size, output_size, capacity_measure=1, use_fft=False, trainable_initial_state=False, **kwargs):
         super().__init__(**kwargs)
         self.state_size_value = state_size
         self.output_size_value = output_size
+        assert 0 <= capacity_measure <= 1
+        self.full_capacity = self.state_size * (self.state_size + 1) // 2
+        self.capacity = int(capacity_measure * self.full_capacity)
+        self.remaining_capacity = self.full_capacity - self.capacity
         self.use_fft = use_fft
         self.trainable_initial_state = trainable_initial_state
-        self.real_state_vector = self.add_weight('real_state_vector', (self.state_size * (self.state_size + 1) // 2,), tf.float32, tf.keras.initializers.Constant())
-        self.imag_state_vector = self.add_weight('imag_state_vector', (self.state_size * (self.state_size + 1) // 2,), tf.float32, tf.keras.initializers.Constant())
-        self.real_initial_state = self.add_weight('real_initial_state', (1, self.state_size), tf.float32, tf.keras.initializers.Constant(), trainable=self.trainable_initial_state)
-        self.imag_initial_state = self.add_weight('imag_initial_state', (1, self.state_size), tf.float32, tf.keras.initializers.Constant(), trainable=self.trainable_initial_state)
-        self.bias = self.add_weight('bias', (self.state_size, 1), tf.float32, tf.keras.initializers.Constant())
+        self.real_state_vector = self.add_weight('real_state_vector', (self.capacity,), tf.float32, tf.keras.initializers.Constant())
+        self.imag_state_vector = self.add_weight('imag_state_vector', (self.capacity,), tf.float32, tf.keras.initializers.Constant())
+        self.real_initial_state = self.add_weight('real_initial_state', (self.state_size,), tf.float32, tf.keras.initializers.Constant(), trainable=self.trainable_initial_state)
+        self.imag_initial_state = self.add_weight('imag_initial_state', (self.state_size,), tf.float32, tf.keras.initializers.Constant(), trainable=self.trainable_initial_state)
+        self.bias = self.add_weight('bias', (self.state_size,), tf.float32, tf.keras.initializers.Constant())
         self.output_layer = tf.keras.layers.Dense(self.output_size)
         self.real_input_matrix = None
         self.imag_input_matrix = None
@@ -38,7 +42,7 @@ class MatrixExponentialUnitaryRNN(tf.keras.layers.AbstractRNNCell):
         return self.output_size_value
 
     def get_initial_state(self, inputs=None, batch_size=None, dtype=None):
-        return tf.repeat(tf.complex(self.real_initial_state, self.imag_initial_state), batch_size, 0)
+        return tf.repeat(tf.complex(self.real_initial_state, self.imag_initial_state)[tf.newaxis, ...], batch_size, 0)
 
     def build(self, input_shape):
         inputs_size = model_factory.get_concat_input_shape(input_shape)
@@ -48,7 +52,7 @@ class MatrixExponentialUnitaryRNN(tf.keras.layers.AbstractRNNCell):
 
     def call(self, inputs, states):
         inputs = model_factory.get_concat_inputs(inputs)
-        state_matrix = get_unitary_matrix(tf.complex(self.real_state_vector, self.imag_state_vector))
+        state_matrix = get_unitary_matrix(tf.concat((tf.complex(self.real_state_vector, self.imag_state_vector), tf.zeros((self.remaining_capacity,), tf.complex64)), -1))
         input_matrix = tf.complex(self.real_input_matrix, self.imag_input_matrix)
         time_domain_inputs = tf.cast(inputs, tf.complex64)
         if self.use_fft:
@@ -58,7 +62,7 @@ class MatrixExponentialUnitaryRNN(tf.keras.layers.AbstractRNNCell):
             augmented_inputs = time_domain_inputs
         input_parts = tf.matmul(input_matrix, augmented_inputs[..., tf.newaxis])
         state_parts = tf.matmul(state_matrix, states[0][..., tf.newaxis])
-        next_states = tf.squeeze(urnn.modrelu(state_parts + input_parts, self.bias), -1)
+        next_states = tf.squeeze(urnn.modrelu(state_parts + input_parts, self.bias[..., tf.newaxis]), -1)
         outputs = self.output_layer(tf.concat((tf.math.real(next_states), tf.math.imag(next_states)), -1))
         return outputs, (next_states,)
 

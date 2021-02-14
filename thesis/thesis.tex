@@ -156,6 +156,8 @@
     A sample loss function can be constructed as easy as computing the mean of all squared errors between the model output and the expected output.
     The model output is also often denoted as the prediction of the model.
     For each input sample, the loss function describes the error the model makes by applying its function and this error is only dependent on the parameters of the model.
+    In practice the loss function is applied to a batch of inputs separately and the arithmetic mean of all scalar loss function return values of the individual input samples is used as loss function to differentiate.
+    The size of this input batch is called batch size.
     In the general case, a computer scientist wants to find the global minimum of that function with respect to all machine learning model parameters.
     As this is a problem that cannot be solved analytically in most cases, it is approximated by using gradient descent \cite{GradientDescent}.
     This method incrementally changes each parameter depending on the gradient of the loss function with respect to each parameter in lock step.
@@ -413,7 +415,7 @@
     There is also the possibility to evaluate the hidden state at intermediate time points, for example at $T-1$, which equals $h(T-1)$.
     With this mechanism any continuous-time model can also map an input vector sequence to an output vector sequence.
     If additional timing information is available about the input vectors, for example the time interval between two input vector samples, it can be used as time to hold this specific input constantly in the input function.
-    This leads to an irregularly sampled time series where time-continuous models are exceptionally well suited as machine learning models, as discrete-time models \ref{sampled_physical_systems} implicitly model a regularly sampled continuous-time system.
+    This leads to an irregularly sampled time-series where time-continuous models are exceptionally well suited as machine learning models, as discrete-time models \ref{sampled_physical_systems} implicitly model a regularly sampled continuous-time system.
     This statement was also shown to be valid by \cite{ODELSTM}.
     The initial state of the CT-RNN is given by $h(0)$, which is picked to the all-zero vector.
     To compute the final hidden state $h(T)$, the ODE (ordinary differential equation) from \ref{used_ct_rnn_function} must be solved given the initial condition $h(0)$.
@@ -547,12 +549,202 @@
     The in-detail implementation is provided in the file \url{https://github.com/Oidlichtnwoada/NeuralNetworkArena/blob/master/experiments/models/neural_circuit_policies.py}.
 
     \section{Unitary RNN} \label{urnn}
-
+    The Unitary RNN architecture was first introduced in \cite{UnitaryRNNs} and later refined in \cite{EfficientUnitaryRNNs} and is a discrete-time machine learning model.
+    It uses the same vanilla recurrent neural network model function as discrussed in section \ref{long_term_difficult}.
+    The Unitary RNN implementation used in this thesis is a modified version of the implementetion provided with the original paper which can be found under the url \url{https://github.com/jingli9111/EUNN-tensorflow/blob/master/eunn.py}.
+    The next hidden state vector of a Unitary RNN $h_{t+1}$ which also equals its output vector is computed as given in \cite[p. 2]{EfficientUnitaryRNNs} by using a non-linear bias-parametrized activation function $\sigma$ and two matrices $W$ and $V$:
+    \begin{align}
+    \label{urnn_state}
+    h_{t+1} &= \sigma(W*h_t + V*x_{t+1})
+    \end{align}
+    The bias-parametrized activation function $\sigma$ was set to the modrelu function firstly introduced in \cite[p. 4]{UnitaryRNNs}.
+    The modrelu function applied to a complex vector $z$ is defined as follows for each vector entry $z_i$: $moderelu(z_i) = max(0, |z_i|+b_i) * \frac{z_i}{|z_i|}$ with a real-valued bias parameter $b_i$ per vector entry.
+    The initial hidden state vector $h_0$ was picked to the all-zero vector.
+    The difference with this model is that it does not use real parameters which is the standard in machine learning.
+    It uses complex parameters which are represented by two single-precision floating-point parameters each. 
+    The parameter count for each model however is always given in terms of single-precision floating-point parameters.
+    The matrices $W$ and $V$ are parametrized as complex matrices. 
+    Matrix $V$ does not have to follow any particular restrictions, therefore it can be simply parametrized by two real matrices $V_{real}$ and $V_{imag}$ for the real and imaginary part. 
+    As explained in detail in section \ref{long_term_difficult}, a matrix $W$ that fulfills $\left\Vert W \right\Vert_{2,ind} = 1$ and a suitable activation function $\sigma$ would solve the vanishing and exploding gradient problem for the vanilla recurrent neural network architecture and exactly this was done in the case of Unitary RNNs. 
+    Unitary matrices $W$ fulfill the requirement $\left\Vert W \right\Vert_{2,ind} = 1$, as all eigenvalues of unitary matrices have a magnitude of $1$ from which follows that $1$ is always the largest singular value as unitary matrices are square. 
+    As the spectral norm is just the largest singular value, it is proven that unitary matrices fulfill the proposed requirement.
+    The difficulty now is to parametrize unitary matrices efficiently as they are only a subset of all complex matrices and therefore cannot be as simply parametrized as the matrix $V$.
+    The method to parametrize unitary matrices as used in \cite[p. 3]{EfficientUnitaryRNNs} was proposed by \cite{UnitaryMatrixParametrization} and is called square decomposition method. 
+    The core statement is that any unitary matrix of dimension $N \times N$ can be represented by matrix multiplications involving a diagonal matrix $D$ and rotational matrices $R_{ij}$ as follows:
+    \begin{align}
+    W &= D \prod_{i=2}^N \prod_{j=1}^{i-1} R_{ij}.
+    \end{align}
+    The diagonal matrix $D$ has only the entries $e^{iw_j}$ on its diagonal which results in $N$ parameters $w_j$.
+    The matrices $R_{ij}$ which are parameterized by two real parameters $\theta_{ij}$ and $\phi_{ij}$ are defined as $N$-dimensional identity matrices whose four entries at positions given as $(row,column)$ are replaced with given entries as follows:
+    \begin{align}
+    \begin{bmatrix} 
+    (i,i) & (i,j) \\
+    (j,i) & (j,j) 
+    \end{bmatrix} \mapsto 
+    \begin{bmatrix} 
+    e^{i\phi_{ij}}\cos (\theta_{ij})  & -e^{i\phi_{ij}}\sin (\theta_{ij}) \\
+    \sin (\theta_{ij}) & \cos (\theta_{ij}) 
+    \end{bmatrix}
+    \end{align}
+    By reordering and grouping rotational matrices as shown in \cite[p. 4]{EfficientUnitaryRNNs}, the unitary matrix $W$ with even capacity $L$ can also be written as:
+    \begin{align}
+    W = D * F_A^{(1)} * F_B^{(2)} * F_A^{(3)} * F_B^{(4)} * \ldots * F_B^{(L)}
+    \end{align}
+    Whenever the capacity $L$ matches the dimension $N$ of the unitary matrix $W$, this expression spans the entire space of all unitary matrices. 
+    Whenever the capacity $L$ is smaller than the dimension $N$ of the unitary matrix $W$, this expression spans a subspace of the space of all unitary matrices. 
+    The matrices $F_A^{(l)}$ and $F_B^{(l)}$ are constructed as follows where superscript $(l)$ denotes different instances of the same type of rotational matrices when the subscript matches:
+    \begin{align}
+    F_A^{(l)} &= R_{1,2}^{(l)} * R_{3,4}^{(l)} * R_{5,6}^{(l)} * \ldots * R_{N/2-1,N/2}^{(l)} \\
+    F_B^{(l)} &= R_{2,3}^{(l)} * R_{4,5}^{(l)} * R_{6,7}^{(l)} * \ldots * R_{N/2-2,N/2-1}^{(l)}
+    \end{align}
+    Furthermore, each matrix $F$ of the above two types is a general rotational matrix and its mapping performend on a vector $x$ can also be written as \cite[p. 4]{EfficientUnitaryRNNs}:
+    \begin{align}
+    F*x = v_1 *_{ew} x + v_2 *_{ew} permute(x)
+    \end{align}
+    The vectors $v_1$ and $v_2$ are computable from the parameters $\theta_{ij}$ and $\phi_{ij}$ that are used to parameterize the rotational matrices $R_{ij}$ that build the matrix $F$.
+    The permutation given by the function $permute$ is fixed and set only at the first instantiation of the machine learning model. 
+    The formula used to generate both vectors $v_1$ and $v_2$ is given under \cite[p. 4]{EfficientUnitaryRNNs}.
+    As this way of applying the mapping of the $F$ matrices to the input vector avoids matrix multiplications and just uses element-wise multiplications and permutation operations, it is an efficient way to parameterize unitary matrices.
+    As the output vector of this machine learning model is complex, the real part of the output was used for further processing as this was also done in benchmarks from the official repository of the paper \cite{EfficientUnitaryRNNs} which can be found under the url \url{https://github.com/jingli9111/EUNN-tensorflow/blob/master/copying_task.py}.
+    Also this model has a configurable hidden vector size which must be even and was picked to $128$ throughout the thesis.
+    The capacity $L$ was always set to $16$, therefore the matrix $W$ is parameterized as a partial-space unitary matrix.
+    As the output vector size has the be variable, the real part of the output vector of the model was then fed to a dense layer to achieve the right output vector dimension.
+    The Unitary RNN model implementation used in this thesis is exposed under the \texttt{get\_unitary\_rnn\_output} function defined in the file \url{https://github.com/Oidlichtnwoada/NeuralNetworkArena/blob/master/experiments/models/model_factory.py}.
+    The in-detail implementation is provided in the file \url{https://github.com/Oidlichtnwoada/NeuralNetworkArena/blob/master/experiments/models/unitary_rnn.py}.
+    
     \section{Matrix Exponential Unitary RNN} \label{meurnn}
+    This machine learning model is an original contribution and a variant of the Unitary RNN \ref{urnn} architecture.
+    It is therefore also a discrete-time recurrent neural network model with the same model function as specified in \ref{urnn_state} and augments the architecture in various ways.
+    Only the differences between the two architectures will be listed.
+    First, the option to use a trainable initial hidden state vector was added to the architecture which is initialized to the all-zero vector.
+    Furthermore, there was an option added to use an augmented input for the model.
+    This augmented input consists of the concatenation of the regular input vector $x_k$ per time step and its 1D discrete Fourier transform as given by $FFT(x_k)$.
+    As problems in the signal and system theory domain are either easier to solve in the time or the frequency domain, this feature may help to make better predictions in some tasks.
+    Moreover, the DFT matrix used to convert a time-domain vector to the frequency domain is also a unitary matrix, which preserves the energy of the input vector, and is therefore a good fit for this architecture.
+    Both described features are disabled during benchmarking of this model, as they showed no substantial decrease of the final test loss.
+    Another difference to the Unitary RNN architecture \ref{urnn} is the construction of the output vector of the required size.
+    As the imaginary part of the hidden state vector may also convey useful information, the approach from \cite[p. 4]{UnitaryRNNs} was used in the implementation to construct the output vector.
+    With this method the final output vector is constructed by passing a concatenated vector consisting of the real and imaginary part of the hidden state vector which is now solely real through a dense layer to get the right output vector dimension.
+    The last difference is the parametrization of the unitary matrix $W$ used in the model function equation \ref{urnn_state}.
+    As presented in section \ref{urnn} the parametrization is quite involved and therefore the new way of parameterizing the unitary matrix is using an approximated matrix exponential.
+    As any unitary matrix $W$ of dimension $N \times N$ can be written as the matrix exponential of a skew-Hermitian matrix $A$ of dimension $N \times N$ as $W=e^A$, the problem is reduced to parameterizing a skew-Hermitian matrix $A$.
+    This matrix exponential is the matrix generalization of $|e^j|=1$ in the scalar case where $j$ is any imaginary number.
+    The approximated matrix exponential implementation used for this model is exposed under the function \texttt{tf.linalg.expm} in the Tensorflow library \cite{Tensorflow} which uses Padé approximation as desribed in \cite{expm}.
+    The fundamental idea is that $e^A = (e^{2^{-s}A})^{2^s} \approx (r_m(2^{-s}A))^{2^s}$ where $r_m(X)$ is the $[m/m]$ Padé approximant to $e^X$ and the non-negative integers $m$ and $s$ are to be chosen \cite[p. 1]{expm}.
+    An approximation is needed as the matrix exponential $e^A$ is defined by an infinite sum as follows:
+    \begin{align}
+    \label{expm_definition}
+    e^A = \sum_{k=0}^{\infty} \frac{A^k}{k!}
+    \end{align}
+    A skew-Hermitian matrix $A$ fulfills $A^H = -A$ which implies that the individual matrix entries fulfill $a_{ij} = -\overline{a_{ji}}$. 
+    This further implies that the diagonal entries of $A$ are purely imaginary.
+    Therefore, the square skew-Hermitian matrix $A$ can be parameterized by only a lower triangular matrix $T$ with complex entries as all other entries follow by symmetry.
+    The diagonal entries in this matrix $T$ can be parametrized with a real parameters, therefore saving $N$ parameters, but this optimization was not applied in the implementation.
+    The skew-Hermitian matrix $A$ can easily be constructed by the triangular matrix $T$ by the following formula fulfilling all symmetry requirements:
+    \begin{align}
+    \label{skew_hermitian}
+    A = T - T^H
+    \end{align}
+    As in this formula \ref{skew_hermitian} only the diagonal entries overlap after the transposition, the diagonal entries will be purely imaginary as the real parts will cancel themselves.
+    All other entries follow the predescribed symmetry.
+    In this model's implementation the matrix $T$ was parameterized by a vector $v$ of size $N*(N+1)/2$ which equals the number of all non-zero elements in $T$.
+    This vector $v$ was then converted to a triangular matrix by filling a triangular matrix with all the values from $T$.
+    With this method any lower triangular matrix $T$ can be constructed, from which any skew-hermitian matrix $A$ can be constructed, from which any unitary matrix $W$ can be computed by using the matrix exponential.
+    This parameterization allows to parameterize the full-space of unitary matrices. 
+    If a partial-space parametrization is favored to reduce the parameter count of the model, there is a capacity measure $c$ available in the model's implementation which should fulfill $0 \leq c \leq 1$.
+    With this only the first $\lfloor c*N*(N+1)/2 \rfloor$ entries of the vector $v$ will be trainable and the remaining entries will be filled up with zeros.
+    The model used for benchmarking had a hidden vector size of $128$ and the capacity measure $c$ set to $1$, therefore the full space of unitary matrices was parameterizable.
+    The Matrix Exponential Unitary RNN model implementation used in this thesis is exposed under the \texttt{get\_matrix\_exponential\_unitary\_rnn\_output} function defined in the file \url{https://github.com/Oidlichtnwoada/NeuralNetworkArena/blob/master/experiments/models/model_factory.py}.
+    The in-detail implementation is provided in the file \url{https://github.com/Oidlichtnwoada/NeuralNetworkArena/blob/master/experiments/models/matrix_exponential_unitary_rnn.py}.
 
     \section{Unitary NCP} \label{uncp}
+    The Unitary NCP model is a novel discrete-time machine learning model that combines the Unitary RNN model \ref{urnn} and the Neural Circuit Policies model \ref{ncp}, just like the ODE-LSTM model \ref{odelstm} combines the LSTM \ref{lstm} and the CT-RNN \ref{ctrnn} architecture.
+    This combination however is not as tightly coupled as the ODE-LSTM architecture. 
+    This architecture uses a Unitary RNN to preprocess all input vectors of the input sequence $x_k$ to an intermediate sequence by storing the real part of the hidden state vector at each time step without feeding it through a dense layer afterwards.
+    Then this intermediate sequence is fed to the Neural Circuit Policies model, which just treats it as its regular input sequence and maps it to the output vector sequence $o_k$.
+    The Unitary NCP model function is given as follows where $x_k$ is the input vector at time step $k$, $h_{k,unitary}$ is the hidden state vector of the Unitary RNN model, $h_{k,ncp}$ is the state vector of the Neural Circuit Policies model and $o_k$ is the output vector at time step $k$:
+    \begin{align}
+    h_{k+1,unitary} &= UnitaryRNN(x_{k+1}, h_{k,unitary}) \\
+    (h_{k+1,ncp}, o_{k+1}) &= NCP(\Re{h_{k+1,unitary}}, h_{k,ncp})
+    \end{align}
+    The $UnitaryRNN$ function is just a pointer to the corresponding model function described in \ref{urnn_state}.
+    How the NCP model maps the input sequence to an output sequence as meant by the function $NCP$ is described in detail in section \ref{ncp}.
+    The architecture should combine the great expressiveness of the NCP model with the ability to capture long-term dependencies of the Unitary RNN model.
+    The Unitary RNN was configured with a hidden state vector size of $32$ and the capacity was set to $4$. 
+    The NCP model uses $4$ inter and command neurons and no recurrent command synapses, as memory-related tasks should be handled by the Unitary RNN.
+    For details on both architectures, consult their individual sections.
+    The Unitary NCP model implementation used in this thesis is exposed under the \texttt{get\_unitary\_ncp\_output} function defined in the file \url{https://github.com/Oidlichtnwoada/NeuralNetworkArena/blob/master/experiments/models/model_factory.py}.
+    The in-detail implementation is provided in the file \url{https://github.com/Oidlichtnwoada/NeuralNetworkArena/blob/master/experiments/models/unitary_ncp.py}.
 
     \section{Transformer} \label{transformer}
+    \subsection{Introduction}
+    The Transformer architecture introduced in \cite{Transformer} is no recurrent neural network architecture in the strict sense like the LSTM \ref{lstm} or the GRU \ref{gru} architecture.
+    It encodes its input sequence using an encoder, whose output is then decoded to the output sequence by a decoder.
+    However, this model has recurrence in its decoder part as explained later.
+    The problem of capturing long-term dependencies as described in \ref{long_term_difficult} originates as the input time-series is provided as one input vector per time step to the machine learning models.
+    This results in deep computational graphs for longer time-series which furthermore leads to problems like vanishing or exploding gradients.
+    The Transformer architecture overcomes this issue by considering the whole input vector sequence at a single time step for prediction. 
+    Attention mechanisms were used to deal with that much input data at a single time step which means the model learns to weight the input data vectors according to their relevance in solving the required problem.
+    By using this method the computational graph becomes much shallower and easier to backpropagate through, therefore overcoming the unwanted deep computational graphs.
+    \subsection{Encoder}
+    At first the Transformer architecture passes its input vectors on to the encoder.
+    The encoder embeds its input vectors into vectors of length $d_{model}$ which is a hyperparameter of the architecture by passing them through a dense layer.
+    As the embedded input vectors of the input time-series are not labelled with their corresponding time index $k$, the transformer architecture adds a positional encoding vector to each embedded input vector.
+    This positional encoding vector is only dependent on the absolute position in the input time-series of the vector and the hyperparameter $d_{model}$ as described in-detail in \cite[p. 6]{Transformer} and should allow the architecture to infer its absolute position in the input time-series.
+    After adding the positional embedding vectors dropout with a configurable architecture-wide dropout rate $0 \leq r \leq 1$ is applied to all embedded input vectors.
+    Dropout was introduced in \cite{dropout} and randomly sets vector entries to $0$ with a frequency of $r$ and vector entries not set to $0$ are scaled up by $1/(1-r)$.
+    According to \cite[p. 1]{dropout} this helps neural networks to prevent overfitting.
+    The output vectors after dropout are then fed to a configurable amount of encoder layers.
+    Each encoder layer consists of two sub-layers, one multi-head attention layer and one fully-connected feed-forward layer.
+    Dropout is applied to each sub-layer output, whose result is then added to the input creating a residual connection \cite{ResNet}.
+    Then layer normalization \cite{layer_norm} is applied to the sum of both which means the mean $\mu$ and variance $\sigma^2$ of all entries $x$ in a vector are computed and these entries $x$ are then mapped to $\frac{(x-\mu)}{\sigma + \varepsilon}$.
+    The mapped vector entries are then normal distributed with mean $0$ and variance $1$, the $\varepsilon$ in the formula is only added for numerical stability.
+    This whole procedure of postprocessing the sub-layer output to the final outputs $y$ given the inputs $x$ can be also written in pseudocode \cite[p. 3]{Transformer}:
+    \begin{align}
+    y = LayerNormalization(x + Dropout(SubLayer(x)))
+    \end{align}
+    The multi-head attention layer requires three mandatory input arguments (queries, keys and values) and an optional mask.
+    There must be as many keys as values as they are used as a key-value-pair.
+    The number of heads $h$, the dimension of the projected queries and keys $d_k$ and the dimension of the projected values $d_v$ can be configured.
+    All queries, keys and values of the input arguments are mapped through three dense layers for queries, keys and values to the projected query, key and value vectors of the specified dimensions.
+    This procedure is repeated $h$ times with different dense layers but the same input. 
+    By writing the output vectors of this procedure in matrix form as queries $Q$, keys $K$ and values $V$ (vectors in rows), the scaled dot-product attention function output $Y$ can be given as follows \cite[p. 4]{Transformer}:
+    \begin{align}
+    Y = softmax \left( \frac{Q * K^T}{\sqrt{d_k}} \right) * V
+    \end{align}
+    The matrix multiplication of $Q$ and $K^T$ corresponds to computing the scalar product of all combinations between query vectors and key vectors.
+    The scalar product result of a single combination should describe how well the "question" or query matches the "answer" or key.
+    These scalar products are then scaled and after that the softmax function given as $\frac{e^{x_i}}{\sum_j{e^{x_j}}}$ is applied to each row and row entry $x_i$ in the corresponding matrix.
+    This now results in a matrix where the entry in row $i$ and column $j$ corresponds to the attention weight between the query vector in row $i$ and the key vector in row $j$. 
+    All attention weights of a single query vector to all possible key vectors add up to $1$.
+    The final output $Y$ is then computed by doing a matrix multiplication of the attention weight matrix with the value matrix $V$, which equals to computing a new representation for each query according to a weighted sum of value vectors.
+    Therefore, the corresponding key vector to a value vector describes how to access the information present in the value vector.
+    This process can also be thought of as a continuous hash map where the key vector and value vector are the key-value-pairs and the indexing is done with a query vector.
+    As the query and key vector may never be exactly equal, the values are weighted according to their relevance.
+    The output $Y$ of the individual heads are then concatenated together and projected back to output vectors of dimension $d_{model}$ with a dense layer. 
+    The encoder layer uses this multi-head attention mechanism as self-attention which means query, key and value vectors are just the same input vectors each encoder layer gets as input.
+    This process can be thought of exchanging information between all vectors.
+    The second sub-layer in the encoder layer is the fully-connected feed-forward layer, which consists of a dense layer which maps the input vectors to size $d_{ff}$ with a relu activation function and a second dense layer which maps the vector back to size $d_{model}$ without an activation function.
+    This process can be thought of exchanging information within all vectors.
+    This concludes the functions present in the encoder layer.
+    \subsection{Decoder}
+    The output of the last encoder layer is then used in decoder layers of the same amount of encoder layers.
+    The decoder gets a single start vector as input vector which was picked to the all-one vector.
+    All input vectors to the decoder are then embedded, positional encoded and dropout is applied in the same fashion as for input vectors to the encoder.
+    The difference between decoder and encoder layers is that decoder layers have a third sub-layer function added between the two functions of the encoder layer.
+    The third sub-layer function also uses multi-head attention, but the key and value vectors are provided by the output of the encoder whereas the query vectors are provided from the previous sub-layer output.
+    This mechanism is called encoder-decoder attention and it is responsible for transferring information from the input vector sequence to the output vector sequence.
+    The final output vectors of the last decoder layer are then passed through a dense layer which maps the outputs to the required dimension of $token\_size$.
+    The $token\_amount$ parameter determines how often the decoder architecture should be run.
+    After a complete run of the decoder architecture, the output vector of size $token\_size$ corresponding to the last decoder input is concatenated to the list of all decoder inputs and the whole decoder architecture is run again, now with two or more input vectors for the decoder.
+    This is the recurrence of the Transformer model present in the decoder as mentioned before.
+    The output of the Transformer architecture is then a flattened version of all output vectors of the decoder excluding the first start vector.
+    \subsection{Implementation}
+    The implementation used for benchmarking had $token\_amount$ set to $1$ and $token\_size$ set to the required output vector size.
+    The hyperparameter $d_{model}$ was set to $16$, $h$ was set to $2$, $d_{ff}$ was set to $64$, there were $2$ encoder and decoder layers used and the dropout rate was set to $0$.
+    The dimension $d_k$ and $d_v$ were always equal to $d_{model}$ in the benchmarked implementation.
+    The Transformer model implementation used in this thesis is exposed under the \texttt{get\_transformer\_output} function defined in the file \url{https://github.com/Oidlichtnwoada/NeuralNetworkArena/blob/master/experiments/models/model_factory.py}.
+    The in-detail implementation is provided in the file \url{https://github.com/Oidlichtnwoada/NeuralNetworkArena/blob/master/experiments/models/transformer.py}.
 
     \section{Recurrent Network Augmented Transformer} \label{rnaut}
 
@@ -731,7 +923,7 @@
     The target function to learn is to simply add two numbers that are marked in a much longer stream of numbers.
     At each time step a number together with a marker bit is presented as input vector to the model.
     As in the Activity Benchmark \ref{activity}, the sequence length and the sample amount are also configurable.
-    For all models a sequence length of $100$ and a sample amount of $100000$ was used.
+    For all models a sequence length of $100$ and a sample amount of $40000$ was used.
     As described above, the input vector has size two.
     The second entry is set to one only in one input vector of the first and last $50$ input vectors.
     Their distribution is uniformly across the whole first and second half of the time-series.
@@ -767,9 +959,9 @@
     Only if the model understands the dynamics that are guided by differential equations, it will be able to produce accurate predictions.
     The ability to capture long-term dependencies is not tested with this benchmark as the most recent input vectors should be enough to make good predictions.
     The benchmark had a configurable sequence length, a maximum sample amount and a sample distance just like the Activity Benchmark \ref{activity}.
-    Throughout the thesis a sample length of $64$, a maximum sample amount of $50000$ and a sample distance of $4$ was used.
+    Throughout the thesis a sample length of $64$, a maximum sample amount of $40000$ and a sample distance of $4$ was used.
     All parameters have the same meaning as before.
-    As there were enough training data provided in \texttt{.npy} files by the creators of \cite{ODELSTM}, the benchmark had $50000$ different samples available that are partitioned in training, validation and test samples.
+    As there were enough training data provided in \texttt{.npy} files by the creators of \cite{ODELSTM}, the benchmark had $40000$ different samples available that are partitioned in training, validation and test samples.
     The acquired simulation data can be downloaded from \url{https://pub.ist.ac.at/~mlechner/datasets/walker.zip}.
     The input sequence consists of input vectors of size $17$, which contains the current state of the physics engine at this specific time step.
     These values represent the angles of the joints and the absolute position of the bipedal robot.
@@ -785,7 +977,7 @@
     It is a slightly changed version of the copying memory problem described in \cite{UnitaryRNNs}.
     Input data of the benchmark input is randomly created at each invocation of the benchmark.
     There is a configurable memory length to test for, a length of the sequence to memorize, an amount of categories and an amount of samples that are randomly generated.
-    Throughout the thesis a memory length of $100$, a sequence length of $1$, a category amount of $10$ and a sample amount of $100000$ were used.
+    Throughout the thesis a memory length of $100$, a sequence length of $1$, a category amount of $10$ and a sample amount of $40000$ were used.
     Each single input vector sequence is created by concatenating three sub sequences.
     The first sequence is the sequence to memorize of length $1$.
     It contains category indices sampled uniformly from $0$ to $9$.
@@ -809,8 +1001,8 @@
     All images are in grey-scale and a higher integer represents a darker pixel.
     The images were vectorized to a vector of size $784$ and then split up to a sequence of vector chunks of size $8$, which results in an input sequence length of $98$.
     The expected output class index is just the digit the current image is representing.
-    Furthermore, the benchmark has a configurable maximum amount of samples, which was set to $70000$.
-    As the MNIST dataset had enough image samples, all specified $70000$ samples were used.
+    Furthermore, the benchmark has a configurable maximum amount of samples, which was set to $40000$.
+    As the MNIST dataset had enough image samples, all specified $40000$ samples were used.
     A long-term memory of seen input chunks is indeed necessary to produce an accurate category prediction, as digits like $1$, $4$ and $9$ may be indistinguishable when only considering the most recent seen input chunks.
     This corresponds to classifying the image only based on a lower fraction of the image visible to the model, where the upper fraction was cut away.
     A model that yields accurate results must not suffer from the vanishing or exploding gradient problem, as only then the whole picture can be taken into account for classification. 
@@ -826,7 +1018,7 @@
     This requires the ability to capture long-term dependencies as the input is provided sparsely to the model as described below.
     The benchmark has a configurable memory high symbol, memory low symbol, memory length, amount of cell switches and amount of samples that are generated at each invocation of the benchmark.
     The memory high and low symbol represent the expected output symbol when either memory state is active but the memory high symbol is also used as input symbol to sparsely activate a specific memory state, all other inputs are then set to the memory low symbol.
-    The memory high symbol was picked to $1$, the memory low symbol was picked to $0$, the memory length was picked to $128$, the amount of cell switches was set to $2$ and the sample amount was set to $10000$.
+    The memory high symbol was picked to $1$, the memory low symbol was picked to $0$, the memory length was picked to $128$, the amount of cell switches was set to $2$ and the sample amount was set to $40000$.
     As the memory cell is a bistable memory element, there are two memory states that can be activated sparsely.
     The input vector at each time step has size $2$. If both entries are $0$, the current memory state should be kept.
     Otherwise, if a single entry is $1$ and the other entry is $0$, the corresponding memory state should be activated.
