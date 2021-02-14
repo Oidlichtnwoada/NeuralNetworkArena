@@ -1,0 +1,2 @@
+model,trainable parameters,training duration total,training duration per epoch,epochs,test sparse categorical crossentropy,test sparse categorical accuracy
+neural_circuit_policies,3650,7122.867437839508,215.84446781331843,33,1.7138043642044067,0.3702116906642914

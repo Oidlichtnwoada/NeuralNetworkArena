@@ -1,0 +1,2 @@
+model,trainable parameters,training duration total,training duration per epoch,epochs,test sparse categorical crossentropy,test sparse categorical accuracy
+lstm,18887,613.5280494689941,13.943819306113504,44,0.21017014980316162,0.9221270084381104

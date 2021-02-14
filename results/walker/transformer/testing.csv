@@ -1,0 +1,2 @@
+model,trainable parameters,training duration total,training duration per epoch,epochs,test mean squared error
+transformer,22657,1468.5122730731964,19.580163640975954,75,1.548484206199646

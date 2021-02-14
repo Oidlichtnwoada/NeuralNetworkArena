@@ -1,0 +1,2 @@
+model,trainable parameters,training duration total,training duration per epoch,epochs,test mean squared error
+recurrent_network_augmented_transformer,4121,5265.224196910858,92.37235433176944,57,2.139572858810425

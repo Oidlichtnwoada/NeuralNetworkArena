@@ -1,0 +1,2 @@
+model,trainable parameters,training duration total,training duration per epoch,epochs,test mean squared error
+unitary_ncp,1885,3612.7241644859314,103.22069041388376,35,0.15750743448734283

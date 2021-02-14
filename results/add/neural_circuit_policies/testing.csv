@@ -1,0 +1,2 @@
+model,trainable parameters,training duration total,training duration per epoch,epochs,test mean squared error
+neural_circuit_policies,1349,1003.5271351337433,125.44089189171791,8,0.16599053144454956
