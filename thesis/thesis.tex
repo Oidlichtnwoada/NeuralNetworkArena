@@ -764,6 +764,19 @@
     The in-detail implementation is provided in the file \url{https://github.com/Oidlichtnwoada/NeuralNetworkArena/blob/master/experiments/models/recurrent_network_augmented_transformer.py}.
 
     \section{Recurrent Network Attention Transformer} \label{rnatt}
+    The Recurrent Network Augmented Transformer architecture is a novel contribution and similiar to the Transformer architecture \ref{transformer}.
+    The only difference is that it uses a completely new attention mechanism called recurrent network attention which uses recurrent neural networks.
+    As in the Transformer architecture, this attention mechanism gets the four arguments queries, keys, values and an attention mask.
+    The attention mask and keys argument is not used in this mechanism.
+    The new representation of each query vector (the output of the attention mechanism) is computed by building a sequence of a single query vector concatenated with all value vectors.
+    This sequence is as long as the amount of value vectors given in the values matrix from the argument and each concatenated vector in this sequence has size $2*d_{model}$.
+    Computing the new representation is then done by passing this sequence through an RNN and using the output after the last input vector for further processing.
+    Of course also this attention mechanism supports multiple heads by passing the same sequence through multiple RNNs with different weights.
+    The results are then concatenated together and projected back to vectors of size $d_{model}$ with a dense layer to get the output vectors of this attention mechanism.
+    The implementaion used to benchmark the architecture uses the Unitary RNN architecture for the described RNNs.
+    The difference in hyperparmeters to the Transformer architecture are that this architecture sets $d_{model}$ to $8$, the number of heads $h$ to $1$, $d_{ff}$ to $32$ and the number of encoder and decoder layers to $1$.
+    The Recurrent Network Attention Transformer model implementation used in this thesis is exposed under the \texttt{get\_recurrent\_network\_attention\_transformer\_output} function defined in the file \url{https://github.com/Oidlichtnwoada/NeuralNetworkArena/blob/master/experiments/models/model_factory.py}.
+    The in-detail implementation is provided in the file \url{https://github.com/Oidlichtnwoada/NeuralNetworkArena/blob/master/experiments/models/recurrent_network_attention.py}.
 
     \section{Memory Augmented Transformer} \label{mat}
 
