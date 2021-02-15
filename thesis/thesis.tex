@@ -27,7 +27,7 @@
 
 % Define convenience functions to use the author name and the thesis title in the PDF document properties.
 \newcommand{\authorname}{Hannes Brantner} % The author name without titles.
-\newcommand{\thesistitle}{Comparing Machine Learning Models using Long-Term Dependency and Physical System Benchmarks} % The title of the thesis. The English version should be used, if it exists.
+\newcommand{\thesistitle}{NeuralNetworkArena: Comparing Machine Learning Models using Long-Term Dependency and Physical System Time Series Benchmarks} % The title of the thesis. The English version should be used, if it exists.
 
 % Set PDF document properties
 \hypersetup{
@@ -703,18 +703,21 @@
     \begin{align}
     y = LayerNormalization(x + Dropout(SubLayer(x)))
     \end{align}
-    The multi-head attention layer requires three mandatory input arguments (queries, keys and values) and an optional mask.
+    The multi-head attention layer requires three mandatory input arguments (queries, keys and values) and an optional attention mask.
     There must be as many keys as values as they are used as a key-value-pair.
     The number of heads $h$, the dimension of the projected queries and keys $d_k$ and the dimension of the projected values $d_v$ can be configured.
     All queries, keys and values of the input arguments are mapped through three dense layers for queries, keys and values to the projected query, key and value vectors of the specified dimensions.
     This procedure is repeated $h$ times with different dense layers but the same input. 
     By writing the output vectors of this procedure in matrix form as queries $Q$, keys $K$ and values $V$ (vectors in rows), the scaled dot-product attention function output $Y$ can be given as follows \cite[p. 4]{Transformer}:
     \begin{align}
+    \label{sdpa}
     Y = softmax \left( \frac{Q * K^T}{\sqrt{d_k}} \right) * V
     \end{align}
     The matrix multiplication of $Q$ and $K^T$ corresponds to computing the scalar product of all combinations between query vectors and key vectors.
     The scalar product result of a single combination should describe how well the "question" or query matches the "answer" or key.
-    These scalar products are then scaled and after that the softmax function given as $\frac{e^{x_i}}{\sum_j{e^{x_j}}}$ is applied to each row and row entry $x_i$ in the corresponding matrix.
+    If this result is high, it is said that the vectors attend to each other.
+    These scalar products are then scaled, the attention mask is applied and after that the softmax function given as $\frac{e^{x_i}}{\sum_j{e^{x_j}}}$ is applied to each row and row entry $x_i$ in the corresponding matrix.
+    The attention mask is responsible for setting the scalar products of certain query-key combinations to $-\infty$ before the softmax function is applied to prohibit information flow from the corresponding value vector.
     This now results in a matrix where the entry in row $i$ and column $j$ corresponds to the attention weight between the query vector in row $i$ and the key vector in row $j$. 
     All attention weights of a single query vector to all possible key vectors add up to $1$.
     The final output $Y$ is then computed by doing a matrix multiplication of the attention weight matrix with the value matrix $V$, which equals to computing a new representation for each query according to a weighted sum of value vectors.
@@ -731,6 +734,7 @@
     The output of the last encoder layer is then used in decoder layers of the same amount of encoder layers.
     The decoder gets a single start vector as input vector which was picked to the all-one vector.
     All input vectors to the decoder are then embedded, positional encoded and dropout is applied in the same fashion as for input vectors to the encoder.
+    The self-attention sub-layer in a decoder layer sets the attention mask correspondingly such that input tokens to the decoder layer can only attend to other tokens up to the own token index which ensures the Transformer's auto-regressive property \cite[p. 5]{Transformer}.  
     The difference between decoder and encoder layers is that decoder layers have a third sub-layer function added between the two functions of the encoder layer.
     The third sub-layer function also uses multi-head attention, but the key and value vectors are provided by the output of the encoder whereas the query vectors are provided from the previous sub-layer output.
     This mechanism is called encoder-decoder attention and it is responsible for transferring information from the input vector sequence to the output vector sequence.
@@ -747,6 +751,17 @@
     The in-detail implementation is provided in the file \url{https://github.com/Oidlichtnwoada/NeuralNetworkArena/blob/master/experiments/models/transformer.py}.
 
     \section{Recurrent Network Augmented Transformer} \label{rnaut}
+    The Recurrent Network Augmented Transformer architecture is a novel contribution and similiar to the Transformer architecture \ref{transformer}.
+    The only difference is that it uses a slightly changed attention mechnism.
+    As given in formula \ref{sdpa} the final output $Y$ is constructed by a matrix multiplication of the attention weights and the value matrix $V$ which means that a new representation for the query vectors is computed by summing up the weighted value vectors per query vector.
+    The idea now is that instead of summing up the weighted value vectors by ordinary summation, maybe the use of a recurrent neural network to accumulate the information present in the weighted value vectors can increase the expressivity of the Transformer architecture.
+    Furthermore, the incorporated RNN can directly use positional information and the sum function is easy to learn for any RNN architecture which has a similar model function to \ref{rnn_state_update}.
+    It just needs to learn that the $W$ matrix should be identity matrix.
+    A different RNN with different weights for each head was used. 
+    The implementaion used to benchmark the architecture uses the LSTM architecture for the described RNNs.
+    The difference in hyperparmeters to the Transformer architecture are that this architecture sets $d_{model}$ to $8$, the number of heads $h$ to $1$, $d_{ff}$ to $32$ and the number of encoder and decoder layers to $1$.
+    The Recurrent Network Augmented Transformer model implementation used in this thesis is exposed under the \texttt{get\_recurrent\_network\_augmented\_transformer\_output} function defined in the file \url{https://github.com/Oidlichtnwoada/NeuralNetworkArena/blob/master/experiments/models/model_factory.py}.
+    The in-detail implementation is provided in the file \url{https://github.com/Oidlichtnwoada/NeuralNetworkArena/blob/master/experiments/models/recurrent_network_augmented_transformer.py}.
 
     \section{Recurrent Network Attention Transformer} \label{rnatt}
 
