@@ -27,7 +27,7 @@
 
 % Define convenience functions to use the author name and the thesis title in the PDF document properties.
 \newcommand{\authorname}{Hannes Brantner} % The author name without titles.
-\newcommand{\thesistitle}{NeuralNetworkArena: Comparing Machine Learning Models using Long-Term Dependency and Physical System Time Series Benchmarks} % The title of the thesis. The English version should be used, if it exists.
+\newcommand{\thesistitle}{Neural Network Arena: Comparing Machine Learning Models using Long-Term Dependency and Physical System Time Series Benchmarks} % The title of the thesis. The English version should be used, if it exists.
 
 % Set PDF document properties
 \hypersetup{
@@ -509,7 +509,7 @@
     Neural Circuit Policies were used in the paper \cite{NCP} which shows the high expressivity of the architecture in the domain of autonomous driving.
     The architecture is a subset of all LTC (Liquid Time-Constant) Networks that were introduced in \cite{LTCFormulas} and further discussed in \cite{LTCNetworks}.
     An LTC Network consists of biologically inspired neurons with leakage that are interconnected using chemical synapses with non-linear activations.
-    LTC Networks model the cell membrane as integrator and are therefore a continous-time machine learning model.
+    LTC Networks model the cell membrane as integrator and are therefore a continuous-time machine learning model.
     Neural Circuit Policies were derived from the neuron interconnection structure of the Caenorhabditis elegans nematode \cite[p. 3]{NCP} which trims the space of all possible LTC networks.
     The state of each neuron $i$ with incoming chemical synapses from neurons $j$ is given as its potential $V_i$ and the ODE that describes the dynamics of a single neuron's potential is given by \cite[p. 1-2]{LTCFormulas}:
     \begin{align}
@@ -779,7 +779,7 @@
     The in-detail implementation is provided in the file \url{https://github.com/Oidlichtnwoada/NeuralNetworkArena/blob/master/experiments/models/recurrent_network_attention.py}.
 
     \section{Memory Augmented Transformer} \label{mat}
-    The Memory Augmented Transformer architecture is a novel contribution and a recurrent neural network architecture that incorporates a transformer model together with an external memory.
+    The Memory Augmented Transformer architecture is a novel contribution and a discrete-time recurrent neural network architecture that incorporates a transformer model together with external memory.
     This model is therefore also a MANN (memory-augmented neural network).
     The external memory $M$ represents the state of the model and has a configurable number of rows $r$ and a configurable number of columns $c$.
     All memory fields are prefilled with a small value which was set to $10^{-6}$.
@@ -820,25 +820,44 @@
     Some improvements of the Differentiable Neural Computer include a memory management system that is able to allocate and free memory in the external memory to avoid overwriting of important information and a memory use link matrix that allows the model to track its memory operations through time.
 
     \section{Memory Cell} \label{memory_cell}
-    The Memory Cell is a simple RNN consisting of two LTC neurons as described in \cite{LTCNetworks} and used in \cite{NCP}.
-    However, the leakage term was removed from the ordinary differential equation describing the state dynamics, as a fading potential would mean losing information stored in the memory cell over time.
-    It has a 2-dimensional input, the input voltage for each of the two neurons delivered by a synapse, and a 1-dimensional output, which is just the potential of the first neuron.
-    This model was implemented to tune state dynamics and parameters for the suggested memory cell architecture.
-    Each cell has three incoming synapses:
-    \begin{itemize}
-        \item{}
-        an excitatory synapse that delivers the input voltage over a synapse to the neuron
-        \item{}
-        a recurrent excitatory synapse that connects each neuron with itself, which is useful to maintain an excitation in a single neuron
-        \item{}
-        an inhibitory synapse from the other neuron, to create mutual exclusive excitation
-    \end{itemize}
-    This simple memory cell should now be able to store information over a long time horizon, the input vectors are provided in the right way.
-    Recent results have shown that this architecture is not capable of repeatedly storing information and I am not sure in what range the input values shall lie.
-    As described in \cite{LTCNetworks}, the synaptic current is computed by multiplying a non-linear conductance with a potential difference.
-    The potential difference is just a parameter $E_{ij}$ minus the potential of the postsynaptic neuron $V_j$.
-    However, if the potentials are not bounded, this would mean even an excitatory synapse can deliver a negative current or analogously an inhibitory synapse can deliver a positive current.
-    The bounded dynamics of LTC networks is no longer valid, as the leakage term was removed from the state dynamics equation.
+    The Memory Cell is a continuous-time recurrent neural network architecture consisting of two LTC neurons as described in the NCP section \ref{ncp} without the input and output mapping using dense layers.
+    It is a proof-of-concept implementation and tries to build an LTC network \cite{LTCNetworks} that is able to capture long-term dependecies in time series, namely a single memory bit.
+    For details on which inputs are provided to the model and what outputs are expected from the model, please consult the Cell Benchmark section \ref{cell}.
+    The model has six synapses in total, each neuron had $3$ incoming synapses.
+    This model can only be used with input vectors and expected output vectors of size $2$.
+    The two entries of the input vector are the two scalar inputs that are passed on to the two neurons with a synaptic activation.
+    As this model is built out of two neurons, the output vector size of this model is fixed to $2$, and the output vector simply contains the potentials of both neurons.
+    Each neuron has an input synapse, an inhibitory synapse and a recurrent synapse. 
+    The three synapses of each neuron share the same parameters as the Memory Cell model should employ the same mechanisms when storing a $0$ or a $1$ bit.
+    The behaviour should be symmetric and the decision which bit to store should only be dependent on the current input.
+    The current memory content of this architecture is encoded in potentials of both neurons.
+    If the first neuron has high potential ($\approx 1$) and the second neuron low potential ($\approx 0$) the bit $1$ is currently stored and if the second neuron has high potential ($\approx 1$) and the first neuron low potential ($\approx 0$) the bit $0$ is currently stored.
+    The purpose of the input synapse which connects the input vector entry with the synapse is to supply each neuron with a large input current to increase its potential to $\approx 1$ if the input vector entry to the corresponding neuron is $\approx 1$, too.
+    It is only applicable that at most one neuron gets a large input vector entry ($\approx 1$) at a single time step.
+    This either leads to a switch of the stored memory bit or to a persistence of the current memory state.
+    It can also be the case that both neurons receive a small input vector entry ($\approx 0$), therefore both neurons receive little to no input current and the memory state is kept as ensured by the inhibitory and recurrent synapse.
+    The inhibitory synapse which connects a neuron with the other neuron is responsible for suppressing the other neuron when a neuron itself has currently high potential, therefore it ensures that the second neuron's potential is kept low such that only one neuron can have a high potential.
+    The recurrent synapse which connects a neuron with itself is responsible that a single neuron keeps its potential if it is not inhibited too much by the other neuron.
+    Three synapses per neuron were at least necessary for a working Memory Cell architecture.
+    The theoretical lower bound may be two synapses per neuron, as an input synapse and a communication synapse that handles communication between the two neurons is needed.
+    The communication synapse would be connected from one neuron to the other and must fulfill the tasks of the recurrent and the inhibitory synapse.
+    However, in this scenario with only two synapses assuming its proper functionality, at a memory switch, the communication synapse will have to supply a negative current to inhibit the other neuron.
+    Furthermore, when there is no memory switch, the same communication synapse must provide a positive current to a neuron with high potential to keep its state as there is leakage current present.
+    The sign of a synaptic current $I_{syn,ji}$ \ref{synaptic_current} is determined by the sign of $E_{ji} - V_i(t)$. 
+    The postsynaptic potential $V_i(t)$ may be $\approx 1$ in both cases, therefore the different sign of $E_{ji} - V_i(t)$ cannot be determined by the parameter $E_{ji}$ which yields a contradiction to the assumption of proper functionality.
+    Each synapse from neuron $j$ to neuron $i$ has four parameters as described in \ref{synaptic_current}: the maximum conductance $G_{syn,ji}$, the mean conductance potential $\mu_{ji}$, the steepness of the conductance transition $\sigma_{ji}$ and the target potential $E_{ji}$.
+    The steepness of the conductance transition was fixed to $100$ for all synapses in the implemented model.
+    The conductances of all neurons including the leakage conductance $G_{leak}$ were parameters and therefore learnt.
+    The target potentials for the the leakage current and the inhibitory synapse were fixed to $0$, the target potentials of the recurrent synapse and the input synapse were parameters and threfore also learnt.
+    The mean conductance potential of the input synapse was fixed to $0.5$, the mean conductance potential of the recurrent and inhibitory synapse was a parameter of the model.
+    The capacitance of all neurons was fixed to $1$ and the fixed time input $t$ per time step used to integrate the state derivative in a continuous-time model was also a learnt parameter.
+    The ODE of the state was unrolled two times per time step.
+    This is necessaey such that the input currents can propagate to each of the two neurons in the first unroll step and the inhibitory synpapse currents can propagate in the second unroll step in case of a memory switch.
+    Therefore, this architecture has $9$ learnable parameters. 
+    Validation of the model was performed using the Cell Benchmark \ref{cell}.
+    The initial state of the first neuron was $0$ and the initial state of the second neuron was $1$.
+    The Memory Cell model implementation used in this thesis is exposed under the \texttt{get\_memory\_cell\_output} function defined in the file \url{https://github.com/Oidlichtnwoada/NeuralNetworkArena/blob/master/experiments/models/model_factory.py}.
+    The in-detail implementation is provided in the file \url{https://github.com/Oidlichtnwoada/NeuralNetworkArena/blob/master/experiments/models/memory_cell.py}.
 
     \chapter{Benchmarks}
 
