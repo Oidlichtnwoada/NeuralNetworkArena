@@ -686,7 +686,7 @@
     The Transformer architecture overcomes this issue by considering the whole input vector sequence at a single time step for prediction. 
     Attention mechanisms were used to deal with that much input data at a single time step which means the model learns to weight the input data vectors according to their relevance in solving the required problem.
     By using this method the computational graph becomes much shallower and easier to backpropagate through, therefore overcoming the unwanted deep computational graphs.
-    \subsection{Encoder}
+    \subsection{Encoder} \label{encoder}
     At first the Transformer architecture passes its input vectors on to the encoder.
     The encoder embeds its input vectors into vectors of length $d_{model}$ which is a hyperparameter of the architecture by passing them through a dense layer.
     As the embedded input vectors of the input time-series are not labelled with their corresponding time index $k$, the transformer architecture adds a positional encoding vector to each embedded input vector.
@@ -730,7 +730,7 @@
     The second sub-layer in the encoder layer is the fully-connected feed-forward layer, which consists of a dense layer which maps the input vectors to size $d_{ff}$ with a relu activation function and a second dense layer which maps the vector back to size $d_{model}$ without an activation function.
     This process can be thought of exchanging information within all vectors.
     This concludes the functions present in the encoder layer.
-    \subsection{Decoder}
+    \subsection{Decoder} \label{decoder}
     The output of the last encoder layer is then used in decoder layers of the same amount of encoder layers.
     The decoder gets a single start vector as input vector which was picked to the all-one vector.
     All input vectors to the decoder are then embedded, positional encoded and dropout is applied in the same fashion as for input vectors to the encoder.
@@ -779,6 +779,35 @@
     The in-detail implementation is provided in the file \url{https://github.com/Oidlichtnwoada/NeuralNetworkArena/blob/master/experiments/models/recurrent_network_attention.py}.
 
     \section{Memory Augmented Transformer} \label{mat}
+    The Memory Augmented Transformer architecture is a novel contribution and a recurrent neural network architecture that incorporates a transformer model together with an external memory.
+    This model is therefore also a MANN (memory-augmented neural network).
+    The external memory $M$ represents the state of the model and has a configurable number of rows $r$ and a configurable number of columns $c$.
+    All memory fields are prefilled with a small value which was set to $10^{-6}$.
+    There are two embedding dense layers defined, the input embedding $IE$ to embed the current step input and the memory embedding $ME$ to embed each memory row of the external memory $M$.
+    Then these embeddings which both project to a vector size of $embedding\_size$ are computed at each time step and the resulting vectors are concatenated together to a vector sequence of length $r+1$.
+    Then positional encoding vectors (denoted as $PE$ in matrix form) are added to each vector in this sequence as described in \ref{encoder}.
+    Moreover, dropout with rate $dr$ is further applied on this vector sequence which is then fed through a single encoder layer with the functionality as described in \ref{encoder}.
+    The first vector of the encoder layer vector outputs is then used to build the output $y$ of the model by projecting it to the required output vector size through the output dense layer $ODL$.
+    All other $r$ output vectors of the encoder layers are then projected with the memory control dense layer $MCDL$ to a memory control signal vector per memory row of size $1 + c$ (denoted as $MCS$ in matrix form).
+    The first entry of this vector is called the enable signal and is used to activate the memory and write the remaining $c$ entries to the memory.
+    It can also deactivate the memory to mask the remaining $c$ vector entries away and therefore resulting in keeping the current memory state.
+    This was done by feeding the enable signal through a $sigmoid$ function in the positive and negated form (both results add up to $1$), which are then used to weigh the new and old memory state.
+    At each time step, the following model function is executed with the input denoted as $i_t$ and the output denoted as $y_t$:
+    \begin{align}
+    z_t &= Dropout(concat(ME(M_{k-1}), IE(i_k)) + PE) \\
+    e_t &= EncoderLayer(z_t) \\
+    o_t &= ODL(e_t[0]) \\
+    MCS_t &= MCDL(e_t[1..r]) \\
+    M_k &= sigmoid(-MCS_t[:,0]) * M_{k-1} + sigmoid(MCS_t[:,0]) * MSC_t[:,1..r]
+    \end{align}
+    By incorporating the encoder layer, the architecture can freely choose how many memory rows it wants to read in a single time step, as this can be determined by the corresponding attention weights.
+    Furthermore, by using the memory enable signal per memory row, the architecture may also freely determine how many memory rows it wants to write in a single time step.
+    This architecture tries to separate computation and memory just like personal computers do. 
+    The CPU equivalent in this architecture is the encoder layer, including all the dense layers, and the external memory is responsible for persisting information.
+    In the implementation used for benchmarking $r$ and $c$ were set to $16$, the embedding size was set to $32$, the number of heads in the encoder layer was set to $2$,
+    the feed-forward size $d_{ff}$ in the encoder layer was set to $128$, and the dropout rate $dr$, as well as the dropout rate in the encoder layer, was set to $0$.
+    The Memory Augmented Transformer model implementation used in this thesis is exposed under the \texttt{get\_memory\_augmented\_transformer\_output} function defined in the file \url{https://github.com/Oidlichtnwoada/NeuralNetworkArena/blob/master/experiments/models/model_factory.py}.
+    The in-detail implementation is provided in the file \url{https://github.com/Oidlichtnwoada/NeuralNetworkArena/blob/master/experiments/models/memory_augmented_transformer.py}.
 
     \section{Differentiable Neural Computer} \label{dnc}
     This model defines a memory-augmented neural network architecture, that consists of a controller, read and write heads and obviously an external memory that is not parameterized by the neural network parameter.
