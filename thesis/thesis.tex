@@ -166,7 +166,7 @@
     A visualized loss surface where the loss function return value is plotted in the z-axis and all possible model parameter combinations are given as points on the plane is given as follows:
     \begin{figure}[H]
         \centering{}
-        \includegraphics[page=1,width=0.8\linewidth,trim={105 105 305 510},clip]{../../../literature/visualizing_the_loss_landscape_of_neural_nets.pdf}
+        \includegraphics[page=1,width=0.8\linewidth,trim={105 107 305 510},clip]{../../../literature/visualizing_the_loss_landscape_of_neural_nets.pdf}
         \caption{visualized loss surface \cite[p. 1]{loss_vis}}
         \label{fig:loss_vis}
     \end{figure}
@@ -186,6 +186,13 @@
     Convergence means that the parameter updates have led to a local minimum of the loss function.
     There are no guarantees that this is the global minimum. Divergence means that the loss function diverges towards infinity.
     A local minimum or convergence can be reached by applying the gradient descent update rule to as many inputs as needed to set the loss function derivative to nearly zero. 
+    The trajectory of the parameter set on the loss surface when repeatedly applying the gradient descent update rule was visualized in \cite[p. 2]{gradient_descent_vis} with initial starting parameter set denoted as black triangle as follows:
+    \begin{figure}[H]
+        \centering{}
+        \includegraphics[page=2,width=0.8\linewidth,trim={90 585 355 75},clip]{../../../literature/gradvis_visualization_and_second_order_analysis_of_optimization_surfaces_during_the_training_of_deep_neural_networks.pdf}
+        \caption{visualization of gradient descent}
+        \label{fig:gradient_descent_vis}
+    \end{figure}
     As at the differentiation of the loss function, which can be represented as a computational graph with lots of nested functions, with respect to the individual model parameters involves lots of applications of the chain rule, the machine learning term for repeatedly applying the chain rule is backpropagation.
     If these nested functions correspond to applying the same machine learning model function across multiple input time steps as done in recurrent neural networks, then this backpropagation procedure can also be called backpropagation through time as introduced in \cite{GradientDescent}.
     The chain rule for differentiating $z(y(x_0))$ with respect to $x$ for $x=x_0$ where $z$ and $y$ are both functions in a single variable is given by:
@@ -767,6 +774,13 @@
     This now results in a matrix where the entry in row $i$ and column $j$ corresponds to the attention weight between the query vector in row $i$ and the key vector in row $j$. 
     All attention weights of a single query vector to all possible key vectors add up to $1$.
     The final output $Y$ is then computed by doing a matrix multiplication of the attention weight matrix with the value matrix $V$, which equals to computing a new representation for each query according to a weighted sum of value vectors.
+    Scaled dot-product attention with multiple heads was also visualized by the original paper as follows:
+    \begin{figure}[H]
+        \centering{}
+        \includegraphics[page=4,width=0.8\linewidth,trim={140 552 145 72},clip]{../../../literature/attention_is_all_you_need.pdf}
+        \caption{visualized scaled dot-product attention \cite[p. 4]{Transformer}}
+        \label{fig:sdpa_vis}
+    \end{figure}
     Therefore, the corresponding key vector to a value vector describes how to access the information present in the value vector.
     This process can also be thought of as a continuous hash map where the key vector and value vector are the key-value-pairs and the indexing is done with a query vector.
     As the query and key vector may never be exactly equal, the values are weighted according to their relevance.
