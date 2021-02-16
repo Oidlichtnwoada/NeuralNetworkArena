@@ -801,7 +801,8 @@
     M_k &= sigmoid(-MCS_t[:,0]) * M_{k-1} + sigmoid(MCS_t[:,0]) * MSC_t[:,1..r]
     \end{align}
     By incorporating the encoder layer, the architecture can freely choose how many memory rows it wants to read in a single time step, as this can be determined by the corresponding attention weights.
-    Furthermore, by using the memory enable signal per memory row, the architecture may also freely determine how many memory rows it wants to write in a single time step.
+    With the attention mechanism the architecture can focus on the memory contents or on the exact location as a positional encoding was used for the memory.
+    Furthermore, by using the memory enable signal per memory row, the architecture may also freely determine how many memory rows it wants to write to in a single time step.
     This architecture tries to separate computation and memory just like personal computers do. 
     The CPU equivalent in this architecture is the encoder layer, including all the dense layers, and the external memory is responsible for persisting information.
     In the implementation used for benchmarking $r$ and $c$ were set to $16$, the embedding size was set to $32$, the number of heads in the encoder layer was set to $2$,
@@ -809,15 +810,48 @@
     The Memory Augmented Transformer model implementation used in this thesis is exposed under the \texttt{get\_memory\_augmented\_transformer\_output} function defined in the file \url{https://github.com/Oidlichtnwoada/NeuralNetworkArena/blob/master/experiments/models/model_factory.py}.
     The in-detail implementation is provided in the file \url{https://github.com/Oidlichtnwoada/NeuralNetworkArena/blob/master/experiments/models/memory_augmented_transformer.py}.
 
-    \section{Differentiable Neural Computer} \label{dnc}
-    This model defines a memory-augmented neural network architecture, that consists of a controller, read and write heads and obviously an external memory that is not parameterized by the neural network parameter.
-    Furthermore, the external memory was structured in rows, where each memory row has a specific length.
-    The architecture was taken from \cite{DNC} and is an enhancement to the Neural Turing Machine firstly introduced in \cite{NTM}.
-    The Neural Turing Machine introduced differentiable read and write functions that allow to access the memory by context or by location in both read and write mode.
-    The access by context was implemented by comparing the cosine distance of an emitted key vector to all memory row contents and by applying the softmax function to that distance vector, which yields a weight vector.
-    The access by location was implemented by adding a possibility to interleave the previous step weights with the current step content-based weights and adding a "blurry" shift operation on top of it.
-    These weight vectors are then normalized using a softmax function that takes each argument to the power of an emitted number to sharpen the weights.
-    Some improvements of the Differentiable Neural Computer include a memory management system that is able to allocate and free memory in the external memory to avoid overwriting of important information and a memory use link matrix that allows the model to track its memory operations through time.
+    \section{Differentiable Neural Computer (DNC)} \label{dnc}
+    The DNC is a discrete-time memory-augmented recurrent neural network architecture that consists of a controller, read and write heads, and an external memory $M$ that is not parameterized and may have arbitrary size.
+    Furthermore, the external memory was structured into $N$ rows, where each memory row contains a vector of length $C$.
+    The architecture was introduced by \cite{DNC} and is an enhancement to the NTM (Neural Turing Machine) architecture first proposed \cite{NTM}.
+    The NTM introduced differentiable read and write functions that act to a greater or lesser degree with all rows in the memory \cite[p. 5]{NTM}.
+    The degree at time step $t$ for row $i$ is determined by the weighting $w_t(i)$ that the corresponding read or write write head emits.
+    The weighting is similar to the attention weights used in the Transformer architecture \ref{transformer}, they all lie between $0$ and $1$ and the weightings for all rows add up to $1$.
+    The read vector $r_t$ returned by the read function of a single read head is given as follows where $M_t(i)$ denotes row $i$ in the memory at time step $t$ \cite[p. 1]{DNC}:
+    \begin{align}
+    \label{dnc_read}
+    r_t = \sum_i{w_t(i) * M_t(i)}
+    \end{align}
+    The write function as executed by a single write head is given as follows where $e_t$ is the erase vector of length $C$ whose elements all lie between $0$ and $1$ and $a_t$ is the add vector of length $C$ at time step $t$ (both vectors get emitted by the write head additionally to the weighting $w_t$, $1$ represents the all-one vector) \cite[p. 1]{DNC}:
+    \begin{align}
+    \label{dnc_write}
+    M_t(i) = M_{t-1}(i) *_{ew} (1 - w_t(i) * e_t) + w_t(i) * a_t
+    \end{align}
+    The weightings $w_t$ emitted by the heads are generated by combining three different attention mechanisms. 
+    The first mechanism is content lookup which is based on a key vector $k_t$ emitted by the corresponding head.
+    The cosine similarity measure between each memory row $M_t(i)$ and the single key vector $k_t$ is then computed and normalized such that it forms a probability distribution over all memory rows that is incorporated to compute the final weighting. 
+    The second attention mechanism uses a temporal link matrix of dimension $N \times N$ which records transitions between consecutively written locations.
+    The entry $L[i,j]$ is close to $1$ if $i$ was the location written in the next time step after $j$ and is close to $0$ otherwise.
+    This matrix is used to smoothly shift the focus of a given weighting $w_t$ to the locations written after those or written previous those emphasized in $w_t$.
+    The third attention mechanism keeps track of the usage $u_t$ of each memory row which lies between $0$ and $1$. 
+    This usage $u_t$ is increased for each write to the memory row and decreased for each read to the memory row.
+    With this mechanism weightings of write heads can favor memory rows with low usage to store new information without overwriting other existing information in memory rows with high usage.
+    All three of these attention mechanisms are described in \cite[p. 1-2]{DNC} and their exact interplay to create the weightings $w_t$ for each head is described in detail in \cite[p. 7-8]{DNC}.
+    All the operations of the DNC architecture are controlled by either an recurrent neural network or a feed-forward neural network controller, which gets the current step inputs $x_k$ and all the read vectors $r_{t-1}$ \ref{dnc_read} from all read heads as inputs.
+    They are provided as a single concatenated input vector.
+    It should be noted that the read vectors are computed with respect to the memory at time step $t-1$ which makes sense when looking at the output of the controller.
+    The output vector of the controller at time step $t$ is the output vector $o_t$ of the required size and an interface vector $\xi_t$.
+    This interface vector $\xi_t$ provides all information to the read and write heads, such that they can execute their read \ref{dnc_read} and write \ref{dnc_write} functions.
+    At first the write heads are updating the memory and then the read heads compute their read function and return their read vectors $r_t$.
+    These read vectors are again provided to the controller at time step $t+1$.
+    Recurrent network controllers are generally preferred as they complement the external memory, just like the internal registers of a CPU complement the RAM.
+    The implementation used for benchmarking uses the open-source DNC implementation distributed under \url{https://github.com/willsq/tf-DNC/tree/master/dnc}.
+    The controller was configured as an LSTM \ref{lstm} with a hidden state vector size of $64$. There were $2$ read heads and $1$ write head used.
+    Even if the architecture supports memory of infinite size, the memory shape has to be fixed for implementation.
+    The amount of memory rows $N$ was set to $16$ and the size of each vector $C$ in each memory row was set to $8$.
+    The initial state of each memory entry as well as each first read vector entry is picked to $10^{-6}$. 
+    The DNC model implementation used in this thesis is exposed under the \texttt{get\_differentiable\_neural\_computer\_output} function defined in the file \url{https://github.com/Oidlichtnwoada/NeuralNetworkArena/blob/master/experiments/models/model_factory.py}.
+    The in-detail implementation is provided in the file \url{https://github.com/Oidlichtnwoada/NeuralNetworkArena/blob/master/experiments/models/differentiable_neural_computer.py}.
 
     \section{Memory Cell} \label{memory_cell}
     The Memory Cell is a continuous-time recurrent neural network architecture consisting of two LTC neurons as described in the NCP section \ref{ncp} without the input and output mapping using dense layers.
@@ -851,7 +885,7 @@
     The target potentials for the the leakage current and the inhibitory synapse were fixed to $0$, the target potentials of the recurrent synapse and the input synapse were parameters and threfore also learnt.
     The mean conductance potential of the input synapse was fixed to $0.5$, the mean conductance potential of the recurrent and inhibitory synapse was a parameter of the model.
     The capacitance of all neurons was fixed to $1$ and the fixed time input $t$ per time step used to integrate the state derivative in a continuous-time model was also a learnt parameter.
-    The ODE of the state was unrolled two times per time step.
+    The ODE of the state was unrolled two times per time step and was solved using the explicit Euler method.
     This is necessaey such that the input currents can propagate to each of the two neurons in the first unroll step and the inhibitory synpapse currents can propagate in the second unroll step in case of a memory switch.
     Therefore, this architecture has $9$ learnable parameters. 
     Validation of the model was performed using the Cell Benchmark \ref{cell}.
