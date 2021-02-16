@@ -23,7 +23,10 @@
 \usepackage{hyperref}  % Enables cross linking in the electronic document version. This package has to be included second to last.
 \usepackage[acronym,toc]{glossaries} % Enables the generation of glossaries and lists fo acronyms. This package has to be included last.
 \usepackage{float}
-\usepackage{amsfonts,amsthm, graphicx, trfsigns, physics, xparse, mleftright}
+\usepackage{amsfonts,amsthm, graphicx, trfsigns, physics, xparse, mleftright, listings}
+
+% enable line breaks if lines in code listings are too long
+\lstset{breaklines=true}
 
 % Define convenience functions to use the author name and the thesis title in the PDF document properties.
 \newcommand{\authorname}{Hannes Brantner} % The author name without titles.
@@ -133,6 +136,7 @@
         These benchmarks try to determine the model's capabilities to capture long-term dependencies and the ability to model physical systems.
         Moreover, a time-continuous memory cell is introduced that is capable of storing a data bit over a large number of time steps without losing the stored information.
         This memory cell is built using the LTC network \cite{LTCNetworks} architecture.
+        All code used for this thesis is available under \url{https://github.com/Oidlichtnwoada/NeuralNetworkArena}.
     \end{abstract}
 
 % Select the language of the thesis, e.g., english or naustrian.
@@ -1147,6 +1151,55 @@
     \chapter{Results}
 
     \chapter{Summary}
+
+    \chapter{Appendix}
+    
+    \section{Code for Benchmarks}
+    \subsection{benchmark.py}
+    \lstinputlisting[language=Python,caption={benchmark.py},captionpos=b]{../experiments/benchmarks/benchmark.py}
+    \subsection{activity\_benchmark.py}
+    \lstinputlisting[language=Python,caption={activity\_benchmark.py},captionpos=b]{../experiments/benchmarks/activity_benchmark.py}
+    \subsection{add\_benchmark.py}
+    \lstinputlisting[language=Python,caption={add\_benchmark.py},captionpos=b]{../experiments/benchmarks/add_benchmark.py}
+    \subsection{walker\_benchmark.py}
+    \lstinputlisting[language=Python,caption={walker\_benchmark.py},captionpos=b]{../experiments/benchmarks/walker_benchmark.py}
+    \subsection{memory\_benchmark.py}
+    \lstinputlisting[language=Python,caption={memory\_benchmark.py},captionpos=b]{../experiments/benchmarks/memory_benchmark.py}
+    \subsection{mnist\_benchmark.py}
+    \lstinputlisting[language=Python,caption={mnist\_benchmark.py},captionpos=b]{../experiments/benchmarks/mnist_benchmark.py}
+    \subsection{cell\_benchmark.py}
+    \lstinputlisting[language=Python,caption={cell\_benchmark.py},captionpos=b]{../experiments/benchmarks/cell_benchmark.py}
+    
+    \section{Code for Models}
+    \subsection{model\_fatory.py}
+    \lstinputlisting[language=Python,caption={model\_fatory.py},captionpos=b]{../experiments/models/model_factory.py}
+    \subsection{ct\_rnn.py}
+    \lstinputlisting[language=Python,caption={ct\_rnn.py},captionpos=b]{../experiments/models/ct_rnn.py}
+    \subsection{ct\_gru.py}
+    \lstinputlisting[language=Python,caption={ct\_gru.py},captionpos=b]{../experiments/models/ct_gru.py}
+    \subsection{ode\_lstm.py}
+    \lstinputlisting[language=Python,caption={ode\_lstm.py},captionpos=b]{../experiments/models/ode_lstm.py}
+    \subsection{neural\_circuit\_policies.py}
+    \lstinputlisting[language=Python,caption={neural\_circuit\_policies.py},captionpos=b]{../experiments/models/neural_circuit_policies.py}
+    \subsection{unitary\_rnn.py}
+    \lstinputlisting[language=Python,caption={unitary\_rnn.py},captionpos=b]{../experiments/models/unitary_rnn.py}
+    \subsection{matrix\_exponential\_unitary\_rnn.py}
+    \lstinputlisting[language=Python,caption={matrix\_exponential\_unitary\_rnn.py},captionpos=b]{../experiments/models/matrix_exponential_unitary_rnn.py}
+    \subsection{unitary\_ncp.py}
+    \lstinputlisting[language=Python,caption={unitary\_ncp.py},captionpos=b]{../experiments/models/unitary_ncp.py}
+    \subsection{transformer.py}
+    \lstinputlisting[language=Python,caption={transformer.py},captionpos=b]{../experiments/models/transformer.py}
+    \subsection{recurrent\_network\_augmented\_transformer.py}
+    \lstinputlisting[language=Python,caption={recurrent\_network\_augmented\_transformer.py},captionpos=b]{../experiments/models/recurrent_network_augmented_transformer.py}
+    \subsection{recurrent\_network\_attention.py}
+    \lstinputlisting[language=Python,caption={recurrent\_network\_attention.py},captionpos=b]{../experiments/models/recurrent_network_attention.py}
+    \subsection{memory\_augmented\_transformer.py}
+    \lstinputlisting[language=Python,caption={memory\_augmented\_transformer.py},captionpos=b]{../experiments/models/memory_augmented_transformer.py}
+    \subsection{differentiable\_neural\_computer.py}
+    \lstinputlisting[language=Python,caption={differentiable\_neural\_computer.py},captionpos=b]{../experiments/models/differentiable_neural_computer.py}
+    \subsection{memory\_cell.py}
+    \lstinputlisting[language=Python,caption={memory\_cell.py},captionpos=b]{../experiments/models/memory_cell.py}
+    
 %\todo{Enter your text here.}
 
 % Remove following line for the final thesis.
