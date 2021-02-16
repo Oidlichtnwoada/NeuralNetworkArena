@@ -221,11 +221,18 @@
         \label{physical_system_equations_output}
         y(t) &= h(x(t),u(t),t)
     \end{align}
-    This form of system description is applicable to all physical systems in our daily surroundings, most of them are even time-invariant. 
+    This form of system description is applicable to all continuous physical systems in our daily surroundings, most of them are even time-invariant. 
     This means the functions $f$ and $h$ do not depend on the absolute time $t$.
     For example, a mechanical pendulum will now approximately behave the same as in one year, as its dynamics do not depend on the absolute time $t$.
     The system description given in \ref{physical_system_equations_state} and \ref{physical_system_equations_output} proposes, that machine learning models that are built in a similar fashion and whose state is also determined by a differential equation, should be pretty capable of modelling the input-output relation of physical systems.
     When the benchmarked models are introduced in more detail, it can be seen that all continuous-time machine learning models use a comparable structure in terms of parameterizing the state derivative and the output function.
+    The key takeaway point is that continuous physical systems map an input function $x(t)$ to an output function $y(t)$ as visualized in \cite[p. 102]{dsp}:
+    \begin{figure}[H]
+        \centering{}
+        \includegraphics[page=102,width=0.8\linewidth,trim={110 580 140 60},clip]{../../../literature/digital_signal_processing.pdf}
+        \caption{visualization of the input-output relation of a continuous system}
+        \label{fig:continuous_system_vis}
+    \end{figure}
     
     \section{Sampled Physical Systems} \label{sampled_physical_systems}
     As the evaluation of the current state $x$ at point in time $t'$ with initial state $x_0$ given the dynamics from \ref{physical_systems} can be computationally very expensive or even infeasible, sampling was introduced to avoid solving a complex differential equation.
@@ -242,6 +249,13 @@
     The system equations \ref{discrete_system_equations_state} and \ref{discrete_system_equations_output} require a regularly (equidistantly) sampled input $x$.
     A similar argument as before in \ref{physical_systems} proposes now that a machine learning model with a similar structure, which gets a regularly sampled input of a physical system, should also be pretty capable of modelling the input-output relation of this sampled physical system.
     The corresponding machine learning models are then called discrete-time machine learning models.
+    The key takeaway point is that discrete physical systems map an input sequence $x[n]$ to an output sequence $y[t]$ as visualized in \cite[p. 102]{dsp}:
+    \begin{figure}[H]
+        \centering{}
+        \includegraphics[page=102,width=0.8\linewidth,trim={110 485 140 150},clip]{../../../literature/digital_signal_processing.pdf}
+        \caption{visualization of the input-output relation of a discrete system}
+        \label{fig:discrete_system_vis}
+    \end{figure}
     
     \section{Why capturing Long-Term Dependencies is difficult} \label{long_term_difficult}
     The difficulty will be outlined solely on the example of vanilla recurrent neural networks (RNNs).
