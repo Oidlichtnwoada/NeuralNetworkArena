@@ -73,7 +73,7 @@
 % Required data.
 \setregnumber{01614466}
 \setdate{31}{04}{2021} % Set date with 3 arguments: {day}{month}{year}.
-\settitle{\thesistitle}{\thesistitle} % Sets English and German version of the title (both can be English or German). If your title contains commas, enclose it with additional curvy brackets (i.e., {{your title}}) or define it as a macro as done with \thesistitle.
+\settitle{\thesistitle}{\thesistitle} % Sets English and German version of the title (both can be English or German). If the title contains commas, enclose it with additional curvy brackets (i.e., {{your title}}) or define it as a macro as done with \thesistitle.
 %\setsubtitle{Optional Subtitle of the Thesis}{Optionaler Untertitel der Arbeit} % Sets English and German version of the subtitle (both can be English or German).
 
 % Select the thesis type: bachelor / master / doctor / phd-school.
@@ -119,7 +119,7 @@
         He cared about me and was always pointing me to state-of-the-art literature, as he wanted to push me forward.
         I also have to thank Prof. Grosu for participating in numerous online meetings and for sharing his in-depth knowledge in the machine learning domain.
         Furthermore, I want to thank Mathias Lechner for giving me first-class support on questions I had regarding various machine learning models.
-        I have to point out that he was always willing to help me and provided his responses incredibly fast.
+        I have to specifically point out that he was always willing to help me and provided his responses incredibly fast.
         Last but not least, I have to thank my parents for providing me with mental and financial support throughout my whole study journey.
     \end{acknowledgements*}
 
@@ -153,7 +153,7 @@
     \section{Machine Learning Terms}
     A machine learning model is a mathematical parametrized function that gets an input and produces an output.
     For example, the machine learning model GPT-3 proposed in \cite{GPT-3} has 175 billion scalar parameters.
-    This thesis will use imitation learning to optimally set the parameters of machine learning models.
+    This thesis will use imitation learning to set the parameters of machine learning models optimally.
     This means that for each input, there is an associative expected output provided that the model should return by applying its function to the input.
     Of course when the model's function is applied to the input with the initial state of the model's parameters, the returned model output will differ from the desired output in almost all cases.
     The measure that quantifies this error between model output and expected output is called a loss function and has a scalar return value.
@@ -325,7 +325,7 @@
     The whole field of sequence modeling started with recurrent neural networks.
     More and more modern machine learning architectures exploit the fact that continuous-time models are very well suited for tasks related to dynamical physical systems as explained in \ref{physical_systems}.
     A few examples for such models would be the CT-GRU \cite{CTGRU}, the LTC network \cite{LTCNetworks} and the ODE-LSTM architecture \cite{ODELSTM}.
-    But there are also some older architectures that exploit continuous-time dynamics in machine learning models like the CT-RNN architecture \cite{CTRNN}.
+    Nevertheless, there are also some older architectures that exploit continuous-time dynamics in machine learning models like the CT-RNN architecture \cite{CTRNN}.
     The other problem described in the previous chapters is the hard task of capturing lon-term dependencies in time-series.
     One solution for the problem was proposed in \cite{UnitaryRNNs}, which introduced the Unitary RNN architecture.
     This architecture in principle just uses the vanilla RNN architecture described above, but with the difference that the matrix $W$ fulfills $\left\Vert W \right\Vert_{2,ind} = 1$ to tackle the vanishing and exploding gradient problem.
@@ -994,7 +994,7 @@
     There are at least three parser configs required that set the loss name, the loss config and the metric name.
     A sample \texttt{parser\_configs} argument would be: \texttt{(('-{}-loss\_name', 'SparseCategoricalCrossentropy', str), ('-{}-loss\_config', {'from\_logits': True}, dict), ('-{}-metric\_name', 'SparseCategoricalAccuracy', str))}.
     If loss config or metric name is not applicable to the benchmark, simply set the default loss config to \texttt{\{\}} or the default metric name to \texttt{''}.
-    Furthermore, if the benchmark needs additional parameters, just extend the \texttt{parser\_configs} parameter to also include the desired command line arguments.
+    Furthermore, if the benchmark needs additional parameters, extend the \texttt{parser\_configs} parameter also to include the desired command line arguments.
     This feature is used by all individual benchmark implementations. 
     After calling the superclass constructor all command line arguments configured through \texttt{parser\_configs} will be available by their names as properties of \texttt{self.args} without the double hyphen.
     For example the loss name can be accessed by \texttt{self.args.loss\_name}.
@@ -1014,7 +1014,7 @@
     The benchmark base class has also support for time inputs to the models.
     Please make sure that the time input is the last entry in the input tuple.
     There is also the command line argument called \texttt{use\_time\_input}. 
-    If you want to use time input, then make sure you have this argument set to true.
+    If the model should use time input, make sure that this argument is set to true.
     Otherwise, if the input tuple has a dimension larger than one, the last entry will be discarded from the input tuple, as it is assumed to be the time input.
     The benchmark suite works currently only for benchmarks which provide time-series input data and only expect a model output after the last input data in the time-series.
     For people familiar with the Tensorflow framework \cite{Tensorflow} this is equivalent to setting \texttt{return\_sequences=False} in an RNN model.
@@ -1024,7 +1024,7 @@
     The sample amount should match between input and output data to be valid input to the benchmark framework.
     All the constraints on the shapes will be checked by the framework and then all individual samples are shuffled such that corresponding input and output data are at the same indices in their arrays.
     Then tensors are created with the same shape as the inputs in the input tuple excluding the first dimension that denotes the sample amount.
-    These are required to later use the Functional API of the Tensorflow framework \cite{Tensorflow}.
+    These are required to use later the Functional API of the Tensorflow framework \cite{Tensorflow}.
     They are created by specifying a fixed batch size, which helps the machine learning framework to better optimize the computational graph for the corresponding model.
     The default batch size is set to $128$ and can be changed by a command line parameter.
     After that, the whole samples are divided into test, validation and training samples. The amount of test and validation samples can be set via command line parameters, which default to $10\%$ each. 
@@ -1047,8 +1047,8 @@
     Then the training is ultimately started by invoking the model's \texttt{fit} method. This method takes the training and validation sample set, the batch size, the number of epochs and a tuple of callbacks as arguments.
     The number of epochs can also be configured in the command line, but throughout the thesis it is left to the default value of $128$.
     The \texttt{fit} method calls the machine learning model function for each batch of inputs in the training sample set. After that the model is validated on the validation sample set.
-    This means the loss function is computed on the validation data, which is data that the model is not trained on.
-    Validating the model should help to determine how well the model will perform on actual test data, which is also data that the model is not trained on. 
+    This means the loss function is computed only on validation data, which is data that the model has never seen before.
+    Validating the model should help to determine how well the model will perform on actual test data, which is also data that the model has never seen before. 
     If the loss function results for training and validation data are similar, it is said that the model generalizes well.
     When the validation step is finished the training loop proceeds with the next epoch and starts the same cycle again by providing the first batch of inputs from the training sample set.
     This cycle is repeated as often as the set value of the epochs.
@@ -1208,7 +1208,7 @@
     Furthermore, it should be checked if the memory state vanishes or if it successfully persists over a long time horizon.
     This requires the ability to capture long-term dependencies as the input is provided sparsely to the model as described below.
     The benchmark has a configurable memory high symbol, memory low symbol, memory length, amount of cell switches and amount of samples that are generated at each invocation of the benchmark.
-    The memory high and low symbol represent the expected output symbol when either memory state is active but the memory high symbol is also used as input symbol to sparsely activate a specific memory state, all other inputs are then set to the memory low symbol.
+    The memory high and low symbol represent the expected output symbol when either memory state is active but the memory high symbol is also used as input symbol to activate a specific memory state sparsely, all other inputs are then set to the memory low symbol.
     The memory high symbol was picked to $1$, the memory low symbol was picked to $0$, the memory length was picked to $128$, the amount of cell switches was set to $2$ and the sample amount was set to $40000$.
     As the memory cell is a bistable memory element, there are two memory states that can be activated sparsely.
     The input vector at each time step has size $2$. If both entries are $0$, the current memory state should be kept.
