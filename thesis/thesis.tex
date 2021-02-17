@@ -23,7 +23,7 @@
 \usepackage{hyperref}  % Enables cross-linking in the electronic document version. This package has to be included second to last.
 \usepackage[acronym,toc]{glossaries} % Enables the generation of glossaries and lists fo acronyms. This package has to be included last.
 \usepackage{float}
-\usepackage{amsfonts,amsthm, graphicx, trfsigns, physics, xparse, mleftright, listings}
+\usepackage{amsfonts,amsthm, graphicx, trfsigns, physics, xparse, mleftright, listings, xurl}
 
 % enable line breaks if lines in code listings are too long
 \lstset{breaklines=true}
@@ -279,6 +279,13 @@
         y_{t} &= U*h_{t} + b_o
     \end{align}
     Without the time shift on the input in the next state equation \ref{rnn_state_update}, the equations are similar to those describing sampled physical systems.
+    Equation \ref{rnn_state_update} can be visualized by the following figure:
+    \begin{figure}[H]
+        \centering{}
+        \includegraphics[width=0.8\linewidth]{graphics/rnn.png}
+        \caption{visualization of an RNN state update \cite{rnn_vis}}
+        \label{fig:rnn_vis}
+    \end{figure}
     The following inequality from \cite[p. 2]{UnitaryRNNs} using norms shows the relation between the loss derivative, a recent state $h_T$ and a state from the distant past $h_t$ where $T \gg t$.
     The notation is kept similar to the examples before. A subscript $2$ after a vector norm denotes the Euclidean norm, and a subscript $2,ind$ after a matrix norm denotes the spectral norm:
     \begin{align}
@@ -401,6 +408,13 @@
     The correct model output vector size is accomplished by postprocessing the hidden state outputs of the LSTM by a dense layer with the required amount of output neurons and without an activation function.
     The output $y$ of a dense layer without an activation function and input vector $x$ can simply be given by: $y = W*x + b$.
     In this notation, $W$ is a matrix such that it maps the input vector $x$ to the required output size, and $b$ is just a bias vector as in the functions describing the LSTM model.
+    The following figure visualizes three dense layers with parameters denotes as arrows:
+    \begin{figure}[H]
+        \centering{}
+        \includegraphics[width=0.5\linewidth]{graphics/dense.png}
+        \caption{visualized dense layers \cite{dense_vis}}
+        \label{fig:lstm_vis}
+    \end{figure}
     Training the LSTM model from the Keras library is fast as it uses an optimized cuDNN \cite{cuDNN} implementation.
     The LSTM model implementation used in this thesis is exposed under the \texttt{get\_lstm\_output} function defined in the file \url{https://github.com/Oidlichtnwoada/NeuralNetworkArena/blob/master/experiments/models/model_factory.py}.
 
@@ -616,7 +630,7 @@
         \label{fig:ncp_vis}
     \end{figure}
     The procedure to create the synaptic wiring is described in detail in \cite[p. 3]{NCP} and will not be covered in this thesis.
-    The NCP implementation used for benchmarking uses the implementation provided in the repository of the paper \cite{NCP} located under the url \url{https://github.com/mlech26l/keras-ncp}.
+    The NCP implementation used for benchmarking uses the implementation provided in the repository of the paper \cite{NCP} located under the URL \url{https://github.com/mlech26l/keras-ncp}.
     It was configured with $9$ inter neurons and $7$ command neurons. The number of motor neurons was picked according to the required output vector size.
     There were two incoming synapses from input vector entries to inter neurons and two incoming synapses from inter neurons to command neurons.
     Each motor neuron receives two incoming synapses from command neurons, and there were $14$ recurrent synapses in all command neurons.
@@ -630,7 +644,7 @@
     \section{Unitary RNN} \label{urnn}
     The Unitary RNN architecture was first introduced in \cite{UnitaryRNNs} and later refined in \cite{EfficientUnitaryRNNs} and is a discrete-time machine learning model.
     It uses the same vanilla recurrent neural network model function as discussed in section \ref{long_term_difficult}.
-    The Unitary RNN implementation used in this thesis is a modified version of the original paper's implementation, which can be found under the url \url{https://github.com/jingli9111/EUNN-tensorflow/blob/master/eunn.py}.
+    The Unitary RNN implementation used in this thesis is a modified version of the original paper's implementation, which can be found under the URL \url{https://github.com/jingli9111/EUNN-tensorflow/blob/master/eunn.py}.
     The next hidden state vector of a Unitary RNN $h_{t+1}$ which also equals its output vector is computed as given in \cite[p. 2]{EfficientUnitaryRNNs} by using a non-linear bias-parametrized activation function $\sigma$ and two matrices $W$ and $V$:
     \begin{align}
         \label{urnn_state}
@@ -685,7 +699,7 @@
     The permutation given by the function $permute$ is fixed and set only at the machine learning model's first instantiation.
     The formula used to generate both vectors $v_1$ and $v_2$ is given under \cite[p. 4]{EfficientUnitaryRNNs}.
     This way of applying the mapping of the $F$ matrices to the input vector avoids matrix multiplications and uses element-wise multiplications and permutation operations. It is an efficient way to parameterize unitary matrices.
-    As the output vector of this machine learning model is complex, the real part of the output was used for further processing as this was also done in benchmarks from the official repository of the paper \cite{EfficientUnitaryRNNs} which can be found under the url \url{https://github.com/jingli9111/EUNN-tensorflow/blob/master/copying_task.py}.
+    As the output vector of this machine learning model is complex, the real part of the output was used for further processing as this was also done in benchmarks from the official repository of the paper \cite{EfficientUnitaryRNNs} which can be found under the URL \url{https://github.com/jingli9111/EUNN-tensorflow/blob/master/copying_task.py}.
     This model also has a configurable hidden vector size, which must be even, and was picked to $128$ throughout the thesis.
     The capacity $L$ was always set to $16$. Therefore the matrix $W$ is parameterized as a partial-space unitary matrix.
     As the output vector size has the be variable, the real part of the model's output vector was then fed to a dense layer to achieve the correct output vector dimension.
@@ -1184,6 +1198,13 @@
     The training data is acquired simulation data of the \texttt{Walker2d-v2} OpenAI gym \cite{OpenAIGym} controlled by a pre-trained policy.
     The objective was to learn the MuJoCo physics engine's kinematic simulation \cite{MuJoCo} in an auto-regressive fashion using imitation learning.
     The simulation data was acquired from various training stages of the pre-trained policy (between 500 and 1200 Proximal Policy Optimization iterations) to increase the task difficulty. Furthermore, 1\% of actions were overwritten by random actions.
+    The simulation environment can be visualized as follows:
+    \begin{figure}[H]
+        \centering{}
+        \includegraphics[page=7,width=0.8\linewidth,trim={340 345 105 375},clip]{../../../literature/learning_long_term_dependencies_in_irregularly_sampled_time_series.pdf}
+        \caption{visualized \texttt{Walker2d-v2} OpenAI gym \cite[p. 7]{ODELSTM}}
+        \label{fig:walker2d_vis}
+    \end{figure}
     Furthermore, the benchmark implements eventual frame-skips that would create an irregularly sampled time-series.
     This feature was not used in this thesis as it covers only regularly sampled time-series.
     If the model understands the dynamics guided by differential equations, it will be able to produce accurate predictions.
@@ -1228,9 +1249,16 @@
     \section{MNIST Benchmark} \label{mnist}
     This benchmark evaluates how well a model can capture long-term dependencies. For correct classification, the model needs to incorporate input vectors from the distant past, further explained below.
     The idea to incorporate this benchmark was taken from \cite{ODELSTM}, which also features an event-based sequential MNIST classification problem.
-    Input sequences for this benchmark were constructed from the MNIST dataset of the Keras framework \cite{Keras}.
+    Input sequences for this benchmark were constructed from the MNIST dataset \cite{mnist} of the Keras framework \cite{Keras}.
     The MNIST dataset contains images of hand-drawn digits of $28$ by $28$ pixels where a single integer encodes each pixel from $0$ to $255$.
     All images are in grey-scale, and a higher integer represents a darker pixel.
+    Some examples of these images are given in the following figure:
+    \begin{figure}[H]
+        \centering{}
+        \includegraphics[width=0.8\linewidth]{graphics/mnist.png}
+        \caption{images from the MNIST dataset \cite{mnist}}
+        \label{fig:walker2d_vis}
+    \end{figure}
     The images were vectorized to a vector containing $784$ entries and then split up to a sequence of vector chunks of size $8$, which results in an input sequence length of $98$.
     The expected output class index is just the digit the current image is representing.
     Furthermore, the benchmark has a configurable maximum amount of samples, which was set to $40000$.
