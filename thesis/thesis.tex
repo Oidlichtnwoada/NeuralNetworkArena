@@ -202,7 +202,7 @@
     \end{align}
     The above equation reveals that a machine learning framework has to compute all partial derivatives of all functions present in the above-mentioned computational graph.
     Furthermore, it must keep track of the so-called activations, which are denoted by $y(x_0)$ in the above formula \ref{chain_rule}, as otherwise the gradient of the loss function with respect to the individual parameters cannot be computed.
-    As this can use lots of memory, reversible layers were introduced by \cite{ReversibleLayer} where intermediate activations can be computed from the layer’s output vector, which makes storing intermediate activations obsolete.
+    As this can use lots of memory, reversible layers were introduced by \cite{ReversibleLayer} where intermediate activations can be computed from the layerâ€™s output vector, which makes storing intermediate activations obsolete.
 
     \section{Problem Statement}
     As the sheer amount of different machine learning models can be overwhelming, the task was to fix a distinct application domain and compare the most influential machine learning models in this domain with suitable benchmarks.
@@ -518,7 +518,7 @@
     Multiplication, which is meant element-wise, is denoted with subscript $ew$. Otherwise, the notation is kept the same as in previous models.
     The equations \ref{retrieval_scale} and \ref{retrieval_weighting} determine the retrieval scale and compute the weighting for each time scale.
     The equations \ref{storage_scale} and \ref{storage_weighting} determine the storage scale and compute the weighting for each time scale.
-    The retrieval scale vector $r_{ki}$ is the multi-dimensional equivalent to the GRU architecture's reset vector. The storage scale vector $s_{ki}$ is the multi-dimensional equivalent to the GRU architecture’s update vector.
+    The retrieval scale vector $r_{ki}$ is the multi-dimensional equivalent to the GRU architecture's reset vector. The storage scale vector $s_{ki}$ is the multi-dimensional equivalent to the GRU architectureâ€™s update vector.
     Equation \ref{relevant_event_signals} describes how the next candidate hidden state vector $s_k$ is computed.
     Finally, equation \ref{state_update} describes how the hidden state for each time scale is updated and equation \ref{state_output} describes how the output vector $h_k$ is computed out of the multi-dimensional hidden state vector.
     It can be said that the CT-GRU architecture is a GRU model with a multi-dimensional state and exponential decay of its state between input vector observations with different time constants.
@@ -689,8 +689,8 @@
     As presented in section \ref{urnn}, the parametrization is quite involved, and therefore the new way of parameterizing the unitary matrix is using an approximated matrix exponential.
     Any unitary matrix $W$ of dimension $N \times N$ can be written as the matrix exponential of a skew-Hermitian matrix $A$ of dimension $N \times N$ as $W=e^A$. The problem is therefore reduced to parameterizing a skew-Hermitian matrix $A$.
     This matrix exponential is the matrix generalization of $|e^j|=1$ in the scalar case where $j$ is an imaginary number.
-    The approximated matrix exponential implementation used for this model is exposed under the function \texttt{tf.linalg.expm} in the Tensorflow library \cite{Tensorflow} which uses PadÃ© approximation as desribed in \cite{expm}.
-    The fundamental idea is that $e^A = (e^{2^{-s}A})^{2^s} \approx (r_m(2^{-s}A))^{2^s}$ where $r_m(X)$ is the $[m/m]$ PadÃ© approximant to $e^X$ and the non-negative integers $m$ and $s$ are to be chosen \cite[p. 1]{expm}.
+    The approximated matrix exponential implementation used for this model is exposed under the function \texttt{tf.linalg.expm} in the Tensorflow library \cite{Tensorflow} which uses PadÃƒÂ© approximation as desribed in \cite{expm}.
+    The fundamental idea is that $e^A = (e^{2^{-s}A})^{2^s} \approx (r_m(2^{-s}A))^{2^s}$ where $r_m(X)$ is the $[m/m]$ PadÃƒÂ© approximant to $e^X$ and the non-negative integers $m$ and $s$ are to be chosen \cite[p. 1]{expm}.
     An approximation is needed as the matrix exponential $e^A$ is defined by an infinite sum as follows:
     \begin{align}
     \label{expm_definition}
@@ -729,7 +729,7 @@
     \end{align}
     The $UnitaryRNN$ function is just a pointer to the corresponding model function described in \ref{urnn_state}.
     The NCP model maps the input sequence to an output sequence as denoted by the function $NCP$. The model function is described in detail in section \ref{ncp}.
-    The architecture should combine the NCP model's excellent expressiveness and the Unitary RNN model’s ability to capture long-term dependencies.
+    The architecture should combine the NCP model's excellent expressiveness and the Unitary RNN modelâ€™s ability to capture long-term dependencies.
     The Unitary RNN was configured with a hidden state vector size of $32$, and the capacity was set to $4$. 
     The NCP model uses $4$ inter and command neurons and no recurrent command synapses, as the Unitary RNN should handle memory-related tasks.
     For details on both architectures, consult their sections.
@@ -815,7 +815,7 @@
     The $token\_amount$ parameter determines how often the decoder architecture should be run.
     After a complete run of the decoder architecture, the output vector of size $token\_size$ corresponding to the last decoder input is concatenated to the list of all decoder inputs, and the whole decoder architecture is rerun, now with two or more input vectors for the decoder.
     These reruns lead to the recurrence of the Transformer model.
-    The Transformer architecture’s output is then a flattened version of all output vectors of the decoder, excluding the first start vector.
+    The Transformer architectureâ€™s output is then a flattened version of all output vectors of the decoder, excluding the first start vector.
     \subsection{Implementation}
     The implementation used for benchmarking had $token\_amount$ set to $1$ and $token\_size$ set to the required output vector size.
     The hyperparameter $d_{model}$ was set to $16$, $h$ was set to $2$, $d_{ff}$ was set to $64$, there were $2$ encoder and decoder layers used and the dropout rate was set to $0$.
@@ -878,7 +878,7 @@
     Furthermore, using the memory enable signals for each memory row, the architecture may also freely determine how many memory rows it wants to write to in a single time step.
     This architecture tries to separate computation and memory just like personal computers do. 
     The CPU equivalent in this architecture is the encoder layer, including all the dense layers, and the external memory is responsible for persisting information.
-    The benchmarked implementation had $r$ and $c$ set to $16$, the embedding size set to $32$, and the number of heads in the encoder layer set to $2$. Furthermore, it had the encoder layer’s feed-forward size $d_{ff}$ set to $128$, and the dropout rate $dr$, as well as the encoder layer’s dropout rate in the encoder layer, set to $0$.
+    The benchmarked implementation had $r$ and $c$ set to $16$, the embedding size set to $32$, and the number of heads in the encoder layer set to $2$. Furthermore, it had the encoder layerâ€™s feed-forward size $d_{ff}$ set to $128$, and the dropout rate $dr$, as well as the encoder layerâ€™s dropout rate in the encoder layer, set to $0$.
     The Memory Augmented Transformer model implementation used in this thesis is exposed under the \texttt{get\_memory\_augmented\_transformer\_output} function defined in the file \url{https://github.com/Oidlichtnwoada/NeuralNetworkArena/blob/master/experiments/models/model_factory.py}.
     The in-detail implementation is provided in the file \url{https://github.com/Oidlichtnwoada/NeuralNetworkArena/blob/master/experiments/models/memory_augmented_transformer.py}.
 
@@ -928,7 +928,7 @@
     The controller was configured as an LSTM \ref{lstm} with a hidden state vector size of $64$. There were $2$ read heads and $1$ write head used.
     Even if the architecture supports a memory of infinite size, the memory shape must be fixed for implementation.
     The number of memory rows $N$ was set to $16$, and the size of each vector $C$ was set to $8$.
-    Each memory entry's initial state and each first read vector entry’s initial state is picked to $10^{-6}$. 
+    Each memory entry's initial state and each first read vector entryâ€™s initial state is picked to $10^{-6}$. 
     The DNC model implementation used in this thesis is exposed under the \texttt{get\_differentiable\_neural\_computer\_output} function defined in the file \url{https://github.com/Oidlichtnwoada/NeuralNetworkArena/blob/master/experiments/models/model_factory.py}.
     The in-detail implementation is provided in the file \url{https://github.com/Oidlichtnwoada/NeuralNetworkArena/blob/master/experiments/models/differentiable_neural_computer.py}.
 
@@ -1130,7 +1130,7 @@
     Predicting $1$ will be the case in this strategy as the expectation of each unique number out of the two marked ones is $0.5$, as they were drawn uniformly from the given interval.
     The addition of both expectation values reveals the output of the memory-less strategy.
     As also pointed out in \cite[p. 6]{UnitaryRNNs}, this naive strategy will lead to a mean squared error of $\frac{1}{6}$.
-    This result can be verified as the mean squared error when predicting the mean is equal to the distribution’s variance.
+    This result can be verified as the mean squared error when predicting the mean is equal to the distributionâ€™s variance.
     As both random numbers were picked independently of each other, the random number sum's variance is just the sum of their variances.
     The distribution from which the random numbers are drawn has variance $\frac{1}{12}$.
     Therefore, adding this value to itself proves the mean square error of the memory-less strategy.
@@ -1141,7 +1141,7 @@
     \section{Walker Benchmark} \label{walker}
     This benchmark evaluates how well a model can predict a dynamic, physical system's behavior. It was taken from \cite{ODELSTM}.
     The training data is acquired simulation data of the \texttt{Walker2d-v2} OpenAI gym \cite{OpenAIGym} controlled by a pre-trained policy.
-    The objective was to learn the MuJoCo physics engine’s kinematic simulation \cite{MuJoCo} in an auto-regressive fashion using imitation learning.
+    The objective was to learn the MuJoCo physics engineâ€™s kinematic simulation \cite{MuJoCo} in an auto-regressive fashion using imitation learning.
     The simulation data was acquired from various training stages of the pre-trained policy (between 500 and 1200 Proximal Policy Optimization iterations) to increase the task difficulty. Furthermore, 1\% of actions were overwritten by random actions.
     Furthermore, the benchmark implements eventual frame-skips that would create an irregularly sampled time-series. 
     This feature was not used in this thesis as it covers only regularly sampled time-series.
