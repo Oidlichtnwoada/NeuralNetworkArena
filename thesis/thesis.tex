@@ -148,7 +148,9 @@
 % Switch to Arabic numbering and start the enumeration of chapters in the table of content.
     \mainmatter
 
+
     \chapter{Introduction}
+
 
     \section{Machine Learning Terms}
     A machine learning model is a mathematical parametrized function that gets input and produces an output.
@@ -173,7 +175,7 @@
     As this is a problem that cannot be solved analytically in most cases, it is approximated by using gradient descent \cite{GradientDescent}.
     This method incrementally changes each parameter depending on the gradient of each parameter's loss function in a lockstep fashion.
     By denoting the loss function with $L$, the learning rate with $\alpha$, the whole old parameter set with $p$, the old single scalar parameter with $p_i$ and the new single scalar parameter with $p_i'$, the formula to update the individual parameters $p_i$ in a single gradient descent step can be given as follows \cite{GradientDescent}:
-    \begin{align} 
+    \begin{align}
         \label{gradient_descent_update}
         \forall p_i:~p_i' &= p_i - \alpha * \frac{\partial{L}}{\partial{p_i}}(p)
     \end{align}
@@ -185,7 +187,7 @@
     Therefore, a too-large learning rate is far more dangerous than a too-small one.
     Convergence means that the parameter updates have led to a local minimum of the loss function.
     There are no guarantees that this is the global minimum. Divergence means that the loss function diverges towards infinity.
-    A local minimum or convergence can be reached by applying the gradient descent update rule to as many inputs as needed to set the loss function derivative to nearly zero. 
+    A local minimum or convergence can be reached by applying the gradient descent update rule to as many inputs as needed to set the loss function derivative to nearly zero.
     The trajectory of the parameter set on the loss surface when repeatedly applying the gradient descent update rule was visualized in \cite[p. 2]{gradient_descent_vis} with the initial starting parameter set denoted as a black triangle as follows:
     \begin{figure}[H]
         \centering{}
@@ -197,12 +199,13 @@
     If these nested functions correspond to applying the same machine learning model function across multiple input time steps as done in recurrent neural networks, then this backpropagation procedure can also be called backpropagation through time as introduced in \cite{GradientDescent}.
     The chain rule for differentiating $z(y(x_0))$ with respect to $x$ for $x=x_0$ where $z$ and $y$ are both functions in a single variable is given by:
     \begin{align}
-    \label{chain_rule}
-    \frac{dz}{dx} \Bigr\rvert_{x=x_0} = \frac{dz}{dy} \Bigr\rvert_{y=y(x_0)} * \frac{dy}{dx} \Bigr\rvert_{x=x_0}
+        \label{chain_rule}
+        \frac{dz}{dx} \Bigr\rvert_{x=x_0} = \frac{dz}{dy} \Bigr\rvert_{y=y(x_0)} * \frac{dy}{dx} \Bigr\rvert_{x=x_0}
     \end{align}
     The above equation reveals that a machine learning framework has to compute all partial derivatives of all functions present in the above-mentioned computational graph.
     Furthermore, it must keep track of the so-called activations, which are denoted by $y(x_0)$ in the above formula \ref{chain_rule}, as otherwise the gradient of the loss function with respect to the individual parameters cannot be computed.
-    As this can use lots of memory, reversible layers were introduced by \cite{ReversibleLayer} where intermediate activations can be computed from the layer’s output vector, which makes storing intermediate activations obsolete.
+    As this can use lots of memory, reversible layers were introduced by \cite{ReversibleLayer} where intermediate activations can be computed from the layer's output vector, which makes storing intermediate activations obsolete.
+
 
     \section{Problem Statement}
     As the sheer amount of different machine learning models can be overwhelming, the task was to fix a distinct application domain and compare the most influential machine learning models in this domain with suitable benchmarks.
@@ -212,16 +215,17 @@
     The whole implementation work done for this thesis should be accessible for everyone by open-sourcing all the code.
     As mentioned in the abstract, all the models covered in this thesis are either derivatives of the recurrent neural network or the transformer \cite{Transformer} architecture.
     The benchmarks used in this thesis either test the models for their capabilities to capture long-term dependencies or their ability to model physical systems.
-    
+
+
     \section{How to better model Physical Systems} \label{physical_systems}
     Differential equations guide physical systems. The relation between system state $x$, system input $u$ and system output $y$ is given by the state derivative function $f$ and the output function $h$, both of which depend on the absolute time $t$, as follows:
-    \begin{align} 
+    \begin{align}
         \label{physical_system_equations_state}
         \dot x(t) &= f(x(t),u(t),t) \\
         \label{physical_system_equations_output}
         y(t) &= h(x(t),u(t),t)
     \end{align}
-    This form of system description applies to all continuous physical systems in our daily surroundings. Most of these systems are even time-invariant. 
+    This form of system description applies to all continuous physical systems in our daily surroundings. Most of these systems are even time-invariant.
     This means the functions $f$ and $h$ do not depend on the absolute time $t$.
     For example, a mechanical pendulum will now approximately behave the same as in one year, as its dynamics do not depend on the absolute time $t$.
     The system description presented in \ref{physical_system_equations_state} and \ref{physical_system_equations_output} proposes that machine learning models built similarly and whose state is also determined by a differential equation should be pretty capable of modeling the input-output relation of physical systems.
@@ -233,19 +237,20 @@
         \caption{visualization of input-output relation of a continuous system}
         \label{fig:continuous_system_vis}
     \end{figure}
-    
+
+
     \section{Sampled Physical Systems} \label{sampled_physical_systems}
     As the current state's evaluation $x$ at time point $t'$, with initial state $x_0$ given the dynamics from \ref{physical_systems}, can be computationally very expensive or even infeasible, sampling was introduced to avoid solving a complex differential equation.
     Therefore, the whole system is only observed at equidistant successive time instants, values belonging to this time instant are denoted with a subscript index $k \in \mathbb{Z}$, and the system is now called discrete.
     Difference equations guide discrete systems. The relation between system state $x$, system input $u$ and system output $y$ is given by the next state function $f$ and the output function $h$, both of which depend on the time instant $k$, as follows:
-    \begin{align} 
+    \begin{align}
         \label{discrete_system_equations_state}
         x_{k+1} &= f(x_k,u_k,k) \\
         \label{discrete_system_equations_output}
         y_k &= h(x_k,u_k,k)
-    \end{align} 
+    \end{align}
     It must be noted that $x$ and $y$ are time-series in discrete systems and no more functions like in continuous-time physical systems.
-    This slightly off-topic explanation is necessary, as vanilla recurrent neural networks are built using the same principle. 
+    This slightly off-topic explanation is necessary, as vanilla recurrent neural networks are built using the same principle.
     The system equations \ref{discrete_system_equations_state} and \ref{discrete_system_equations_output} require a regularly (equidistantly) sampled input $x$.
     A similar argument as before in \ref{physical_systems} proposes now that a machine learning model with a similar structure, which gets a regularly sampled input of a physical system, should also be pretty capable of modeling the input-output relation of this sampled physical system.
     The corresponding machine learning models are then called discrete-time machine learning models.
@@ -256,11 +261,12 @@
         \caption{visualization of input-output relation of a discrete system}
         \label{fig:discrete_system_vis}
     \end{figure}
-    
+
+
     \section{Why capturing Long-Term Dependencies is difficult} \label{long_term_difficult}
     The difficulty will be outlined solely on the example of vanilla recurrent neural networks (RNNs).
     How transformer-based and advanced RNN architectures tackle the problem will be discussed later.
-    Vanilla recurrent neural networks are discrete-time machine learning models. 
+    Vanilla recurrent neural networks are discrete-time machine learning models.
     Its dynamics are given similar to the equations that govern sampled physical systems \ref{sampled_physical_systems}.
     The current state vector $h_{t}$ and the next input vector $x_{t+1}$ determine the next state vector $h_{t+1}$ and output vector $y_{t+1}$ deterministically.
     In this model, all the past inputs are implicitly encoded in the current state vector.
@@ -296,12 +302,14 @@
     The first case is called the exploding gradient problem, and the second case is called the vanishing gradient problem for given reasons.
     Both phenomena are explained in more detail in \cite{LongTermDependenciesGradientDescent}.
 
+
     \section{Aim of the Work}
     This work should help to objectively compare various machine learning models used to process regularly sampled time-series data.
     It should outline the weaknesses and strengths of the benchmarked models and determine their primary domain of use.
     Moreover, as there are many models benchmarked, their relative expressivity across various application domains can be compared reasonably well.
     Another aim is to provide an overview of what architectures are currently available and how they can be implemented.
     Furthermore, the implemented benchmark suite should be reusable for future projects in the machine learning domain.
+
 
     \section{Methodological Approach}
     The first part of this thesis was to determine the most influential models for processing time-series data.
@@ -321,6 +329,7 @@
     When this step is also done, all benchmarks should be run on all applicable models, and then the results should be thoroughly compared to filter out the strengths and weaknesses of the diverse models.
     Only after that, a summary should be written to concisely summarize the most important discoveries and fallacies that were made.
 
+
     \section{State of the Art}
     The whole field of sequence modeling started with recurrent neural networks.
     More and more modern machine learning architectures exploit the fact that continuous-time models are very well suited for tasks related to dynamical physical systems as explained in \ref{physical_systems}.
@@ -330,24 +339,27 @@
     One solution for the problem was proposed in \cite{UnitaryRNNs}, which introduced the Unitary RNN architecture.
     In principle, this architecture uses the vanilla RNN architecture described above. The difference is that the matrix $W$ fulfills $\left\Vert W \right\Vert_{2,ind} = 1$ to tackle the vanishing and exploding gradient problem.
     This idea was later refined by \cite{EfficientUnitaryRNNs}.
-    The vanishing gradient problem was also tackled by the LSTM architecture \cite{LSTM} using a gating mechanism. 
+    The vanishing gradient problem was also tackled by the LSTM architecture \cite{LSTM} using a gating mechanism.
     This mechanism changes the subsequent state computation of the vanilla RNN.
     Another possible mitigation to the vanishing gradient problem is the transformer architecture proposed in \cite{Transformer} using a mechanism called attention.
     In principle, the transformer architecture model has access to all past inputs simultaneously and directs its attention to the inputs most relevant for solving the required task.
-    This global access eliminates the need to backpropagate the error through multiple time-steps, which keeps the number of backpropagation steps low. 
-    
+    This global access eliminates the need to backpropagate the error through multiple time-steps, which keeps the number of backpropagation steps low.
+
 %\todo{Enter your text here.}
 
+
     \chapter{Models}
+
 
     \section{Model Factory}
     As all the benchmarks require variants of the same models with different output vector sizes, a model factory function was implemented to produce an output tensor given the model's name, the output vector size, and the input tensor tuple.
     This function was called \texttt{get\_model\_output\_by\_name} and can be found under \url{https://github.com/Oidlichtnwoada/NeuralNetworkArena/blob/master/experiments/models/model_factory.py}.
     This mechanism of creating the output tensor, including the internal computational graph of the Tensorflow library \cite{Tensorflow} is called the Functional API.
-    Most of the models were parameterized such that they have roughly $20000$ trainable parameters in the Walker Benchmark \ref{walker} as this benchmark features the largest input and output vector size of all benchmarks. 
+    Most of the models were parameterized such that they have roughly $20000$ trainable parameters in the Walker Benchmark \ref{walker} as this benchmark features the largest input and output vector size of all benchmarks.
     The exceptions of the parameter cound are the Unitary RNN model \ref{urnn}, the NCP model \ref{ncp}, the Unitary NCP model \ref{uncp}, the Recurrent Network Augmented Transformer \ref{rnaut} and the Recurrent Network Attention Transformer \ref{rnatt}.
-    All these models' computational graphs lead to high computation costs during backpropagation, which leads to training durations up to a whole day for a single benchmark. 
+    All these models' computational graphs lead to high computation costs during backpropagation, which leads to training durations up to a whole day for a single benchmark.
     This high computational cost was unacceptable, and therefore their parameter count was reduced to present at least some results for these models.
+
 
     \section{LSTM} \label{lstm}
     The LSTM (Long Short-Term Memory) recurrent neural network architecture is a discrete-time machine learning model as introduced in \ref{sampled_physical_systems}.
@@ -355,16 +367,16 @@
     This thesis uses the open-source LSTM implementation provided by the Keras library \cite{Keras} which is based on the original LSTM paper \cite{LSTM} as well on its successor paper \cite{LSTM_forget} that introduces a forget mechanism for the LSTM.
     The function the LSTM model is applying to its inputs to produce the outputs is given as follows with inputs denoted as $x_t$ and outputs which equals the hidden states denoted as $h_t$ \cite[p. 4-8]{LSTM_forget}:
     \begin{align}
-    \label{forget_gate} f_t &= sigmoid(W_f*x_t + U_f*h_{t-1} + b_f) \\
-    \label{input_gate} i_t &= sigmoid(W_i*x_t + U_i*h_{t-1} + b_i) \\
-    \label{output_gate} o_t &= sigmoid(W_o*x_t + U_o*h_{t-1} + b_o) \\
-    \label{cell_input} \tilde{c}_t &= tanh(W_c*x_t + U_c*h_{t-1} + b_c) \\
-    \label{cell_state} c_t &= f_t * c_{t-1} + i_t * \tilde{c}_t \\
-    \label{hidden_state} h_t &= o_t * tanh(c_t)
+        \label{forget_gate} f_t &= sigmoid(W_f*x_t + U_f*h_{t-1} + b_f) \\
+        \label{input_gate} i_t &= sigmoid(W_i*x_t + U_i*h_{t-1} + b_i) \\
+        \label{output_gate} o_t &= sigmoid(W_o*x_t + U_o*h_{t-1} + b_o) \\
+        \label{cell_input} \tilde{c}_t &= tanh(W_c*x_t + U_c*h_{t-1} + b_c) \\
+        \label{cell_state} c_t &= f_t * c_{t-1} + i_t * \tilde{c}_t \\
+        \label{hidden_state} h_t &= o_t * tanh(c_t)
     \end{align}
     The term $f_t$ \ref{forget_gate} is the forget gate's activation vector, $i_t$ \ref{input_gate} is the input gate's activation vector, $o_t$ \ref{output_gate} is the output gate's activation vector, $\tilde{c}_t$ \ref{cell_input} is the cell input activation vector, $c_t$ \ref{cell_state} is the cell state vector and $h_t$ \ref{hidden_state} is the hidden state vector or also called output vector of the LSTM model.
     The initial hidden state $h_0$ and the initial cell state $c_0$ are picked to the all-zero vector.
-    Matrices are denoted with capital letters, and vectors are denoted with lower case letters. 
+    Matrices are denoted with capital letters, and vectors are denoted with lower case letters.
     The LSTM model has a configurable state size. The multiplication sign between two vectors denotes a scalar product, and it denotes matrix multiplication between matrices and vectors.
     This convention is used throughout this thesis.
     Dimensions of matrices are picked such that the resulting vector has the required state size, which is configurable.
@@ -384,13 +396,14 @@
     LSTMs can incorporate this mechanism to store essential information from the distant past, which may help to make accurate predictions in the future.
     Furthermore, the model can also decide to forget the previous cell state entirely if the current input vector makes the stored cell state obsolete in the corresponding application.
     This forgetting is done by learning to set the forget gate's activation vector close to zero, and the cell input activation vector is then used to fill the cell state again if the input gate's activation vector is set accordingly.
-    The output gate's activation vector determines which portion of the cell state is used to build the hidden state or output vector of the LSTM model. 
+    The output gate's activation vector determines which portion of the cell state is used to build the hidden state or output vector of the LSTM model.
     Throughout the thesis, an LSTM model with a fixed state vector size of $64$ was used. As mentioned in the benchmark framework section, each model must support an arbitrary output vector size.
     The correct model output vector size is accomplished by postprocessing the hidden state outputs of the LSTM by a dense layer with the required amount of output neurons and without an activation function.
     The output $y$ of a dense layer without an activation function and input vector $x$ can simply be given by: $y = W*x + b$.
     In this notation, $W$ is a matrix such that it maps the input vector $x$ to the required output size, and $b$ is just a bias vector as in the functions describing the LSTM model.
     Training the LSTM model from the Keras library is fast as it uses an optimized cuDNN \cite{cuDNN} implementation.
     The LSTM model implementation used in this thesis is exposed under the \texttt{get\_lstm\_output} function defined in the file \url{https://github.com/Oidlichtnwoada/NeuralNetworkArena/blob/master/experiments/models/model_factory.py}.
+
 
     \section{GRU} \label{gru}
     The GRU (Gated Recurrent Unit) recurrent neural network architecture is a discrete-time machine learning model as introduced in \ref{sampled_physical_systems}.
@@ -400,10 +413,10 @@
     This simplification leads to a smaller parameter count of a GRU model with the same hidden state vector size as an LSTM model.
     The function the GRU model is applying to its inputs to produce the outputs is given as follows with inputs denoted as $x_t$ and outputs which equals the hidden states denoted as $h_t$ \cite[p. 4]{GRU}:
     \begin{align}
-    \label{update_gate} z_t &= sigmoid(W_z*x_t + U_z*h_{t-1} + b_z) \\
-    \label{reset_gate} r_t &= sigmoid(W_r*x_t + U_r*h_{t-1} + b_r) \\
-    \label{candidate_activation_vector} \tilde{h}_t &= tanh(W_h*x_t + U_h*(r_t * h_{t-1}) + b_h) \\
-    \label{output_vector} h_t &= (1 - z_t) * h_{t-1} + z_t * \tilde{h}_t \\
+        \label{update_gate} z_t &= sigmoid(W_z*x_t + U_z*h_{t-1} + b_z) \\
+        \label{reset_gate} r_t &= sigmoid(W_r*x_t + U_r*h_{t-1} + b_r) \\
+        \label{candidate_activation_vector} \tilde{h}_t &= tanh(W_h*x_t + U_h*(r_t * h_{t-1}) + b_h) \\
+        \label{output_vector} h_t &= (1 - z_t) * h_{t-1} + z_t * \tilde{h}_t \\
     \end{align}
     The term $z_t$ \ref{update_gate} is the update gate vector, $r_t$ \ref{reset_gate} is reset gate vector, $\tilde{h}_t$ \ref{candidate_activation_vector} is the candidate activation vector and $h_t$ is the hidden state or output vector of the GRU model.
     The initial hidden state $h_0$ is picked to the all-zero vector.
@@ -425,21 +438,22 @@
     Another critical difference between the LSTM and GRU architecture is that the LSTM architecture controls the portions of the previous cell state and the portions of the cell input activation that add up to the next step cell state separately using the forget gate's activation vector and the input gate's activation vector \ref{cell_state}.
     The GRU model simplifies this mechanism by providing just a single update gate vector $z$.
     The other vector controlling the portion from the previous hidden state added together to build the next step hidden state vector is then determined by subtracting $z$ from the all-one vector \ref{output_vector}.
-    This subtraction is feasible as the sigmoid activation function produces only outputs lying in the interval $[0,1]$. 
+    This subtraction is feasible as the sigmoid activation function produces only outputs lying in the interval $[0,1]$.
     Furthermore, the reset mechanism works differently in the GRU architecture as the reset vector solely operates on the previous step hidden state vector when computing the next state candidate activation vector.
     Throughout the thesis, a GRU model with a fixed state vector size of $80$ was used. As mentioned in the benchmark framework section, each model must support an arbitrary output vector size.
     This variable output vector size is accomplished by postprocessing the hidden state outputs with a dense layer, just like in the case of the LSTM architecture \ref{lstm}.
     Training the GRU model from the Keras library is fast as it uses an optimized cuDNN \cite{cuDNN} implementation.
     The LSTM model implementation used in this thesis is exposed under the \texttt{get\_gru\_output} function defined in the file \url{https://github.com/Oidlichtnwoada/NeuralNetworkArena/blob/master/experiments/models/model_factory.py}.
- 
+
+
     \section{CT-RNN} \label{ctrnn}
     The CT-RNN (continuous-time recurrent neural network) was first proposed in \cite{CTRNN} and is a continuous-time machine learning model \ref{physical_systems}.
     This thesis uses an implementation taken from the repository of the paper \cite{ODELSTM} which can be found under the URL \url{https://github.com/mlech26l/ode-lstms}.
     The CT-RNN has a configurable hidden state vector size, and its output vector is equal to its hidden state vector at each time step.
     The hidden state vector is parametrized as follows \cite[p. 2]{CTRNN} with the same notation as introduced in \ref{lstm}:
     \begin{align}
-    \label{paper_ct_rnn_function}
-    \dot h(t) &= -\frac{h(t)}{\tau} + W * sigmoid(h(t)) + i(t)
+        \label{paper_ct_rnn_function}
+        \dot h(t) &= -\frac{h(t)}{\tau} + W * sigmoid(h(t)) + i(t)
     \end{align}
     The division between $h(t)$ and the vector $\tau$ is understood element-wise. The vector $\tau$ is also called the time constant as it is the time constant of the exponential decay of the hidden state vector over time.
     As the input has not, in general, the same dimension as the hidden state vector, the input is preprocessed by mapping it to the proper dimension with matrix multiplication.
@@ -447,8 +461,8 @@
     There is also an additional bias vector $b$ and scaling vector $\alpha$ introduced whose multiplication is to understand element-wise.
     The derivative in the CT-RNN implementation used for benchmarking is given by:
     \begin{align}
-    \label{used_ct_rnn_function}
-    \dot h(t) &= -\frac{h(t)}{\tau} + \alpha * tanh(W_h * h(t) + W_i * i(t) + b)
+        \label{used_ct_rnn_function}
+        \dot h(t) &= -\frac{h(t)}{\tau} + \alpha * tanh(W_h * h(t) + W_i * i(t) + b)
     \end{align}
     The idea of parameterizing the derivative (change) of the hidden vector (activation) rather than computing a completely new hidden vector or activation was extensively reused in recent research.
     For example, ResNets \cite{ResNet} used the idea in a discrete-time model, and Neural ODEs \cite{NeuralODEs} reused it in a continuous-time model, which features a similar model function as the CT-RNN.
@@ -466,7 +480,7 @@
     The initial state of the CT-RNN is given by $h(0)$, which is picked to the all-zero vector.
     To compute the final hidden state $h(T)$, the ODE (ordinary differential equation) from \ref{used_ct_rnn_function} must be solved given the initial condition $h(0)$.
     This solving procedure can be done by incorporating ODE solvers, which compute $h(T)$ by approximately integrating $\dot h(t)$ with guarantees on the error bound.
-    Then $h(T)$ is given by $h(0) + \int_0^T{\dot h(t)}~dt$. 
+    Then $h(T)$ is given by $h(0) + \int_0^T{\dot h(t)}~dt$.
     In all continuous-time models implementations the ODE solver is called at each time step computing the next step hidden state $h(t+1)$ as $h(t) + \int_t^{t+1}{\dot h(t)}~dt$.
     Examples for ODE solvers are the explicit Euler method, the RK4 (Runge-Kutta $4^{th}$ order) method, or the Dormand-Prince method.
     The Dormand-Prince method is the default ODE solver used in the \texttt{ode45} solver of MATLAB \cite{MATLAB}.
@@ -481,6 +495,7 @@
     As pointed out by \cite[p. 3]{LTCNetworks}, this memory-efficient procedure, however, comes with numerical errors as it forgets the forward-time computational trajectories.
     The CT-RNN model implementation used in this thesis is exposed under the \texttt{get\_ct\_rnn\_output} function defined in the file \url{https://github.com/Oidlichtnwoada/NeuralNetworkArena/blob/master/experiments/models/model_factory.py}.
     The in-detail implementation is provided in the file \url{https://github.com/Oidlichtnwoada/NeuralNetworkArena/blob/master/experiments/models/ct_rnn.py}.
+
 
     \section{CT-GRU} \label{ctgru}
     The CT-GRU (continuous-time gated recurrent unit) recurrent neural network architecture is a continuous-time machine learning model firstly introduced in \cite{CTGRU}.
@@ -500,25 +515,25 @@
     As all benchmarks do not provide time inputs and the benchmarks' input vectors are regularly sampled, $\Delta t_k$ was set to constant $1$.
     The function the GRU model is applying to its input vectors to produce the output vectors or hidden state vectors is given as follows with inputs denoted as $x_k$ and outputs which equals the hidden states denoted as $h_k$ \cite[p. 7]{CTGRU}:
     \begin{align}
-    \label{retrieval_scale}
-    \ln{\tau_k^R} &= W^R*x_k + U^R*h_{k-1} + b^R \\
-    \label{retrieval_weighting}
-    r_{ki} &= softmax_i(-(\ln{\tau_k^R-\ln{\tau_i}})^2) \\
-    \label{relevant_event_signals}
-    q_k &= tanh(W^Q*x_k + U^Q*(\sum_i {r_{ki} *_{ew} \tilde{h}_{k-1,i}}) + b^Q) \\
-    \label{storage_scale}
-    \ln{\tau_k^S} &= W^S*x_k + U^S*h_{k-1} + b^S \\
-    \label{storage_weighting}
-    s_{ki} &= softmax_i(-(\ln{\tau_k^S-\ln{\tau_i}})^2) \\
-    \label{state_update}
-    \tilde{h}_{ki} &= [(1 - s_{ki}) *_{ew} \tilde{h}_{k-1,i} + s_{ki} *_{ew} q_k] * e^{-\frac{\Delta t_k}{\tau_i}} \\
-    \label{state_output}
-    h_k &= \sum_i{\tilde{h}_{ki}}
+        \label{retrieval_scale}
+        \ln{\tau_k^R} &= W^R*x_k + U^R*h_{k-1} + b^R \\
+        \label{retrieval_weighting}
+        r_{ki} &= softmax_i(-(\ln{\tau_k^R-\ln{\tau_i}})^2) \\
+        \label{relevant_event_signals}
+        q_k &= tanh(W^Q*x_k + U^Q*(\sum_i {r_{ki} *_{ew} \tilde{h}_{k-1,i}}) + b^Q) \\
+        \label{storage_scale}
+        \ln{\tau_k^S} &= W^S*x_k + U^S*h_{k-1} + b^S \\
+        \label{storage_weighting}
+        s_{ki} &= softmax_i(-(\ln{\tau_k^S-\ln{\tau_i}})^2) \\
+        \label{state_update}
+        \tilde{h}_{ki} &= [(1 - s_{ki}) *_{ew} \tilde{h}_{k-1,i} + s_{ki} *_{ew} q_k] * e^{-\frac{\Delta t_k}{\tau_i}} \\
+        \label{state_output}
+        h_k &= \sum_i{\tilde{h}_{ki}}
     \end{align}
     Multiplication, which is meant element-wise, is denoted with subscript $ew$. Otherwise, the notation is kept the same as in previous models.
     The equations \ref{retrieval_scale} and \ref{retrieval_weighting} determine the retrieval scale and compute the weighting for each time scale.
     The equations \ref{storage_scale} and \ref{storage_weighting} determine the storage scale and compute the weighting for each time scale.
-    The retrieval scale vector $r_{ki}$ is the multi-dimensional equivalent to the GRU architecture's reset vector. The storage scale vector $s_{ki}$ is the multi-dimensional equivalent to the GRU architecture’s update vector.
+    The retrieval scale vector $r_{ki}$ is the multi-dimensional equivalent to the GRU architecture's reset vector. The storage scale vector $s_{ki}$ is the multi-dimensional equivalent to the GRU architecture's update vector.
     Equation \ref{relevant_event_signals} describes how the next candidate hidden state vector $s_k$ is computed.
     Finally, equation \ref{state_update} describes how the hidden state for each time scale is updated and equation \ref{state_output} describes how the output vector $h_k$ is computed out of the multi-dimensional hidden state vector.
     It can be said that the CT-GRU architecture is a GRU model with a multi-dimensional state and exponential decay of its state between input vector observations with different time constants.
@@ -535,28 +550,31 @@
     The CT-GRU model implementation used in this thesis is exposed under the \texttt{get\_ct\_gru\_output} function defined in the file \url{https://github.com/Oidlichtnwoada/NeuralNetworkArena/blob/master/experiments/models/model_factory.py}.
     The in-detail implementation is provided in the file \url{https://github.com/Oidlichtnwoada/NeuralNetworkArena/blob/master/experiments/models/ct_gru.py}.
 
+
     \section{ODE-LSTM} \label{odelstm}
     The ODE-LSTM recurrent neural network architecture is a continuous-time machine learning model firstly introduced in \cite{ODELSTM}.
     The implementation of the ODE-LSTM architecture used in this thesis was taken from the repository of its original paper \cite{ODELSTM}.
     This model's idea is to combine the LSTM architecture's ability to capture long-term dependencies and the ability of CT-RNNs to accurately model dynamical physical systems, even if an irregularly sampled time-series is provided to the model as input.
-    As in this thesis, only regularly sampled time-series are used. The continuous-time model is continually fed with the time input $1$ as mentioned in the \ref{ctrnn} section. 
+    As in this thesis, only regularly sampled time-series are used. The continuous-time model is continually fed with the time input $1$ as mentioned in the \ref{ctrnn} section.
     This constant time input should be no problem as the ability to model dynamical physical systems generalizes to any time input very well.
     Like the LSTM architecture, the ODE-LSTM has two state vectors: one hidden state vector $h_i$ and one cell state vector $c_i$. Both vectors are initialized to the all-zero vector.
     The function the ODE-LSTM model is applying to its input vectors to produce the output vectors or hidden state vectors is given as follows with inputs denoted as $x_i$ and outputs denoted as $h_i$ \cite[p. 5]{ODELSTM}:
     \begin{align}
-    (c_i,h_i') &= LSTM(x_i, (c_{i-1}, h_{i-1})) \\
-    h_i &= CTRNN(h_i', (h_{i-1}))
+    (c_i,h_i')
+        &= LSTM(x_i, (c_{i-1}, h_{i-1})) \\
+        h_i &= CTRNN(h_i', (h_{i-1}))
     \end{align}
     The function $LSTM$ denotes one model function step of the LSTM model \ref{lstm} starting from the given state $(c_{i-1}, h_{i-1})$ for input $x_i$.
     The function $CTRNN$ denotes one model function step of the CT-RNN model \ref{ctrnn} starting from the given state $(h_{i-1})$ for input $x_i$, the input is set to $1$ for each time step.
     Implementation-wise, the CTRNN model function call was done to the implementation as described in \ref{ctrnn}.
-    The LSTM model function was implemented from scratch, and no library modules were used. 
+    The LSTM model function was implemented from scratch, and no library modules were used.
     As only the hidden state vector of the LSTM architecture is post-processed by the CT-RNN model, the cell state stays untouched, which enables the architecture to learn long-term dependencies by using the same argument as in \ref{lstm}.
     By the postprocessing of the hidden state vector, which controls the LSTM's gates, the gating dynamics become dependent on the time input as well \cite[p. 4]{ODELSTM}.
     Of course, the ODE-LSTM architecture has a configurable hidden state vector size, which was picked to $64$.
     The same hidden vector size was used to initialize the CT-RNN. The number of unfolds was set to $4$, and the explicit Euler method was used as an ODE solver.
     The ODE-LSTM model implementation used in this thesis is exposed under the \texttt{get\_ode\_lstm\_output} function defined in the file \url{https://github.com/Oidlichtnwoada/NeuralNetworkArena/blob/master/experiments/models/model_factory.py}.
     The in-detail implementation is provided in the file \url{https://github.com/Oidlichtnwoada/NeuralNetworkArena/blob/master/experiments/models/ode_lstm.py}.
+
 
     \section{Neural Circuit Policies (NCP)} \label{ncp}
     Neural Circuit Policies were used in the paper \cite{NCP} which shows the high expressivity of the architecture in autonomous driving.
@@ -566,12 +584,12 @@
     Neural Circuit Policies were derived from the neuron interconnection structure of the Caenorhabditis elegans nematode \cite[p. 3]{NCP} which trims the space of all possible LTC networks.
     The state of each neuron $i$ with incoming chemical synapses from neurons $j$ is given as its potential $V_i$ and the ODE that describes the dynamics of a single neuron's potential is given by \cite[p. 1-2]{LTCFormulas}:
     \begin{align}
-    \label{ltc_formula}
-    \dot{V_i}(t) &= \frac{1}{C_i} * (I_{leak,i} + \sum_j{I_{syn,ji}}) \\
-    \label{leakage_current}
-    I_{leak,i} &= G_{leak,i} * (E_{leak,i} - V_i(t)) \\
-    \label{synaptic_current}
-    I_{syn,ji} &= [G_{syn,ji} * sigmoid(\sigma_{ji}*(V_j(t)-\mu_{ji}))] * (E_{ji} - V_i(t))
+        \label{ltc_formula}
+        \dot{V_i}(t) &= \frac{1}{C_i} * (I_{leak,i} + \sum_j{I_{syn,ji}}) \\
+        \label{leakage_current}
+        I_{leak,i} &= G_{leak,i} * (E_{leak,i} - V_i(t)) \\
+        \label{synaptic_current}
+        I_{syn,ji} &= [G_{syn,ji} * sigmoid(\sigma_{ji}*(V_j(t)-\mu_{ji}))] * (E_{ji} - V_i(t))
     \end{align}
     By reordering terms in equation \ref{ltc_formula}, it can be shown that the time constant $\tau$ as used in the equation \ref{paper_ct_rnn_function} in the CT-RNN architecture is varying with time.
     The capacitance of a neuron $i$ is denoted as $C_i$ and the whole equation will be more familiar when the capacitance is brought to the left hand side which yields $C_i * \dot{V_i}(t) = I_{leak,i} + \sum_j{I_{syn,ji}}$.
@@ -581,7 +599,7 @@
     As the voltage $U$ is given as the potential difference, all terms in equation \ref{leakage_current} and \ref{synaptic_current} should be clear now.
     Worth mentioning is the non-linear conductance for chemical synaptic currents given as $G_{syn,ji} * sigmoid(\sigma_{ji}*(V_j(t)-\mu_{ji}))$, where the parameter $G_{syn,ji}$ controls the maximum conductance, the parameter $\mu_{ji}$ controls the mean conductance potential and the parameter $\sigma_{ji}$ controls the steepness of the transition between conductance and non-conductance.
     Note that the non-linear synaptic conductance is only influenced by the presynaptic neuron potential $V_j(t)$.
-    The potentials given by the capital letter $E$ control the targeted potentials for the neuron $i$. Therefore if the neuron has reached this potential, the corresponding currents will vanish. 
+    The potentials given by the capital letter $E$ control the targeted potentials for the neuron $i$. Therefore if the neuron has reached this potential, the corresponding currents will vanish.
     The NCP architecture builds its output vector by determining output neurons in the same amount as the output vector size.
     These neurons are called motor neurons, and their vectorized potentials then build the output vector.
     The input vector entries are fed to neurons as currents using the chemical synaptic current equation as described in \ref{synaptic_current} and by setting the presynaptic potential equal to the input vector entry.
@@ -608,61 +626,63 @@
     The NCP model implementation used in this thesis is exposed under the \texttt{get\_neural\_circuit\_policies\_output} function defined in the file \url{https://github.com/Oidlichtnwoada/NeuralNetworkArena/blob/master/experiments/models/model_factory.py}.
     The in-detail implementation is provided in the file \url{https://github.com/Oidlichtnwoada/NeuralNetworkArena/blob/master/experiments/models/neural_circuit_policies.py}.
 
+
     \section{Unitary RNN} \label{urnn}
     The Unitary RNN architecture was first introduced in \cite{UnitaryRNNs} and later refined in \cite{EfficientUnitaryRNNs} and is a discrete-time machine learning model.
     It uses the same vanilla recurrent neural network model function as discussed in section \ref{long_term_difficult}.
     The Unitary RNN implementation used in this thesis is a modified version of the original paper's implementation, which can be found under the url \url{https://github.com/jingli9111/EUNN-tensorflow/blob/master/eunn.py}.
     The next hidden state vector of a Unitary RNN $h_{t+1}$ which also equals its output vector is computed as given in \cite[p. 2]{EfficientUnitaryRNNs} by using a non-linear bias-parametrized activation function $\sigma$ and two matrices $W$ and $V$:
     \begin{align}
-    \label{urnn_state}
-    h_{t+1} &= \sigma(W*h_t + V*x_{t+1})
+        \label{urnn_state}
+        h_{t+1} &= \sigma(W*h_t + V*x_{t+1})
     \end{align}
     The bias-parametrized activation function $\sigma$ was set to the modrelu function firstly introduced in \cite[p. 4]{UnitaryRNNs}.
     The modrelu function applied to a complex vector $z$ is defined as follows for each vector entry $z_i$: $moderelu(z_i) = max(0, |z_i|+b_i) * \frac{z_i}{|z_i|}$ with a real-valued bias parameter $b_i$ per vector entry.
     The initial hidden state vector $h_0$ was picked to the all-zero vector.
     The difference with this model is that it does not use real parameters, which is the standard in machine learning.
-    It uses complex parameters that are represented by two single-precision floating-point parameters each. 
+    It uses complex parameters that are represented by two single-precision floating-point parameters each.
     The parameter count for each model, however, is always given in terms of single-precision floating-point parameters.
-    The matrices $W$ and $V$ are parametrized as complex matrices. 
-    Matrix $V$ does not have to follow any particular restrictions. Therefore, two real matrices $V_{real}$ and $V_{imag}$ for the real and imaginary part are employed for parameterization. 
-    As explained in detail in section \ref{long_term_difficult}, a matrix $W$ that fulfills $\left\Vert W \right\Vert_{2,ind} = 1$ and a suitable activation function $\sigma$ would solve the vanishing and exploding gradient problem for the vanilla recurrent neural network architecture and precisely this was done in the case of Unitary RNNs. 
-    Unitary matrices $W$ fulfill the requirement $\left\Vert W \right\Vert_{2,ind} = 1$, as all eigenvalues of unitary matrices have a magnitude of $1$ from which follows that $1$ is always the largest singular value as unitary matrices are square. 
+    The matrices $W$ and $V$ are parametrized as complex matrices.
+    Matrix $V$ does not have to follow any particular restrictions. Therefore, two real matrices $V_{real}$ and $V_{imag}$ for the real and imaginary part are employed for parameterization.
+    As explained in detail in section \ref{long_term_difficult}, a matrix $W$ that fulfills $\left\Vert W \right\Vert_{2,ind} = 1$ and a suitable activation function $\sigma$ would solve the vanishing and exploding gradient problem for the vanilla recurrent neural network architecture and precisely this was done in the case of Unitary RNNs.
+    Unitary matrices $W$ fulfill the requirement $\left\Vert W \right\Vert_{2,ind} = 1$, as all eigenvalues of unitary matrices have a magnitude of $1$ from which follows that $1$ is always the largest singular value as unitary matrices are square.
     As the spectral norm is just the largest singular value, it is proven that unitary matrices fulfill the proposed requirement.
     The difficulty now is to parametrize unitary matrices efficiently as they are only a subset of all complex matrices and therefore cannot be parametrized as simple as the matrix $V$.
-    The method to parametrize unitary matrices as used in \cite[p. 3]{EfficientUnitaryRNNs} was proposed by \cite{UnitaryMatrixParametrization} and is called the square decomposition method. 
+    The method to parametrize unitary matrices as used in \cite[p. 3]{EfficientUnitaryRNNs} was proposed by \cite{UnitaryMatrixParametrization} and is called the square decomposition method.
     The core statement is that any unitary matrix of dimension $N \times N$ can be represented by matrix multiplications involving a diagonal matrix $D$ and rotational matrices $R_{ij}$ as follows:
     \begin{align}
-    W &= D \prod_{i=2}^N \prod_{j=1}^{i-1} R_{ij}.
+        W &= D \prod_{i=2}^N \prod_{j=1}^{i-1} R_{ij}.
     \end{align}
     The diagonal matrix $D$ has only the entries $e^{iw_j}$ on its diagonal which results in $N$ parameters $w_j$.
     The matrices $R_{ij}$ which are parameterized by two real parameters $\theta_{ij}$ and $\phi_{ij}$ are defined as $N$-dimensional identity matrices whose four entries at positions given as $(row,column)$ are replaced with given entries as follows:
     \begin{align}
-    \begin{bmatrix} 
-    (i,i) & (i,j) \\
-    (j,i) & (j,j) 
-    \end{bmatrix} \mapsto 
-    \begin{bmatrix} 
-    e^{i\phi_{ij}}\cos (\theta_{ij})  & -e^{i\phi_{ij}}\sin (\theta_{ij}) \\
-    \sin (\theta_{ij}) & \cos (\theta_{ij}) 
-    \end{bmatrix}
+        \begin{bmatrix}
+        (i,i)
+            & (i,j) \\
+            (j,i) & (j,j)
+        \end{bmatrix} \mapsto
+        \begin{bmatrix}
+            e^{i\phi_{ij}}\cos (\theta_{ij})  & -e^{i\phi_{ij}}\sin (\theta_{ij}) \\
+            \sin (\theta_{ij}) & \cos (\theta_{ij})
+        \end{bmatrix}
     \end{align}
     By reordering and grouping rotational matrices as shown in \cite[p. 4]{EfficientUnitaryRNNs}, the unitary matrix $W$ with even capacity $L$ can also be written as:
     \begin{align}
-    W = D * F_A^{(1)} * F_B^{(2)} * F_A^{(3)} * F_B^{(4)} * \ldots * F_B^{(L)}
+        W = D * F_A^{(1)} * F_B^{(2)} * F_A^{(3)} * F_B^{(4)} * \ldots * F_B^{(L)}
     \end{align}
-    Whenever the capacity $L$ matches the dimension $N$ of the unitary matrix $W$, this expression spans the entire space of all unitary matrices. 
-    Whenever the capacity $L$ is smaller than the dimension $N$ of the unitary matrix $W$, this expression spans a subspace of the space of all unitary matrices. 
+    Whenever the capacity $L$ matches the dimension $N$ of the unitary matrix $W$, this expression spans the entire space of all unitary matrices.
+    Whenever the capacity $L$ is smaller than the dimension $N$ of the unitary matrix $W$, this expression spans a subspace of the space of all unitary matrices.
     The matrices $F_A^{(l)}$ and $F_B^{(l)}$ are constructed as follows where superscript $(l)$ denotes different instances of the same type of rotational matrices when the subscript matches:
     \begin{align}
-    F_A^{(l)} &= R_{1,2}^{(l)} * R_{3,4}^{(l)} * R_{5,6}^{(l)} * \ldots * R_{N/2-1,N/2}^{(l)} \\
-    F_B^{(l)} &= R_{2,3}^{(l)} * R_{4,5}^{(l)} * R_{6,7}^{(l)} * \ldots * R_{N/2-2,N/2-1}^{(l)}
+        F_A^{(l)} &= R_{1,2}^{(l)} * R_{3,4}^{(l)} * R_{5,6}^{(l)} * \ldots * R_{N/2-1,N/2}^{(l)} \\
+        F_B^{(l)} &= R_{2,3}^{(l)} * R_{4,5}^{(l)} * R_{6,7}^{(l)} * \ldots * R_{N/2-2,N/2-1}^{(l)}
     \end{align}
     Furthermore, each matrix $F$ of the above two types is a general rotational matrix, and its mapping performed on a vector $x$ can also be written as \cite[p. 4]{EfficientUnitaryRNNs}:
     \begin{align}
-    F*x = v_1 *_{ew} x + v_2 *_{ew} permute(x)
+        F*x = v_1 *_{ew} x + v_2 *_{ew} permute(x)
     \end{align}
     The vectors $v_1$ and $v_2$ are computable from the parameters $\theta_{ij}$ and $\phi_{ij}$ that are used to parameterize the rotational matrices $R_{ij}$ that build the matrix $F$.
-    The permutation given by the function $permute$ is fixed and set only at the machine learning model's first instantiation. 
+    The permutation given by the function $permute$ is fixed and set only at the machine learning model's first instantiation.
     The formula used to generate both vectors $v_1$ and $v_2$ is given under \cite[p. 4]{EfficientUnitaryRNNs}.
     This way of applying the mapping of the $F$ matrices to the input vector avoids matrix multiplications and uses element-wise multiplications and permutation operations. It is an efficient way to parameterize unitary matrices.
     As the output vector of this machine learning model is complex, the real part of the output was used for further processing as this was also done in benchmarks from the official repository of the paper \cite{EfficientUnitaryRNNs} which can be found under the url \url{https://github.com/jingli9111/EUNN-tensorflow/blob/master/copying_task.py}.
@@ -671,7 +691,8 @@
     As the output vector size has the be variable, the real part of the model's output vector was then fed to a dense layer to achieve the correct output vector dimension.
     The Unitary RNN model implementation used in this thesis is exposed under the \texttt{get\_unitary\_rnn\_output} function defined in the file \url{https://github.com/Oidlichtnwoada/NeuralNetworkArena/blob/master/experiments/models/model_factory.py}.
     The in-detail implementation is provided in the file \url{https://github.com/Oidlichtnwoada/NeuralNetworkArena/blob/master/experiments/models/unitary_rnn.py}.
-    
+
+
     \section{Matrix Exponential Unitary RNN} \label{meurnn}
     This machine learning model is an original contribution and a variant of the Unitary RNN \ref{urnn} architecture.
     Therefore, it is a discrete-time recurrent neural network model with the same model function as specified in \ref{urnn_state} and augments the architecture in various ways.
@@ -693,57 +714,60 @@
     The fundamental idea is that $e^A = (e^{2^{-s}A})^{2^s} \approx (r_m(2^{-s}A))^{2^s}$ where $r_m(X)$ is the $[m/m]$ PadÃ© approximant to $e^X$ and the non-negative integers $m$ and $s$ are to be chosen \cite[p. 1]{expm}.
     An approximation is needed as the matrix exponential $e^A$ is defined by an infinite sum as follows:
     \begin{align}
-    \label{expm_definition}
-    e^A = \sum_{k=0}^{\infty} \frac{A^k}{k!}
+        \label{expm_definition}
+        e^A = \sum_{k=0}^{\infty} \frac{A^k}{k!}
     \end{align}
-    A skew-Hermitian matrix $A$ fulfills $A^H = -A$ which implies that the individual matrix entries fulfill $a_{ij} = -\overline{a_{ji}}$. 
+    A skew-Hermitian matrix $A$ fulfills $A^H = -A$ which implies that the individual matrix entries fulfill $a_{ij} = -\overline{a_{ji}}$.
     This further implies that the diagonal entries of $A$ are purely imaginary.
     Therefore, the square skew-Hermitian matrix $A$ can be parameterized by only a lower triangular matrix $T$ with complex entries as all other entries follow symmetry.
     The diagonal entries in this matrix $T$ can be parametrized with real parameters, therefore saving $N$ parameters, but this optimization was not applied in the implementation.
     The skew-Hermitian matrix $A$ can easily be constructed by the triangular matrix $T$ by the following formula fulfilling all symmetry requirements:
     \begin{align}
-    \label{skew_hermitian}
-    A = T - T^H
+        \label{skew_hermitian}
+        A = T - T^H
     \end{align}
     As in this formula \ref{skew_hermitian}, only the diagonal entries overlap after the transposition, and the diagonal entries will be purely imaginary as the real parts will cancel themselves.
     All other entries follow the previously described symmetry.
     In this model's implementation, the matrix $T$ was parameterized by a vector $v$ of size $N*(N+1)/2$, which equals the number of all non-zero elements in $T$.
     This vector $v$ was then converted to a triangular matrix by filling a triangular matrix with all the values from $T$.
     With this method, any lower triangular matrix $T$ can be constructed, from which any skew-hermitian matrix $A$ can be constructed, from which any unitary matrix $W$ can be computed by using the matrix exponential.
-    This parameterization allows parameterizing the full-space of unitary matrices. 
+    This parameterization allows parameterizing the full-space of unitary matrices.
     If a partial-space parametrization is favored to reduce the model's parameter count, there is a capacity measure $c$ available in the model's implementation, which should fulfill $0 \leq c \leq 1$.
     With this, only the first $\lfloor c*N*(N+1)/2 \rfloor$ entries of the vector $v$ will be trainable, and the remaining entries will be filled up with zeros.
     The benchmarked model had a hidden vector size of $128$ and the capacity measure $c$ set to $1$. Therefore the entire space of unitary matrices was parameterizable.
     The Matrix Exponential Unitary RNN model implementation used in this thesis is exposed under the \texttt{get\_matrix\_exponential\_unitary\_rnn\_output} function defined in the file \url{https://github.com/Oidlichtnwoada/NeuralNetworkArena/blob/master/experiments/models/model_factory.py}.
     The in-detail implementation is provided in the file \url{https://github.com/Oidlichtnwoada/NeuralNetworkArena/blob/master/experiments/models/matrix_exponential_unitary_rnn.py}.
 
+
     \section{Unitary NCP} \label{uncp}
     The Unitary NCP model is a novel discrete-time machine learning model that combines the Unitary RNN model \ref{urnn} and the Neural Circuit Policies model \ref{ncp}, just like the ODE-LSTM model \ref{odelstm} combines the LSTM \ref{lstm} and the CT-RNN \ref{ctrnn} architecture.
-    This combination, however, is not as tightly coupled as the ODE-LSTM architecture. 
+    This combination, however, is not as tightly coupled as the ODE-LSTM architecture.
     This architecture uses a Unitary RNN to preprocess all input vectors of the input sequence $x_k$ to an intermediate sequence by storing the real part of the hidden state vector at each step without feeding it through a dense layer afterward.
     This intermediate sequence is fed to the Neural Circuit Policies model, which treats it as its regular input sequence and maps it to the output vector sequence $o_k$.
     The Unitary NCP model function is given as follows where $x_k$ is the input vector at time step $k$, $h_{k,unitary}$ is the hidden state vector of the Unitary RNN model, $h_{k,ncp}$ is the state vector of the Neural Circuit Policies model and $o_k$ is the output vector at time step $k$:
     \begin{align}
-    h_{k+1,unitary} &= UnitaryRNN(x_{k+1}, h_{k,unitary}) \\
-    (h_{k+1,ncp}, o_{k+1}) &= NCP(\Re{h_{k+1,unitary}}, h_{k,ncp})
+        h_{k+1,unitary} &= UnitaryRNN(x_{k+1}, h_{k,unitary}) \\
+        (h_{k+1,ncp}, o_{k+1}) &= NCP(\Re{h_{k+1,unitary}}, h_{k,ncp})
     \end{align}
     The $UnitaryRNN$ function is just a pointer to the corresponding model function described in \ref{urnn_state}.
     The NCP model maps the input sequence to an output sequence as denoted by the function $NCP$. The model function is described in detail in section \ref{ncp}.
-    The architecture should combine the NCP model's excellent expressiveness and the Unitary RNN model’s ability to capture long-term dependencies.
-    The Unitary RNN was configured with a hidden state vector size of $32$, and the capacity was set to $4$. 
+    The architecture should combine the NCP model's excellent expressiveness and the Unitary RNN model's ability to capture long-term dependencies.
+    The Unitary RNN was configured with a hidden state vector size of $32$, and the capacity was set to $4$.
     The NCP model uses $4$ inter and command neurons and no recurrent command synapses, as the Unitary RNN should handle memory-related tasks.
     For details on both architectures, consult their sections.
     The Unitary NCP model implementation used in this thesis is exposed under the \texttt{get\_unitary\_ncp\_output} function defined in the file \url{https://github.com/Oidlichtnwoada/NeuralNetworkArena/blob/master/experiments/models/model_factory.py}.
     The in-detail implementation is provided in the file \url{https://github.com/Oidlichtnwoada/NeuralNetworkArena/blob/master/experiments/models/unitary_ncp.py}.
 
+
     \section{Transformer} \label{transformer}
+
     \subsection{Introduction}
     The Transformer architecture introduced in \cite{Transformer} is no recurrent neural network architecture in the strict sense like the LSTM \ref{lstm} or the GRU \ref{gru} architecture.
     It encodes its input sequence using an encoder, whose output is then decoded to the output sequence by a decoder.
     However, this model has a recurrence in its decoder part, as explained later.
     The problem of capturing long-term dependencies as described in \ref{long_term_difficult} originates as the input time-series is provided as one input vector per time step to the machine learning models.
     This nesting of functions results in deep computational graphs for longer time-series, leading to vanishing or exploding gradients.
-    The Transformer architecture overcomes this issue by considering the whole input vector sequence at a single time step for prediction. 
+    The Transformer architecture overcomes this issue by considering the whole input vector sequence at a single time step for prediction.
     Attention mechanisms were used to deal with that much input data at a single time step, which means the model learns to weight the input data vectors according to their relevance in solving the required problem.
     Therefore, the computational graph becomes much shallower and easier to backpropagate through, overcoming the unwanted deep computational graphs and their problems.
     Before describing the exact structure of the encoder and decoder of the Transformer architecture, this visualization from the original paper summarizes the structure of the architecture as follows:
@@ -753,6 +777,7 @@
         \caption{visualized Transformer architecture \cite[p. 3]{Transformer}}
         \label{fig:transformer_vis}
     \end{figure}
+
     \subsection{Encoder} \label{encoder}
     At first, the Transformer architecture passes its input vectors to the encoder.
     The encoder embeds its input vectors into vectors of length $d_{model}$ (hyperparameter of the architecture) by passing them through a dense layer.
@@ -768,24 +793,24 @@
     The mapped vector entries are then normally distributed with mean $0$ and variance $1$. The $\varepsilon$ in the formula is only added for numerical stability.
     This whole procedure of postprocessing the sub-layer output to the final outputs $y$ given the inputs $x$ can also be written in pseudocode \cite[p. 3]{Transformer}:
     \begin{align}
-    y = LayerNormalization(x + Dropout(SubLayer(x)))
+        y = LayerNormalization(x + Dropout(SubLayer(x)))
     \end{align}
     The multi-head attention layer requires three mandatory input arguments (queries, keys, and values) and an optional attention mask.
     There must be as many keys as values as they are used as a key-value-pair.
     The number of heads $h$, the dimension of the projected queries and keys $d_k$, and the dimension of the projected values $d_v$ can be configured.
     All queries, keys, and values of the input arguments are mapped through three dense layers for queries, keys, and values to the projected query, key, and value vectors of the specified dimensions.
-    This procedure is repeated $h$ times with different dense layers but the same input. 
+    This procedure is repeated $h$ times with different dense layers but the same input.
     By writing the output vectors of this procedure in matrix form as queries $Q$, keys $K$ and values $V$ (vectors in rows), the scaled dot-product attention function output $Y$ can be given as follows \cite[p. 4]{Transformer}:
     \begin{align}
-    \label{sdpa}
-    Y = softmax \left( \frac{Q * K^T}{\sqrt{d_k}} \right) * V
+        \label{sdpa}
+        Y = softmax \left( \frac{Q * K^T}{\sqrt{d_k}} \right) * V
     \end{align}
     The matrix multiplication of $Q$ and $K^T$ corresponds to computing the scalar product of all combinations between query vectors and key vectors.
     The scalar product result of a single combination should describe how well the "question" or query matches the "answer" or key.
     If this result is high, it is said that the vectors attend to each other.
     These scalar products are then scaled, the attention mask is applied, and after that, the softmax function ($\frac{e^{x_i}}{\sum_j{e^{x_j}}}$) is applied to each row and row entry $x_i$ in the corresponding matrix.
     The attention mask is responsible for setting the scalar products of certain query-key combinations to $-\infty$ before the softmax function is applied to prohibit information flow from the corresponding value vector.
-    This normalization now results in a matrix where the entry in row $i$ and column $j$ corresponds to the attention weight between the query vector in row $i$ and the key vector in row $j$. 
+    This normalization now results in a matrix where the entry in row $i$ and column $j$ corresponds to the attention weight between the query vector in row $i$ and the key vector in row $j$.
     All attention weights of a single query vector to all possible key vectors add up to $1$.
     The final output $Y$ is then computed by doing a matrix multiplication of the attention weight matrix with the value matrix $V$, which equals computing a new representation for each query according to a weighted sum of value vectors.
     Scaled dot-product attention with multiple heads was also visualized by the original paper as follows:
@@ -798,16 +823,17 @@
     Therefore, the corresponding key vector to a value vector describes how to access the value vector's information.
     This process can also be thought of as a continuous hash map where the key vector and value vector are the key-value-pairs, and the indexing is done with a query vector.
     As the query and key vector may never be exactly equal, the values are weighted according to their relevance.
-    The output $Y$ of the individual heads are then concatenated together and projected back to output vectors of dimension $d_{model}$ with a dense layer. 
+    The output $Y$ of the individual heads are then concatenated together and projected back to output vectors of dimension $d_{model}$ with a dense layer.
     The encoder layer uses this multi-head attention mechanism as self-attention, which means query, key, and value vectors are just the same input vectors each encoder layer gets as input.
     This process can be thought of as exchanging information between all vectors.
     The second sub-layer in the encoder layer is the fully-connected feed-forward layer, which consists of a dense layer that maps the input vectors to size $d_{ff}$ with a relu activation function and a second dense layer that maps the vector back to size $d_{model}$ without an activation function.
     This process can be thought of as exchanging information within all vectors.
-        \subsection{Decoder} \label{decoder}
+
+    \subsection{Decoder} \label{decoder}
     The last encoder layer's output is then used in decoder layers of the same amount as encoder layers.
     The decoder gets a single start vector as input vector, which was picked to the all-one vector.
     All input vectors to the decoder are then embedded, positional encoded, and dropout is applied in the same fashion as for input vectors to the encoder.
-    The self-attention sub-layer in a decoder layer sets the attention mask correspondingly such that input tokens to the decoder layer can only attend to other tokens up to the own token index ensuring the Transformer's auto-regressive property \cite[p. 5]{Transformer}.  
+    The self-attention sub-layer in a decoder layer sets the attention mask correspondingly such that input tokens to the decoder layer can only attend to other tokens up to the own token index ensuring the Transformer's auto-regressive property \cite[p. 5]{Transformer}.
     The decoder and encoder layers' difference is that decoder layers have a third sub-layer function added between the encoder layer's two functions.
     The third sub-layer function also uses multi-head attention, but the key and value vectors are provided by the encoder's output, whereas the query vectors are provided from the previous sub-layer output.
     This mechanism is called encoder-decoder attention, and it is responsible for transferring information from the input vector sequence to the output vector sequence.
@@ -815,13 +841,15 @@
     The $token\_amount$ parameter determines how often the decoder architecture should be run.
     After a complete run of the decoder architecture, the output vector of size $token\_size$ corresponding to the last decoder input is concatenated to the list of all decoder inputs, and the whole decoder architecture is rerun, now with two or more input vectors for the decoder.
     These reruns lead to the recurrence of the Transformer model.
-    The Transformer architecture’s output is then a flattened version of all output vectors of the decoder, excluding the first start vector.
+    The Transformer architecture's output is then a flattened version of all output vectors of the decoder, excluding the first start vector.
+
     \subsection{Implementation}
     The implementation used for benchmarking had $token\_amount$ set to $1$ and $token\_size$ set to the required output vector size.
     The hyperparameter $d_{model}$ was set to $16$, $h$ was set to $2$, $d_{ff}$ was set to $64$, there were $2$ encoder and decoder layers used and the dropout rate was set to $0$.
     The dimension $d_k$ and $d_v$ were always equal to $d_{model}$ in the benchmarked implementation.
     The Transformer model implementation used in this thesis is exposed under the \texttt{get\_transformer\_output} function defined in the file \url{https://github.com/Oidlichtnwoada/NeuralNetworkArena/blob/master/experiments/models/model_factory.py}.
     The in-detail implementation is provided in the file \url{https://github.com/Oidlichtnwoada/NeuralNetworkArena/blob/master/experiments/models/transformer.py}.
+
 
     \section{Recurrent Network Augmented Transformer} \label{rnaut}
     The Recurrent Network Augmented Transformer architecture is a novel contribution similar to the Transformer architecture \ref{transformer}.
@@ -830,11 +858,12 @@
     The idea now is that instead of summing up the weighted value vectors by ordinary summation, maybe the use of a recurrent neural network to accumulate the information present in the weighted value vectors can increase the Transformer architecture's expressivity.
     Furthermore, the incorporated RNN can directly use positional information, and the sum function is easy to learn for any RNN architecture, which has a similar model function to \ref{rnn_state_update}.
     It just needs to learn that the $W$ matrix should be an identity matrix.
-    A different RNN with different weights for each head was used. 
+    A different RNN with different weights for each head was used.
     The implementation used to benchmark the architecture uses the LSTM architecture for the described RNNs.
     The difference in hyperparameters to the Transformer architecture is that this architecture sets $d_{model}$ to $8$, the number of heads $h$ to $1$, $d_{ff}$ to $32$ and the number of encoder and decoder layers to $1$.
     The Recurrent Network Augmented Transformer model implementation used in this thesis is exposed under the \texttt{get\_recurrent\_network\_augmented\_transformer\_output} function defined in the file \url{https://github.com/Oidlichtnwoada/NeuralNetworkArena/blob/master/experiments/models/model_factory.py}.
     The in-detail implementation is provided in the file \url{https://github.com/Oidlichtnwoada/NeuralNetworkArena/blob/master/experiments/models/recurrent_network_augmented_transformer.py}.
+
 
     \section{Recurrent Network Attention Transformer} \label{rnatt}
     The Recurrent Network Augmented Transformer architecture is a novel contribution similar to the Transformer architecture \ref{transformer}.
@@ -850,6 +879,7 @@
     The difference in hyperparameters to the Transformer architecture is that this architecture sets $d_{model}$ to $8$, the number of heads $h$ to $1$, $d_{ff}$ to $32$ and the number of encoder and decoder layers to $1$.
     The Recurrent Network Attention Transformer model implementation used in this thesis is exposed under the \texttt{get\_recurrent\_network\_attention\_transformer\_output} function defined in the file \url{https://github.com/Oidlichtnwoada/NeuralNetworkArena/blob/master/experiments/models/model_factory.py}.
     The in-detail implementation is provided in the file \url{https://github.com/Oidlichtnwoada/NeuralNetworkArena/blob/master/experiments/models/recurrent_network_attention.py}.
+
 
     \section{Memory Augmented Transformer} \label{mat}
     The Memory Augmented Transformer architecture is a novel contribution and a discrete-time recurrent neural network architecture incorporating a Transformer model and external memory.
@@ -867,20 +897,21 @@
     This masking was done by feeding the enable signal through a $sigmoid$ function in the positive and negated form (both results add up to $1$), which are then used to weigh the new and old memory state.
     At each time step, the following model function is executed with the input denoted as $i_t$ and the output denoted as $y_t$:
     \begin{align}
-    z_t &= Dropout(concat(ME(M_{k-1}), IE(i_k)) + PE) \\
-    e_t &= EncoderLayer(z_t) \\
-    o_t &= DOL(e_t[0]) \\
-    MCS_t &= MCDL(e_t[1..r]) \\
-    M_k &= sigmoid(-MCS_t[:,0]) * M_{k-1} + sigmoid(MCS_t[:,0]) * MSC_t[:,1..r]
+        z_t &= Dropout(concat(ME(M_{k-1}), IE(i_k)) + PE) \\
+        e_t &= EncoderLayer(z_t) \\
+        o_t &= DOL(e_t[0]) \\
+        MCS_t &= MCDL(e_t[1..r]) \\
+        M_k &= sigmoid(-MCS_t[:,0]) * M_{k-1} + sigmoid(MCS_t[:,0]) * MSC_t[:,1..r]
     \end{align}
     By incorporating the encoder layer, the architecture can freely choose how many memory rows it wants to read in a single time step, as the corresponding attention weights can determine this.
     With the attention mechanism, the architecture can focus on the memory contents or the exact location as a positional encoding was used.
     Furthermore, using the memory enable signals for each memory row, the architecture may also freely determine how many memory rows it wants to write to in a single time step.
-    This architecture tries to separate computation and memory just like personal computers do. 
+    This architecture tries to separate computation and memory just like personal computers do.
     The CPU equivalent in this architecture is the encoder layer, including all the dense layers, and the external memory is responsible for persisting information.
-    The benchmarked implementation had $r$ and $c$ set to $16$, the embedding size set to $32$, and the number of heads in the encoder layer set to $2$. Furthermore, it had the encoder layer’s feed-forward size $d_{ff}$ set to $128$, and the dropout rate $dr$, as well as the encoder layer’s dropout rate in the encoder layer, set to $0$.
+    The benchmarked implementation had $r$ and $c$ set to $16$, the embedding size set to $32$, and the number of heads in the encoder layer set to $2$. Furthermore, it had the encoder layer's feed-forward size $d_{ff}$ set to $128$, and the dropout rate $dr$, as well as the encoder layer's dropout rate in the encoder layer, set to $0$.
     The Memory Augmented Transformer model implementation used in this thesis is exposed under the \texttt{get\_memory\_augmented\_transformer\_output} function defined in the file \url{https://github.com/Oidlichtnwoada/NeuralNetworkArena/blob/master/experiments/models/model_factory.py}.
     The in-detail implementation is provided in the file \url{https://github.com/Oidlichtnwoada/NeuralNetworkArena/blob/master/experiments/models/memory_augmented_transformer.py}.
+
 
     \section{Differentiable Neural Computer (DNC)} \label{dnc}
     The DNC is a discrete-time memory-augmented recurrent neural network architecture that consists of a controller, read and write heads, and an external memory $M$ that is not parameterized and may have arbitrary size.
@@ -891,21 +922,21 @@
     The weighting is similar to the attention weights used in the Transformer architecture \ref{transformer}. They all lie between $0$ and $1$, and the weightings for all rows add up to $1$.
     The read vector $r_t$ returned by the read function of a single read head is given as follows where $M_t(i)$ denotes row $i$ in the memory at time step $t$ \cite[p. 1]{DNC}:
     \begin{align}
-    \label{dnc_read}
-    r_t = \sum_i{w_t(i) * M_t(i)}
+        \label{dnc_read}
+        r_t = \sum_i{w_t(i) * M_t(i)}
     \end{align}
     The write function as executed by a single write head is given as follows where $e_t$ is the erase vector of length $C$ whose elements all lie between $0$ and $1$ and $a_t$ is the add vector of length $C$ at time step $t$ (both vectors get emitted by the write head additionally to the weighting $w_t$, $1$ represents the all-one vector) \cite[p. 1]{DNC}:
     \begin{align}
-    \label{dnc_write}
-    M_t(i) = M_{t-1}(i) *_{ew} (1 - w_t(i) * e_t) + w_t(i) * a_t
+        \label{dnc_write}
+        M_t(i) = M_{t-1}(i) *_{ew} (1 - w_t(i) * e_t) + w_t(i) * a_t
     \end{align}
-    The weightings $w_t$ emitted by the heads are generated by combining three different attention mechanisms. 
+    The weightings $w_t$ emitted by the heads are generated by combining three different attention mechanisms.
     The first mechanism is content lookup, which is based on a key vector $k_t$ emitted by the corresponding head.
-    The cosine similarity measure between each memory row $M_t(i)$ and the single key vector $k_t$ is then computed and normalized such that it forms a probability distribution over all memory rows that is incorporated to compute the final weighting. 
+    The cosine similarity measure between each memory row $M_t(i)$ and the single key vector $k_t$ is then computed and normalized such that it forms a probability distribution over all memory rows that is incorporated to compute the final weighting.
     The second attention mechanism uses a temporal link matrix of dimension $N \times N$, which records transitions between consecutively written locations.
     The entry $L[i,j]$ is close to $1$ if $i$ was the location written next time step after $j$ and is close to $0$ otherwise.
     This matrix smoothly shifts the focus of a given weighting $w_t$ to the locations written after those or written previous those emphasized in $w_t$.
-    The third attention mechanism keeps track of the usage $u_t$ of each memory row, which lies between $0$ and $1$. 
+    The third attention mechanism keeps track of the usage $u_t$ of each memory row, which lies between $0$ and $1$.
     The usage $u_t$ is increased by writing and decreased by reading to the memory row.
     With this mechanism, write heads' weightings can favor memory rows with low usage to store new information without overwriting other existing information in memory rows with high usage.
     All three of these attention mechanisms are described in \cite[p. 1-2]{DNC} and their exact interplay to create the weightings $w_t$ for each head is described in detail in \cite[p. 7-8]{DNC}.
@@ -928,9 +959,10 @@
     The controller was configured as an LSTM \ref{lstm} with a hidden state vector size of $64$. There were $2$ read heads and $1$ write head used.
     Even if the architecture supports a memory of infinite size, the memory shape must be fixed for implementation.
     The number of memory rows $N$ was set to $16$, and the size of each vector $C$ was set to $8$.
-    Each memory entry's initial state and each first read vector entry’s initial state is picked to $10^{-6}$. 
+    Each memory entry's initial state and each first read vector entry's initial state is picked to $10^{-6}$.
     The DNC model implementation used in this thesis is exposed under the \texttt{get\_differentiable\_neural\_computer\_output} function defined in the file \url{https://github.com/Oidlichtnwoada/NeuralNetworkArena/blob/master/experiments/models/model_factory.py}.
     The in-detail implementation is provided in the file \url{https://github.com/Oidlichtnwoada/NeuralNetworkArena/blob/master/experiments/models/differentiable_neural_computer.py}.
+
 
     \section{Memory Cell} \label{memory_cell}
     The Memory Cell is a continuous-time recurrent neural network architecture consisting of two LTC neurons described in the NCP section \ref{ncp} without the input and output mapping using dense layers.
@@ -940,7 +972,7 @@
     This model can only be used with input vectors and expected output vectors of size $2$.
     The input vector entries are the two scalar inputs passed on to the two neurons with a synaptic activation.
     As this model is built out of two neurons, this model's output vector size is fixed to $2$, and the output vector contains both neurons' potentials.
-    Each neuron has an input synapse, an inhibitory synapse, and a recurrent synapse. 
+    Each neuron has an input synapse, an inhibitory synapse, and a recurrent synapse.
     Each neuron's three synapses share the same parameters as the Memory Cell model should employ similar mechanisms when storing a $0$ or a $1$ bit.
     The behavior should be symmetric, and the decision which bit to store should only be dependent on the current input.
     The current memory content of this architecture is encoded in the potentials of both neurons.
@@ -956,7 +988,7 @@
     The communication synapse would be connected from one neuron to the other and must fulfill the recurrent and inhibitory synapse tasks.
     However, in this scenario, with only two synapses assuming their proper functionality, the communication synapse will have to supply a negative current to inhibit the other neuron at a memory switch.
     Furthermore, when there is no memory switch, the same communication synapse must provide a positive current to a neuron with high potential to keep its state as there is a leakage current.
-    The sign of a synaptic current $I_{syn,ji}$ \ref{synaptic_current} is determined by the sign of $E_{ji} - V_i(t)$. 
+    The sign of a synaptic current $I_{syn,ji}$ \ref{synaptic_current} is determined by the sign of $E_{ji} - V_i(t)$.
     The postsynaptic potential $V_i(t)$ may be $\approx 1$ in both cases, therefore the different sign of $E_{ji} - V_i(t)$ cannot be determined by the parameter $E_{ji}$ which yields a contradiction to the assumption of proper functionality.
     Each synapse from neuron $j$ to neuron $i$ has four parameters as described in \ref{synaptic_current}: the maximum conductance $G_{syn,ji}$, the mean conductance potential $\mu_{ji}$, the steepness of the conductance transition $\sigma_{ji}$ and the target potential $E_{ji}$.
     The steepness of the conductance transition was fixed to $100$ for all synapses in the implemented model.
@@ -966,43 +998,46 @@
     The capacitance of all neurons was fixed to $1$ and the fixed time input $t$ per time step used to integrate the state derivative in a continuous-time model was also a learned parameter.
     The state's ODE was unrolled two times per time step and was solved using the explicit Euler method.
     This unrolling is necessary such that the input currents can propagate to each of the two neurons in the first unroll step, and the inhibitory synapse currents can propagate in the second unroll step in case of a memory switch.
-    Therefore, this architecture has $9$ learnable parameters. 
+    Therefore, this architecture has $9$ learnable parameters.
     Validation of the model was performed using the Cell Benchmark \ref{cell}.
     The first neuron's initial state was $0$, and the initial state of the second neuron was $1$.
     The Memory Cell model implementation used in this thesis is exposed under the \texttt{get\_memory\_cell\_output} function defined in the file \url{https://github.com/Oidlichtnwoada/NeuralNetworkArena/blob/master/experiments/models/model_factory.py}.
     The in-detail implementation is provided in the file \url{https://github.com/Oidlichtnwoada/NeuralNetworkArena/blob/master/experiments/models/memory_cell.py}.
 
+
     \chapter{Benchmarks}
 
+
     \section{Benchmark Framework}
+
     \subsection{Setup}
-    A single code base to run and evaluate the diverse set of benchmarks and models was inevitable. 
+    A single code base to run and evaluate the diverse set of benchmarks and models was inevitable.
     Otherwise, the whole project would have been unmanageable.
-    As the implementation of all models occurred in the \texttt{Python} programming language \cite{Python3} using the framework Tensorflow \cite{Tensorflow}, also the benchmark framework used the same set of tools.  
+    As the implementation of all models occurred in the \texttt{Python} programming language \cite{Python3} using the framework Tensorflow \cite{Tensorflow}, also the benchmark framework used the same set of tools.
     Therefore, a benchmark base class was created in the file \texttt{benchmark.py}, which is available under the URL \url{https://github.com/Oidlichtnwoada/NeuralNetworkArena/blob/master/experiments/benchmarks/benchmark.py}.
     The creation of a new benchmark is as easy as subclassing the benchmark base class \texttt{Benchmark}.
     For instructions on how to call the newly created class, please consulate the \texttt{README.md} file given under the URL \url{https://github.com/Oidlichtnwoada/NeuralNetworkArena/blob/master/README.md}.
     After subclassing the base class, the new class has to correctly call the superclass constructor and overwrite the abstract method \texttt{get\_data\_and\_output\_size}.
     Furthermore, the new benchmark's name should be added to the \texttt{BENCHMARK\_NAMES} list.
-    The superclass constructor only has two arguments: \texttt{name} and \texttt{parser\_configs}. 
+    The superclass constructor only has two arguments: \texttt{name} and \texttt{parser\_configs}.
     The first argument is just the name of the new benchmark passed as a string.
-    The second argument should be a tuple of individual parser configs. 
+    The second argument should be a tuple of individual parser configs.
     A parser config is itself a tuple consisting of the argument name, the argument default value, and the argument type.
     This argument determines which values should be settable and usable when calling the benchmark from the command line.
     There are at least three parser configs required that set the loss name, the loss config, and the metric name.
     A sample \texttt{parser\_configs} argument would be: \texttt{(('-{}-loss\_name', 'SparseCategoricalCrossentropy', str), ('-{}-loss\_config', {'from\_logits': True}, dict), ('-{}-metric\_name', 'SparseCategoricalAccuracy', str))}.
     If loss config or metric name does not apply to the benchmark, set the default loss config to \texttt{\{\}} or the default metric name to \texttt{''}.
     Furthermore, if the benchmark needs additional parameters, extend the \texttt{parser\_configs} parameter also to include the desired command-line arguments.
-    All individual benchmark implementations use this feature. 
+    All individual benchmark implementations use this feature.
     After calling the superclass constructor, all command-line arguments configured through \texttt{parser\_configs} will be available by their names as properties of \texttt{self.args} without the double hyphen.
     For example the loss name can be accessed by \texttt{self.args.loss\_name}.
     If some parameters were set through the command line, they would have the corresponding value. Otherwise, the configured default values will be applied.
-    After that, the benchmark base class will create paths for some required directories. 
+    After that, the benchmark base class will create paths for some required directories.
     There are five directories required during benchmark execution: a saved model directory (will be created to save the models together with their best weights during training), a TensorBoard directory (will be created to save TensorBoard logs for eventual later evaluation), a supplementary data directory (already present in the repo to pass input data to the benchmark), a result directory (will be created to save CSV files with relevant information about the training process) and a visualization directory (will be created to save visualizations created after each training of a model).
-    All these paths start in the root folder of the repository called \texttt{NeuralNetworkArena}. 
+    All these paths start in the root folder of the repository called \texttt{NeuralNetworkArena}.
     The structure of how these paths continue is the same for all five kinds of folders.
     For the next step in path creation, the individual name for the required folder will be appended to the root folder.
-    These names can be passed as a command argument when calling the individual benchmark classes. 
+    These names can be passed as a command argument when calling the individual benchmark classes.
     For a more detailed description of these command-line parameters, call an implemented benchmark class with the \texttt{-{}-h} command line parameter as described in the \texttt{README.md} file.
     The name of the individual benchmarks is further added to the path, such that each benchmark has its own five subfolders.
     Then the benchmark base class calls its \texttt{get\_data\_and\_output\_size} method that the subclass should have implemented.
@@ -1011,13 +1046,13 @@
     The input tuple must have a size of at least one.
     The benchmark base class also has support for time inputs to the models.
     Please make sure that the time input is the last entry in the input tuple.
-    There is also the command line argument called \texttt{use\_time\_input}. 
+    There is also the command line argument called \texttt{use\_time\_input}.
     If the model should use time input, make sure that this argument is set to true.
     Otherwise, if the input tuple has a dimension larger than one, the last entry will be discarded from the input tuple, as it is assumed to be the time input.
     The benchmark suite works currently only for benchmarks that provide time-series input data and only expect a model output after the last input data in the time-series.
     For people familiar with the Tensorflow framework \cite{Tensorflow} this is equivalent to setting \texttt{return\_sequences=False} in an RNN model.
     All input arrays in the input tuple should have the shape \texttt{(SAMPLE\_AMOUNT, SEQUENCE\_LENGTH, INPUT\_DIMENSION)}.
-    Of course, the input dimension can vary between different inputs. Time data should have an input dimension of one. 
+    Of course, the input dimension can vary between different inputs. Time data should have an input dimension of one.
     The single output array present in the output tuple should have the shape \texttt{(SAMPLE\_AMOUNT, OUTPUT\_DIMENSION)}.
     The sample amount should match between input and output data to be valid input to the benchmark framework.
     The framework will check all the constraints on the shapes, and then all individual samples are shuffled such that corresponding input and output data are at the same indices in their arrays.
@@ -1025,11 +1060,11 @@
     These are required to use later the Functional API of the Tensorflow framework \cite{Tensorflow}.
     They are created by specifying a fixed batch size, which helps the machine learning framework optimize the computational graph for the corresponding model.
     The default batch size is set to $128$ and can be changed by a command-line parameter.
-    After that, the whole samples are divided into the test, validation, and training samples. The amount of test and validation samples can be set via command line parameters, which default to $10\%$ each. 
+    After that, the whole samples are divided into the test, validation, and training samples. The amount of test and validation samples can be set via command line parameters, which default to $10\%$ each.
     It is ensured that each sample set is exactly divisible by the batch size, as the computational graph was optimized by only allowing inputs of a fixed batch size as described above.
     After all the setup work is done, the folder paths to the result, the saved model, and the TensorBoard directory will be augmented with the model name currently under test and passed via a command-line parameter.
     The TensorBoard directory for that model will then be deleted, as each training run creates a significant amount of log files.
-    After that, the TensorBoard, the result, the saved model, and visualization directory will be created if they do not already exist. 
+    After that, the TensorBoard, the result, the saved model, and visualization directory will be created if they do not already exist.
     Then it will be checked if the passed model name is present in the list constant \texttt{MODEL\_ARGUMENTS} in the file \texttt{model\_factory.py}.
     When this check is passed, the benchmark framework either loads a saved model with the corresponding model name or creates a new one using the model output functions in the previously described model factory depending on the command line parameter \texttt{use\_saved\_model}.
     These output functions get an output vector size and the tensor inputs and create an output tensor that contains all the information about the operations in between.
@@ -1040,20 +1075,21 @@
     The three remaining parameters also discussed in the previous subsection must be passed such that it is conforming with the requirements of the functions \texttt{tf.keras.optimizers.get} and \texttt{tf.keras.losses.get}.
     A debug mode can also be enabled via the command line, which puts the newly created model in eager execution mode, making it easier to debug the model. Furthermore, the model will be called on a single batch of inputs without invoking the model's \texttt{fit} method. This invocation happens only in debug mode.
     In any case, a model ready to train should now have been constructed, and all the model characteristics, including input and output shape, will then be printed to the command line enabling to check if all the dimensions match the expectations.
+
     \subsection{Training}
     After printing available information of the model to the command line, a UNIX timestamp is retrieved from the system to keep track of the total training duration.
     Then the training is ultimately started by invoking the model's \texttt{fit} method. This method takes the training and validation sample set, the batch size, the number of epochs, and a tuple of callbacks as arguments.
     The number of epochs is configurable via the command line, but the default value of $128$ is used throughout the thesis.
     The \texttt{fit} method calls the machine learning model function for each batch of inputs in the training sample set. After that, the model is validated on the validation sample set.
     Validation means the loss function is computed only on validation data, which is data that the model has never seen before.
-    Validating the model should help to determine how well the model will perform on actual test data, which is also data that the model has never seen before. 
+    Validating the model should help to determine how well the model will perform on actual test data, which is also data that the model has never seen before.
     If the loss function results for training and validation data are similar, it is said that the model generalizes well.
     When the validation step is finished, the training loop proceeds with the next epoch. Therefore, it starts the same cycle again by providing the first batch of inputs from the training sample set.
     This cycle is repeated as often as the set value of the epochs.
     The callbacks are invoked after each completed epoch. There were five callbacks added: a ModelCheckpoint callback (saves the model with the best validation loss), an EarlyStopping callback (terminates training if the validation loss has not improved for a configurable number of epochs), a TerminateOnNan callback (terminates the training when a nan loss is encountered), a ReduceLROnPlateau callback (multiplies the learning rate by a configurable factor after no improvement of the validation loss for a configurable number of epochs) and a TensorBoard callback (saves TensorBoard log data for eventual later inspection).
     The default number of epochs used in this thesis for the EarlyStopping callback is $5$.
     Another necessary callback is the TerminateOnNan callback, which terminates the training loop if the loss evaluates to nan.
-    This nan return value can, for example, happen when the loss function diverges towards infinity, therefore, if the exploding gradient problem appears. 
+    This nan return value can, for example, happen when the loss function diverges towards infinity, therefore, if the exploding gradient problem appears.
     It may also be the case that there is a division through zero somewhere in the computational graph, which may also lead to a nan loss.
     The term nan just stands for \texttt{not a number}.
     As all benchmarked models are trained until convergence in this thesis, the ReduceLROnPlateau callback is especially important.
@@ -1062,18 +1098,21 @@
     This minimum delta can also be configured via the command line, but this thesis uses the default value throughout all benchmarks.
     Furthermore, all these parameters are configurable by passing alternative values in the command line.
     After the training loop has terminated, another UNIX timestamp is taken to compute the total training duration.
+
     \subsection{Evaluation}
     The model is then evaluated using the parameters that led to the smallest validation loss during the whole training loop.
     Evaluation means that the model function is applied to the test sample set inputs, and the resulting loss function result on that inputs is saved.
     The created model also provides an \texttt{evaluate} function, which takes the test sample set a batch size and another callback tuple as arguments.
     The only callback passed in the tuple is the TensorBoard callback already used in the \texttt{fit} method invocation.
+
     \subsection{Data Processing}
     The return values of the \texttt{fit} and \texttt{evaluate} method invocations now contain information about the means of the loss and metric function results. These results are available for the training, validation, and test sample set.
     The arithmetic means for the training and validation sample set are available for each training epoch together with the currently applied learning rate.
-    All information is automatically accumulated in a single CSV file per model for the training and the testing process. 
+    All information is automatically accumulated in a single CSV file per model for the training and the testing process.
     All models' testing results are also merged in a single CSV containing all model results for a single benchmark.
     Data generated during training is automatically visualized by the benchmark base class and will be presented in a future chapter that discusses the benchmark results in more detail.
     Of course, all generated files will be stored in their respective directories.
+
 
     \section{Activity Benchmark} \label{activity}
     As described in the benchmark base class, all benchmarks feature time-series data where the model output is only used after the last time step to compute the loss function.
@@ -1105,7 +1144,8 @@
     The softmax function is necessary to convert the so-called output logits to an output probability for each class.
     The results of this benchmark are presented in a later chapter.
     The implementation of this benchmark can be found under \url{https://github.com/Oidlichtnwoada/NeuralNetworkArena/blob/master/experiments/benchmarks/activity_benchmark.py}.
-    
+
+
     \section{Add Benchmark} \label{add}
     This benchmark uses the same structure as the add benchmark introduced used in \cite{UnitaryRNNs}.
     Data for this benchmark is generated randomly at each instantiation of the benchmark.
@@ -1116,7 +1156,7 @@
     As described above, the input vector has size two.
     The second entry is set to one only in one input vector of the first and last $50$ input vectors.
     Their distribution is uniform across the whole first and second half of the time-series.
-    In all other input vectors, this second entry is set to zero. 
+    In all other input vectors, this second entry is set to zero.
     The first entry of all input vectors is filled with random numbers taken independently and uniformly from the interval $[0,1)$.
     A single input vector out of the $100$ input vectors each model gets during the benchmark looks like $[0.5,1]$.
     In this example, the random number is $0.5$, and it is marked as the second entry is one.
@@ -1130,7 +1170,7 @@
     Predicting $1$ will be the case in this strategy as the expectation of each unique number out of the two marked ones is $0.5$, as they were drawn uniformly from the given interval.
     The addition of both expectation values reveals the output of the memory-less strategy.
     As also pointed out in \cite[p. 6]{UnitaryRNNs}, this naive strategy will lead to a mean squared error of $\frac{1}{6}$.
-    This result can be verified as the mean squared error when predicting the mean is equal to the distribution’s variance.
+    This result can be verified as the mean squared error when predicting the mean is equal to the distribution's variance.
     As both random numbers were picked independently of each other, the random number sum's variance is just the sum of their variances.
     The distribution from which the random numbers are drawn has variance $\frac{1}{12}$.
     Therefore, adding this value to itself proves the mean square error of the memory-less strategy.
@@ -1138,12 +1178,13 @@
     The results of this benchmark are presented in a later chapter.
     The implementation of this benchmark can be found under \url{https://github.com/Oidlichtnwoada/NeuralNetworkArena/blob/master/experiments/benchmarks/add_benchmark.py}.
 
+
     \section{Walker Benchmark} \label{walker}
     This benchmark evaluates how well a model can predict a dynamic, physical system's behavior. It was taken from \cite{ODELSTM}.
     The training data is acquired simulation data of the \texttt{Walker2d-v2} OpenAI gym \cite{OpenAIGym} controlled by a pre-trained policy.
-    The objective was to learn the MuJoCo physics engine’s kinematic simulation \cite{MuJoCo} in an auto-regressive fashion using imitation learning.
+    The objective was to learn the MuJoCo physics engine's kinematic simulation \cite{MuJoCo} in an auto-regressive fashion using imitation learning.
     The simulation data was acquired from various training stages of the pre-trained policy (between 500 and 1200 Proximal Policy Optimization iterations) to increase the task difficulty. Furthermore, 1\% of actions were overwritten by random actions.
-    Furthermore, the benchmark implements eventual frame-skips that would create an irregularly sampled time-series. 
+    Furthermore, the benchmark implements eventual frame-skips that would create an irregularly sampled time-series.
     This feature was not used in this thesis as it covers only regularly sampled time-series.
     If the model understands the dynamics guided by differential equations, it will be able to produce accurate predictions.
     The ability to capture long-term dependencies is not tested with this benchmark, as the most recent input vectors should be enough to make good predictions.
@@ -1161,6 +1202,7 @@
     The results of this benchmark are presented in a later chapter.
     The implementation of this benchmark can be found under \url{https://github.com/Oidlichtnwoada/NeuralNetworkArena/blob/master/experiments/benchmarks/walker_benchmark.py}.
 
+
     \section{Memory Benchmark} \label{memory}
     This benchmark evaluates how well a model can capture long-term dependencies by letting the model recall past seen categories exactly.
     It is a slightly changed version of the copying memory problem described in \cite{UnitaryRNNs}.
@@ -1173,14 +1215,15 @@
     The second sequence is then just a sequence of the filler symbol $10$ repeated $100$ times.
     The third sequence is just the index of the category in the sequence to memorize what the model should recall, which is also sampled uniformly from all available indices in the sequence.
     This sequence is obviously of length $1$ and always filled with $0$ in the previously described setup.
-    In total, this makes up for a total sequence length of $102$ and a vector size of $1$ per time step. 
+    In total, this makes up for a total sequence length of $102$ and a vector size of $1$ per time step.
     The expected output category is encoded sparsely as in the Activity Benchmark \ref{activity} and contains a category index from $0$ to $9$ that matches the category at the index the model got the last time step in the sequence to memorize.
-    The model's output vector size is $10$, and each output logit represents a  single category.
+    The model's output vector size is $10$, and each output logit represents a single category.
     As this is a classification problem, a categorical cross-entropy loss was used between the model's output logits passed through a softmax function and the one-hot encoding extension of the sparsely encoded expected category index.
     To better visualize how good a model can recall the category, a categorical accuracy metric was added to this benchmark.
     It must be pointed out that a model is only capable of recalling the category seen in the first input vector if the gradient does not vanish or explode, as the error signal is only provided after the last time step.
     The results of this benchmark are presented in a later chapter.
     The implementation of this benchmark can be found under \url{https://github.com/Oidlichtnwoada/NeuralNetworkArena/blob/master/experiments/benchmarks/memory_benchmark.py}.
+
 
     \section{MNIST Benchmark} \label{mnist}
     This benchmark evaluates how well a model can capture long-term dependencies. For correct classification, the model needs to incorporate input vectors from the distant past, further explained below.
@@ -1194,12 +1237,13 @@
     As the MNIST dataset had enough image samples, all specified $40000$ samples were used.
     Long-term memory of seen input chunks is necessary to produce an accurate category prediction, as digits like $1$, $4$, and $9$ may be indistinguishable when only considering the most recent seen input chunks.
     This limitation corresponds to classifying the image only based on a lower fraction of the image visible to the model, where the upper fraction was cut away.
-    A model that yields accurate results must not suffer from the vanishing or exploding gradient problem, as only then the whole picture can be taken into account for classification. 
+    A model that yields accurate results must not suffer from the vanishing or exploding gradient problem, as only then the whole picture can be taken into account for classification.
     The model output vector size was set to $10$, as each output logit should represent a single digit.
     As the expected output digit is encoded sparsely, the same procedure as in the Memory Benchmark \ref{memory} is applied to compute the categorical cross-entropy loss.
     The models' performance was also measured by using a categorical accuracy metric, which produces a more human-interpretable result than the chosen loss function.
     The results of this benchmark are presented in a later chapter.
     The implementation of this benchmark can be found under \url{https://github.com/Oidlichtnwoada/NeuralNetworkArena/blob/master/experiments/benchmarks/mnist_benchmark.py}.
+
 
     \section{Cell Benchmark} \label{cell}
     This benchmark evaluates if the newly introduced memory cell architecture can repeatedly store a single bit of information, including switching the memory state.
@@ -1222,59 +1266,85 @@
     As described above, the model output vector size is $2$, and a mean squared error loss without a metric was used, as more similar vectors lead to a better prediction.
     The results of this benchmark are presented in a later chapter.
     The implementation of this benchmark can be found under \url{https://github.com/Oidlichtnwoada/NeuralNetworkArena/blob/master/experiments/benchmarks/cell_benchmark.py}.
-    
+
+
     \chapter{Results}
+
 
     \chapter{Summary}
 
+
     \chapter{Appendix}
-    
+
+
     \section{Code for Benchmarks}
+
     \subsection{benchmark.py}
     \lstinputlisting[language=Python,caption={benchmark.py},captionpos=b]{../experiments/benchmarks/benchmark.py}
+
     \subsection{activity\_benchmark.py}
     \lstinputlisting[language=Python,caption={activity\_benchmark.py},captionpos=b]{../experiments/benchmarks/activity_benchmark.py}
+
     \subsection{add\_benchmark.py}
     \lstinputlisting[language=Python,caption={add\_benchmark.py},captionpos=b]{../experiments/benchmarks/add_benchmark.py}
+
     \subsection{walker\_benchmark.py}
     \lstinputlisting[language=Python,caption={walker\_benchmark.py},captionpos=b]{../experiments/benchmarks/walker_benchmark.py}
+
     \subsection{memory\_benchmark.py}
     \lstinputlisting[language=Python,caption={memory\_benchmark.py},captionpos=b]{../experiments/benchmarks/memory_benchmark.py}
+
     \subsection{mnist\_benchmark.py}
     \lstinputlisting[language=Python,caption={mnist\_benchmark.py},captionpos=b]{../experiments/benchmarks/mnist_benchmark.py}
+
     \subsection{cell\_benchmark.py}
     \lstinputlisting[language=Python,caption={cell\_benchmark.py},captionpos=b]{../experiments/benchmarks/cell_benchmark.py}
-    
+
+
     \section{Code for Models}
+
     \subsection{model\_fatory.py}
     \lstinputlisting[language=Python,caption={model\_fatory.py},captionpos=b]{../experiments/models/model_factory.py}
+
     \subsection{ct\_rnn.py}
     \lstinputlisting[language=Python,caption={ct\_rnn.py},captionpos=b]{../experiments/models/ct_rnn.py}
+
     \subsection{ct\_gru.py}
     \lstinputlisting[language=Python,caption={ct\_gru.py},captionpos=b]{../experiments/models/ct_gru.py}
+
     \subsection{ode\_lstm.py}
     \lstinputlisting[language=Python,caption={ode\_lstm.py},captionpos=b]{../experiments/models/ode_lstm.py}
+
     \subsection{neural\_circuit\_policies.py}
     \lstinputlisting[language=Python,caption={neural\_circuit\_policies.py},captionpos=b]{../experiments/models/neural_circuit_policies.py}
+
     \subsection{unitary\_rnn.py}
     \lstinputlisting[language=Python,caption={unitary\_rnn.py},captionpos=b]{../experiments/models/unitary_rnn.py}
+
     \subsection{matrix\_exponential\_unitary\_rnn.py}
     \lstinputlisting[language=Python,caption={matrix\_exponential\_unitary\_rnn.py},captionpos=b]{../experiments/models/matrix_exponential_unitary_rnn.py}
+
     \subsection{unitary\_ncp.py}
     \lstinputlisting[language=Python,caption={unitary\_ncp.py},captionpos=b]{../experiments/models/unitary_ncp.py}
+
     \subsection{transformer.py}
     \lstinputlisting[language=Python,caption={transformer.py},captionpos=b]{../experiments/models/transformer.py}
+
     \subsection{recurrent\_network\_augmented\_transformer.py}
     \lstinputlisting[language=Python,caption={recurrent\_network\_augmented\_transformer.py},captionpos=b]{../experiments/models/recurrent_network_augmented_transformer.py}
+
     \subsection{recurrent\_network\_attention.py}
     \lstinputlisting[language=Python,caption={recurrent\_network\_attention.py},captionpos=b]{../experiments/models/recurrent_network_attention.py}
+
     \subsection{memory\_augmented\_transformer.py}
     \lstinputlisting[language=Python,caption={memory\_augmented\_transformer.py},captionpos=b]{../experiments/models/memory_augmented_transformer.py}
+
     \subsection{differentiable\_neural\_computer.py}
     \lstinputlisting[language=Python,caption={differentiable\_neural\_computer.py},captionpos=b]{../experiments/models/differentiable_neural_computer.py}
+
     \subsection{memory\_cell.py}
     \lstinputlisting[language=Python,caption={memory\_cell.py},captionpos=b]{../experiments/models/memory_cell.py}
-    
+
 %\todo{Enter your text here.}
 
 % Remove the following line for the final thesis.

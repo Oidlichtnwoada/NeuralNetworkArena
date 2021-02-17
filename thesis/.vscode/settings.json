@@ -1,13 +1,13 @@
 {
-    "cSpell.words": [
-        "Dormand",
-        "Kutta",
-        "MNIST",
-        "Runge",
-        "backpropagate",
-        "exponentials",
-        "overfitting",
-        "pseudocode",
-        "sublayers"
-    ]
+  "cSpell.words": [
+    "Dormand",
+    "Kutta",
+    "MNIST",
+    "Runge",
+    "backpropagate",
+    "exponentials",
+    "overfitting",
+    "pseudocode",
+    "sublayers"
+  ]
 }
