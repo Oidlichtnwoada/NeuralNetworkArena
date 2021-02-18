@@ -1,0 +1,2 @@
+model,trainable parameters,training duration total,training duration per epoch,epochs,test mean squared error
+gru,25137,562.689779996872,14.42794307684287,39,1.334162712097168

@@ -1,0 +1,2 @@
+model,trainable parameters,training duration total,training duration per epoch,epochs,test sparse categorical crossentropy,test sparse categorical accuracy
+differentiable_neural_computer,26540,3500.347692012787,102.95140270625843,34,0.2809028923511505,0.8974294066429138

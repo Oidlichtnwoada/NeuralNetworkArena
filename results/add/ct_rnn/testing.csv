@@ -1,0 +1,2 @@
+model,trainable parameters,training duration total,training duration per epoch,epochs,test mean squared error
+ct_rnn,17025,11533.106975078583,192.21844958464305,60,0.018348565325140953

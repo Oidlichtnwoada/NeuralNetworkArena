@@ -1,0 +1,2 @@
+model,trainable parameters,training duration total,training duration per epoch,epochs,test mean squared error
+matrix_exponential_unitary_rnn,17409,7327.816471338272,128.55818370768898,57,0.002830853220075369

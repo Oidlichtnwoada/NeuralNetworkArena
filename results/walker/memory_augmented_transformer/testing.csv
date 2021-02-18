@@ -1,0 +1,2 @@
+model,trainable parameters,training duration total,training duration per epoch,epochs,test mean squared error
+memory_augmented_transformer,19074,8569.206997156143,178.52514577408633,48,1.2000783681869507

@@ -1,0 +1,2 @@
+model,trainable parameters,training duration total,training duration per epoch,epochs,test mean squared error
+recurrent_network_attention_transformer,2741,6229.753777980804,168.37172372921094,37,3.031561851501465
