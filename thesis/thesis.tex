@@ -105,7 +105,7 @@
 % The structure of the thesis has to conform to the guidelines at
 %  https://informatics.tuwien.ac.at/study-services
 
-%\addtitlepage{naustrian} % German title page (not for dissertations at the PhD School).
+    \addtitlepage{naustrian} % German title page (not for dissertations at the PhD School).
     \addtitlepage{english} % English title page.
 
     \AddStatementPage
@@ -123,9 +123,17 @@
         Finally, I have to thank my parents for providing me with mental and financial support throughout my whole study journey.
     \end{acknowledgements*}
 
-%\begin{kurzfassung}
-%\todo{Ihr Text here.}
-%\end{kurzfassung}
+    \begin{kurzfassung}
+        Die Vielfalt der Modelle für maschinelles Lernen hat in den letzten Jahren mit dem Aufblühen der Forschung in diesem Bereich rapide zugenommen.
+        Diese Arbeit versucht einen Überblick über Modelle zu geben, die in der Lage sind mit regelmäßig abgetasteten Zeitreihendaten umzugehen, ohne eine vorgegebene Historienlänge zu spezifizieren, die vom Modell berücksichtigt werden soll.
+        Daher sind alle in dieser Arbeit vorgestellten Modelle entweder Abkömmlinge des rekurrenten neuronalen Netzes oder der Transformer-Architektur \cite{Transformer}.
+        Darüber hinaus wurden neue Modelle eingeführt, um die gegebene Architektur des Transformers \cite{Transformer} und des unitären rekurrenten neuronalen Netzes \cite{EfficientUnitaryRNNs} zu verbessern.
+        Nach der Einführung aller Modelle werden sie anhand fünf Benchmarks verglichen.
+        Diese Benchmarks versuchen die Fähigkeit der Modelle zur Erfassung langfristiger Abhängigkeiten und die Fähigkeit der Modelle zur Modellierung physikalischer Systeme zu testen.
+        Darüber hinaus wird eine zeitkontinuierliche Speicherzelle eingeführt, die in der Lage ist, ein Datenbit über eine große Anzahl von Zeitschritten zu speichern, ohne die gespeicherte Information zu verlieren.
+        Diese Speicherzelle wird unter Verwendung der LTC-Network-Architektur \cite{LTCNetworks} aufgebaut.
+        Der gesamte für diese Arbeit verwendete Code ist unter \url{https://github.com/Oidlichtnwoada/NeuralNetworkArena} verfügbar.
+    \end{kurzfassung}
 
     \begin{abstract}
         The diversity of machine learning models has rapidly increased in recent years as research in the machine learning domain flourishes.
