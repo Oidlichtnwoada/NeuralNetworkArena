@@ -148,7 +148,6 @@ class Benchmark(abc.ABC):
         else:
             second_axis = first_axis.twinx()
             second_axis.set_prop_cycle(color=['blue', 'orange'])
-            second_axis.legend(loc='center right', prop={'size': 6})
             axes = [first_axis, second_axis]
         hline_colors = ['black', 'grey']
         legend_positions = ['center left', 'center right']
