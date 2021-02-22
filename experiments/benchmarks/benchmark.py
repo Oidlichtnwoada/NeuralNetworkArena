@@ -141,7 +141,7 @@ class Benchmark(abc.ABC):
         figure, first_axis = plt.subplots()
         first_axis.set_xlabel('epochs')
         first_axis.xaxis.set_major_locator(ticker.MaxNLocator(integer=True))
-        first_axis.set_title(f'{self.args.model.replace("_", " ")} @ {self.__class__.__name__}')
+        first_axis.set_title(f'{self.args.model} @ {self.name}_benchmark')
         first_axis.set_prop_cycle(color=['red', 'green'])
         if self.args.metric_name == '':
             axes = [first_axis]
@@ -181,7 +181,7 @@ class Benchmark(abc.ABC):
         max_len = max([len(x[1]) for x in val_loss_data])
         x_data = np.array(range(1, max_len + 1))
         fig, axis = plt.subplots()
-        axis.set_title(f'{val_loss_column} @ {self.__class__.__name__}')
+        axis.set_title(f'{val_loss_column} @ {self.name}_benchmark')
         axis.set_xlabel('epochs')
         axis.xaxis.set_major_locator(ticker.MaxNLocator(integer=True))
         for model_name, val_losses in val_loss_data:
