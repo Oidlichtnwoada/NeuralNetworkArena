@@ -160,6 +160,7 @@ class Benchmark(abc.ABC):
             legend.remove()
             axes[-1].add_artist(legend)
         plt.savefig(os.path.join(self.visualization_dir, f'{self.args.model}.pdf'))
+        plt.close()
 
     def accumulate_data(self):
         testing_data = []
@@ -191,6 +192,7 @@ class Benchmark(abc.ABC):
             axis.plot(x_data[:len(val_losses)], val_losses, label=model_name)
         axis.legend(loc='upper right', prop={'size': 6})
         plt.savefig(os.path.join(self.visualization_dir, 'merged_visualizations.pdf'))
+        plt.close()
 
     def train_and_test(self):
         self.check_directories()
