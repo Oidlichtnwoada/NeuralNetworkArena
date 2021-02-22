@@ -156,7 +156,9 @@ class Benchmark(abc.ABC):
         for index, column in enumerate(evaluate_table.columns):
             axes[index % len(axes)].hlines(evaluate_table[column].tolist(), x_data[0], x_data[-1], label=column, linestyles='dashed', colors=hline_colors[index % len(hline_colors)])
         for index, axis in enumerate(axes):
-            axis.legend(loc=legend_positions[index % len(legend_positions)], prop={'size': 6})
+            legend = axis.legend(loc=legend_positions[index % len(legend_positions)], prop={'size': 6})
+            legend.remove()
+            axes[-1].add_artist(legend)
         plt.savefig(os.path.join(self.visualization_dir, f'{self.args.model}.pdf'))
 
     def accumulate_data(self):
