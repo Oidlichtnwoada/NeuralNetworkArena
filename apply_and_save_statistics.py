@@ -53,6 +53,6 @@ for benchmark_name in benchmark.BENCHMARK_NAMES:
     stds = np.std(merged_results, -1, ddof=1)
     sorted_stds = np.round(stds[sort_order], decimals=args.decimal_places)
     formatted_stds = np.char.mod(f'%.{args.decimal_places}f', sorted_stds)
-    merged_results_string = np.char.add(np.char.add(formatted_means, ' ± '), formatted_stds)
+    merged_results_string = np.char.add(np.char.add(formatted_means, ' \u00b1 '), formatted_stds)
     result_table = pd.DataFrame(np.concatenate((sorted_first_columns, merged_results_string), -1), columns=header)
     result_table.to_csv(os.path.join(statistics_folder_path, f'{benchmark_name}.csv'), index=False)

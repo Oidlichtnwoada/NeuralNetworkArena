@@ -23,7 +23,7 @@
 \usepackage{hyperref}  % Enables cross-linking in the electronic document version. This package has to be included second to last.
 \usepackage[acronym,toc]{glossaries} % Enables the generation of glossaries and lists fo acronyms. This package has to be included last.
 \usepackage{float}
-\usepackage{amsfonts,amsthm, graphicx, trfsigns, physics, xparse, mleftright, listings, xurl}
+\usepackage{amsfonts,amsthm, graphicx, trfsigns, physics, xparse, mleftright, listings, xurl, csvsimple, rotating}
 
 % enable line breaks if lines in code listings are too long
 \lstset{breaklines=true}
@@ -1307,13 +1307,103 @@
     \chapter{Results}
 
 
+    \section{Activity Benchmark}
+    \begin{sidewaystable}
+        \centering{}
+        \resizebox{\linewidth}{!}{\csvautotabular[respect all]{../benchmark_logs/statistics/activity.csv}}
+        \caption{statistics of test loss and metrics for Activity Benchmark}
+        \label{tab:test_loss_activity}
+    \end{sidewaystable}
+    \begin{figure}[H]
+        \centering{}
+        \includegraphics{../benchmark_logs/run_1/visualizations/activity/merged_visualizations.pdf}
+        \caption{validation loss evolution during training for Activity Benchmark on second run}
+        \label{fig:validation_loss_activity}
+    \end{figure}
+
+
+    \section{Add Benchmark}
+    \begin{sidewaystable}
+        \centering{}
+        \resizebox{\linewidth}{!}{\csvautotabular[respect all]{../benchmark_logs/statistics/add.csv}}
+        \caption{statistics of test loss and metrics for Add Benchmark}
+        \label{tab:test_loss_add}
+    \end{sidewaystable}
+    \begin{figure}[H]
+        \centering{}
+        \includegraphics{../benchmark_logs/run_1/visualizations/add/merged_visualizations.pdf}
+        \caption{validation loss evolution during training for Add Benchmark on second run}
+        \label{fig:validation_loss_add}
+    \end{figure}
+
+
+    \section{Walker Benchmark}
+    \begin{sidewaystable}
+        \centering{}
+        \resizebox{\linewidth}{!}{\csvautotabular[respect all]{../benchmark_logs/statistics/walker.csv}}
+        \caption{statistics of test loss and metrics for Walker Benchmark}
+        \label{tab:test_loss_walker}
+    \end{sidewaystable}
+    \begin{figure}[H]
+        \centering{}
+        \includegraphics{../benchmark_logs/run_1/visualizations/walker/merged_visualizations.pdf}
+        \caption{validation loss evolution during training for Walker Benchmark on second run}
+        \label{fig:validation_loss_walker}
+    \end{figure}
+
+
+    \section{Memory Benchmark}
+    \begin{sidewaystable}
+        \centering{}
+        \resizebox{\linewidth}{!}{\csvautotabular[respect all]{../benchmark_logs/statistics/memory.csv}}
+        \caption{statistics of test loss and metrics for Memory Benchmark}
+        \label{tab:test_loss_memory}
+    \end{sidewaystable}
+    \begin{figure}[H]
+        \centering{}
+        \includegraphics{../benchmark_logs/run_1/visualizations/memory/merged_visualizations.pdf}
+        \caption{validation loss evolution during training for Memory Benchmark on second run}
+        \label{fig:validation_loss_memory}
+    \end{figure}
+
+
+    \section{MNIST Benchmark}
+    \begin{sidewaystable}
+        \centering{}
+        \resizebox{\linewidth}{!}{\csvautotabular[respect all]{../benchmark_logs/statistics/mnist.csv}}
+        \caption{statistics of test loss and metrics for MNIST Benchmark}
+        \label{tab:test_loss_mnist}
+    \end{sidewaystable}
+    \begin{figure}[H]
+        \centering{}
+        \includegraphics{../benchmark_logs/run_1/visualizations/mnist/merged_visualizations.pdf}
+        \caption{validation loss evolution during training for MNIST Benchmark on second run}
+        \label{fig:validation_loss_mnist}
+    \end{figure}
+
+
+    \section{Cell Benchmark}
+    \begin{sidewaystable}
+        \centering{}
+        \resizebox{\linewidth}{!}{\csvautotabular[respect all]{../benchmark_logs/statistics/cell.csv}}
+        \caption{statistics of test loss and metrics for Cell Benchmark}
+        \label{tab:test_loss_cell}
+    \end{sidewaystable}
+    \begin{figure}[H]
+        \centering{}
+        \includegraphics{../benchmark_logs/run_1/visualizations/cell/merged_visualizations.pdf}
+        \caption{validation loss evolution during training for Cell Benchmark on second run}
+        \label{fig:validation_loss_cell}
+    \end{figure}
+
+
     \chapter{Summary}
 
 
     \chapter{Appendix}
 
 
-    \section{Code for Benchmarks}
+    \section{Benchmark Code}
 
     \subsection{benchmark.py}
     \lstinputlisting[language=Python,caption={benchmark.py},captionpos=b]{../experiments/benchmarks/benchmark.py}
@@ -1337,7 +1427,7 @@
     \lstinputlisting[language=Python,caption={cell\_benchmark.py},captionpos=b]{../experiments/benchmarks/cell_benchmark.py}
 
 
-    \section{Code for Models}
+    \section{Model Code}
 
     \subsection{model\_fatory.py}
     \lstinputlisting[language=Python,caption={model\_fatory.py},captionpos=b]{../experiments/models/model_factory.py}
@@ -1380,6 +1470,16 @@
 
     \subsection{memory\_cell.py}
     \lstinputlisting[language=Python,caption={memory\_cell.py},captionpos=b]{../experiments/models/memory_cell.py}
+
+
+    \section{Other Code}
+
+    \subsection{apply\_and\_save\_statistics.py}
+    \lstinputlisting[language=Python,caption={apply\_and\_save\_statistics.py},captionpos=b]{../apply_and_save_statistics.py}
+
+    \subsection{run\_all\_benchmarks\_and\_models.py}
+    \lstinputlisting[language=Python,caption={run\_all\_benchmarks\_and\_models.py},captionpos=b]{../run_all_benchmarks_and_models.py}
+
 
 %\todo{Enter your text here.}
 
