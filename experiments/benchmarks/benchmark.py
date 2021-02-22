@@ -188,6 +188,7 @@ class Benchmark(abc.ABC):
         axis.xaxis.set_major_locator(ticker.MaxNLocator(integer=True))
         color_cycle = plt.rcParams['axes.prop_cycle'].by_key()['color']
         axis.set_prop_cycle(color=color_cycle * 2, linestyle=['solid'] * len(color_cycle) + ['dashed'] * len(color_cycle))
+        axis.set_yscale('log')
         for model_name, val_losses in val_loss_data:
             axis.plot(x_data[:len(val_losses)], val_losses, label=model_name)
         axis.legend(loc='upper right', prop={'size': 6})
