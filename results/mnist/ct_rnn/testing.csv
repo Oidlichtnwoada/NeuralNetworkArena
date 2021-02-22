@@ -1,0 +1,2 @@
+model,trainable parameters,training duration total,training duration per epoch,epochs,test sparse categorical crossentropy,test sparse categorical accuracy
+ct_rnn,18954,6580.571489334106,188.01632826668876,35,1.1576589345932007,0.5675403475761414

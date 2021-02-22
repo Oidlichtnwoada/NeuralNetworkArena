@@ -1,0 +1,2 @@
+model,trainable parameters,training duration total,training duration per epoch,epochs,test mean squared error
+differentiable_neural_computer,24774,4510.765236854553,155.54362885705356,29,0.00021697591000702232

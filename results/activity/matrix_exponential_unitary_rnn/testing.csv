@@ -1,0 +1,2 @@
+model,trainable parameters,training duration total,training duration per epoch,epochs,test sparse categorical crossentropy,test sparse categorical accuracy
+matrix_exponential_unitary_rnn,20231,4331.295170545578,69.85959952492868,62,0.3534221351146698,0.8752520084381104

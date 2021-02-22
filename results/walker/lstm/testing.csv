@@ -1,0 +1,2 @@
+model,trainable parameters,training duration total,training duration per epoch,epochs,test mean squared error
+lstm,22097,734.8894350528717,14.132489135632149,52,1.4071155786514282

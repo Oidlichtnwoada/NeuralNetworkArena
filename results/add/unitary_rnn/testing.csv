@@ -1,0 +1,2 @@
+model,trainable parameters,training duration total,training duration per epoch,epochs,test mean squared error
+unitary_rnn,2929,12523.240156173706,272.2443512211675,46,0.14274835586547852

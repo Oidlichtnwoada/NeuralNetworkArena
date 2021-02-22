@@ -1,0 +1,2 @@
+model,trainable parameters,training duration total,training duration per epoch,epochs,test sparse categorical crossentropy,test sparse categorical accuracy
+ct_gru,22634,2567.591157913208,45.849842105593,56,0.5452689528465271,0.7986391186714172

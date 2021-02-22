@@ -1,0 +1,2 @@
+model,trainable parameters,training duration total,training duration per epoch,epochs,test sparse categorical crossentropy,test sparse categorical accuracy
+recurrent_network_augmented_transformer,3930,13166.623548269272,182.86977150373988,72,0.7813288569450378,0.735131025314331

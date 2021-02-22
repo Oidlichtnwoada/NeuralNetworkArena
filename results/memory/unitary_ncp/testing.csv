@@ -1,0 +1,2 @@
+model,trainable parameters,training duration total,training duration per epoch,epochs,test sparse categorical crossentropy,test sparse categorical accuracy
+unitary_ncp,3990,3398.7128908634186,178.87962583491677,19,0.020285630598664284,1.0
