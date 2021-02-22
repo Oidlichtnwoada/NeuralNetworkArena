@@ -1,0 +1,2 @@
+model,trainable parameters,training duration total,training duration per epoch,epochs,test mean squared error
+memory_cell,9,631.731 ± 7.779,105.288 ± 1.297,6.000 ± 0.000,0.000 ± 0.000
