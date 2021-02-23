@@ -46,7 +46,7 @@
 \setsecnumdepth{subsection} % Enumerate subsections.
 
 \nonzeroparskip             % Create space between paragraphs (optional).
-\setlength{\parindent}{0pt} % Remove paragraph identation (optional).
+\setlength{\parindent}{0pt} % Remove paragraph indentation (optional).
 
 \makeindex      % Use an optional index.
 \makeglossaries % Use an optional glossary.
@@ -100,10 +100,14 @@
 
 \makeatletter
 \csvset{
-    options/.style={
-        late after line=\\\hline,
-        late after last line=\csv@tablefoot\end{tabular}\csv@posttable,
-respect all=true}
+  options/.style={
+    after head=\csv@pretable\begin{tabular}{|l|*{\csv@columncount}{c|}}\csv@tablehead,
+    table head=\hline \csvlinetotablerow \\\hline\hline,
+    late after line=\\\hline,
+    table foot=\\\hline,
+    late after last line=\csv@tablefoot\end{tabular}\csv@posttable,
+    command=\csvlinetotablerow,
+    respect all=true},
 }
 \makeatother
 
