@@ -98,6 +98,114 @@
 %\setfirstreviewerdata{Affiliation, Country}
 %\setsecondreviewerdata{Affiliation, Country}
 
+\newcommand{\benchmarksummary}[2]{
+\begin{sidewaystable}[h]
+    \centering{}
+    \resizebox{\linewidth}{!}{\csvautotabular[respect all]{../benchmark_logs/statistics/#1.csv}}
+    \caption{statistics of test loss and metrics for #2 Benchmark ($\mu \pm \sigma, N=3$)}
+    \label{tab:test_loss_#1}
+\end{sidewaystable}
+\begin{figure}[h]
+    \centering{}
+    \includegraphics{../benchmark_logs/run_1/visualizations/#1/merged_visualizations.pdf}
+    \caption{validation loss evolution during training for #2 Benchmark on second run}
+    \label{fig:validation_loss_#1}
+\end{figure}
+\clearpage{}
+}
+
+\newcommand{\benchmarkplots}[2]{
+\subsection{#2 Benchmark}
+\clearpage{}
+\begin{sidewaysfigure}[h]
+    \centerline{
+        \begin{minipage}[b]{0.5\linewidth}
+            \centering
+            \includegraphics[width=\linewidth]{../benchmark_logs/run_1/visualizations/#1/memory_augmented_transformer.pdf}
+        \end{minipage}
+        \begin{minipage}[b]{0.5\linewidth}
+            \centering
+            \includegraphics[width=\linewidth]{../benchmark_logs/run_1/visualizations/#1/lstm.pdf}
+        \end{minipage}
+    }
+    \centerline{
+        \begin{minipage}[b]{0.5\linewidth}
+            \centering
+            \includegraphics[width=\linewidth]{../benchmark_logs/run_1/visualizations/#1/differentiable_neural_computer.pdf}
+        \end{minipage}
+        \begin{minipage}[b]{0.5\linewidth}
+            \centering
+            \includegraphics[width=\linewidth]{../benchmark_logs/run_1/visualizations/#1/unitary_rnn.pdf}
+        \end{minipage}
+    }
+    \label{fig:#1_part_1}
+    \caption{individual training plots for #2 Benchmark on second run - part 1}
+\end{sidewaysfigure}
+\begin{sidewaysfigure}[h]
+    \centerline{
+        \begin{minipage}[b]{0.5\linewidth}
+            \centering
+            \includegraphics[width=\linewidth]{../benchmark_logs/run_1/visualizations/#1/matrix_exponential_unitary_rnn.pdf}
+        \end{minipage}
+        \begin{minipage}[b]{0.5\linewidth}
+            \centering
+            \includegraphics[width=\linewidth]{../benchmark_logs/run_1/visualizations/#1/transformer.pdf}
+        \end{minipage}
+    }
+    \centerline{
+        \begin{minipage}[b]{0.5\linewidth}
+            \centering
+            \includegraphics[width=\linewidth]{../benchmark_logs/run_1/visualizations/#1/recurrent_network_attention_transformer.pdf}
+        \end{minipage}
+        \begin{minipage}[b]{0.5\linewidth}
+            \centering
+            \includegraphics[width=\linewidth]{../benchmark_logs/run_1/visualizations/#1/recurrent_network_augmented_transformer.pdf}
+        \end{minipage}
+    }
+    \label{fig:#1_part_2}
+    \caption{individual training plots for #2 Benchmark on second run - part 2}
+\end{sidewaysfigure}
+\begin{sidewaysfigure}[h]
+    \centerline{
+        \begin{minipage}[b]{0.5\linewidth}
+            \centering
+            \includegraphics[width=\linewidth]{../benchmark_logs/run_1/visualizations/#1/gru.pdf}
+        \end{minipage}
+        \begin{minipage}[b]{0.5\linewidth}
+            \centering
+            \includegraphics[width=\linewidth]{../benchmark_logs/run_1/visualizations/#1/neural_circuit_policies.pdf}
+        \end{minipage}
+    }
+    \centerline{
+        \begin{minipage}[b]{0.5\linewidth}
+            \centering
+            \includegraphics[width=\linewidth]{../benchmark_logs/run_1/visualizations/#1/ct_rnn.pdf}
+        \end{minipage}
+        \begin{minipage}[b]{0.5\linewidth}
+            \centering
+            \includegraphics[width=\linewidth]{../benchmark_logs/run_1/visualizations/#1/ct_gru.pdf}
+        \end{minipage}
+    }
+    \label{fig:#1_part_3}
+    \caption{individual training plots for #2 Benchmark on second run - part 3}
+\end{sidewaysfigure}
+\begin{sidewaysfigure}[h]
+    \centerline{
+        \begin{minipage}[b]{0.5\linewidth}
+            \centering
+            \includegraphics[width=\linewidth]{../benchmark_logs/run_1/visualizations/#1/ode_lstm.pdf}
+        \end{minipage}
+        \begin{minipage}[b]{0.5\linewidth}
+            \centering
+            \includegraphics[width=\linewidth]{../benchmark_logs/run_1/visualizations/#1/unitary_ncp.pdf}
+        \end{minipage}
+    }
+    \label{fig:#1_part_4}
+    \caption{individual training plots for #2 Benchmark on second run - part 4}
+\end{sidewaysfigure}
+\clearpage{}
+}
+
 
 \begin{document}
 
@@ -1306,102 +1414,38 @@
 
     \chapter{Results}
 
+    \section{Benchmark Hardware and Experiment Clarifications}
 
     \section{Activity Benchmark}
-    \begin{sidewaystable}
-        \centering{}
-        \resizebox{\linewidth}{!}{\csvautotabular[respect all]{../benchmark_logs/statistics/activity.csv}}
-        \caption{statistics of test loss and metrics for Activity Benchmark}
-        \label{tab:test_loss_activity}
-    \end{sidewaystable}
-    \begin{figure}[H]
-        \centering{}
-        \includegraphics{../benchmark_logs/run_1/visualizations/activity/merged_visualizations.pdf}
-        \caption{validation loss evolution during training for Activity Benchmark on second run}
-        \label{fig:validation_loss_activity}
-    \end{figure}
-
-
+    \benchmarksummary{activity}{Activity}
+    
     \section{Add Benchmark}
-    \begin{sidewaystable}
-        \centering{}
-        \resizebox{\linewidth}{!}{\csvautotabular[respect all]{../benchmark_logs/statistics/add.csv}}
-        \caption{statistics of test loss and metrics for Add Benchmark}
-        \label{tab:test_loss_add}
-    \end{sidewaystable}
-    \begin{figure}[H]
-        \centering{}
-        \includegraphics{../benchmark_logs/run_1/visualizations/add/merged_visualizations.pdf}
-        \caption{validation loss evolution during training for Add Benchmark on second run}
-        \label{fig:validation_loss_add}
-    \end{figure}
-
+    \benchmarksummary{add}{Add}
 
     \section{Walker Benchmark}
-    \begin{sidewaystable}
-        \centering{}
-        \resizebox{\linewidth}{!}{\csvautotabular[respect all]{../benchmark_logs/statistics/walker.csv}}
-        \caption{statistics of test loss and metrics for Walker Benchmark}
-        \label{tab:test_loss_walker}
-    \end{sidewaystable}
-    \begin{figure}[H]
-        \centering{}
-        \includegraphics{../benchmark_logs/run_1/visualizations/walker/merged_visualizations.pdf}
-        \caption{validation loss evolution during training for Walker Benchmark on second run}
-        \label{fig:validation_loss_walker}
-    \end{figure}
-
+    \benchmarksummary{walker}{Walker}
 
     \section{Memory Benchmark}
-    \begin{sidewaystable}
-        \centering{}
-        \resizebox{\linewidth}{!}{\csvautotabular[respect all]{../benchmark_logs/statistics/memory.csv}}
-        \caption{statistics of test loss and metrics for Memory Benchmark}
-        \label{tab:test_loss_memory}
-    \end{sidewaystable}
-    \begin{figure}[H]
-        \centering{}
-        \includegraphics{../benchmark_logs/run_1/visualizations/memory/merged_visualizations.pdf}
-        \caption{validation loss evolution during training for Memory Benchmark on second run}
-        \label{fig:validation_loss_memory}
-    \end{figure}
-
+    \benchmarksummary{memory}{Memory}
 
     \section{MNIST Benchmark}
-    \begin{sidewaystable}
-        \centering{}
-        \resizebox{\linewidth}{!}{\csvautotabular[respect all]{../benchmark_logs/statistics/mnist.csv}}
-        \caption{statistics of test loss and metrics for MNIST Benchmark}
-        \label{tab:test_loss_mnist}
-    \end{sidewaystable}
-    \begin{figure}[H]
-        \centering{}
-        \includegraphics{../benchmark_logs/run_1/visualizations/mnist/merged_visualizations.pdf}
-        \caption{validation loss evolution during training for MNIST Benchmark on second run}
-        \label{fig:validation_loss_mnist}
-    \end{figure}
-
+    \benchmarksummary{mnist}{MNIST}
 
     \section{Cell Benchmark}
-    \begin{sidewaystable}
-        \centering{}
-        \resizebox{\linewidth}{!}{\csvautotabular[respect all]{../benchmark_logs/statistics/cell.csv}}
-        \caption{statistics of test loss and metrics for Cell Benchmark}
-        \label{tab:test_loss_cell}
-    \end{sidewaystable}
-    \begin{figure}[H]
-        \centering{}
-        \includegraphics{../benchmark_logs/run_1/visualizations/cell/merged_visualizations.pdf}
-        \caption{validation loss evolution during training for Cell Benchmark on second run}
-        \label{fig:validation_loss_cell}
-    \end{figure}
-
+    \benchmarksummary{cell}{Cell}
 
     \chapter{Summary}
 
 
     \chapter{Appendix}
 
+    \section{Individual Training Plots}
+    
+    \benchmarkplots{activity}{Activity}
+    \benchmarkplots{add}{Add}
+    \benchmarkplots{walker}{Walker}
+    \benchmarkplots{memory}{Memory}
+    \benchmarkplots{mnist}{MNIST}
 
     \section{Benchmark Code}
 
