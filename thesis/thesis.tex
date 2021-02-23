@@ -1444,11 +1444,13 @@
     The script can be found under the URL \url{https://github.com/Oidlichtnwoada/NeuralNetworkArena/blob/master/run_all_benchmarks_and_models.py}.
     This script was executed three times and the produced log data was processed using the script \texttt{apply\_and\_save\_statistics.py} which extracted the statistics (means and standard deviations) in CSV files out of all measured metrics.
     Time metrics are always reported in seconds.
+    All values in the measured metrics are reported with a precision of three decimal digits.
+    The test loss of models is reported in brackets after their names in the next sections.
     This script can be found under the URL \url{https://github.com/Oidlichtnwoada/NeuralNetworkArena/blob/master/apply_and_save_statistics.py}.
     To achieve transparency on how the results were obtained, all logs generated during the three benchmark runs by the benchmark framework \ref{benchmark_framework} are availalbe under \url{https://github.com/Oidlichtnwoada/NeuralNetworkArena/tree/master/benchmark_logs}.
 
 
-    \section{Activity Benchmark}
+    \section{Activity Benchmark} \label{activity_results}
     The statistics summary for this benchmark is shown in \ref{tab:test_loss_activity} and the validation loss during training for all models is visualized in \ref{fig:validation_loss_activity}.
     This benchmark should test wheter a model has the capability to model a dynamic physical system.
     The Transformer architecture achieved the lowest test loss of $0.178$ and highest accuracy of $0.937$ by incorporating the great expressivity of multi-head attention and the concept of attention.
@@ -1483,23 +1485,55 @@
     \benchmarksummary{activity}{Activity}
 
 
-    \section{Add Benchmark}
+    \section{Add Benchmark} \label{add_results}
+    The statistics summary for this benchmark is shown in \ref{tab:test_loss_add} and the validation loss during training for all models is visualized in \ref{fig:validation_loss_add}.
+    This benchmark should test wheter a model has the capability to capture long-term dependencies in time-series.
+    The adding problem is considered to be solved when the mean test loss is under $0.04$.
+    As always the same models as reported in \ref{activity_results} take a large amount of time to train, only exceptions to the norm in terms of training durations will be reported in the following.
+    The Transformer architecture achieved the perfect test loss of $0.000$ by incorporating the concept of attention as discussed in \ref{activity_results}.
+    This architecture processes all input vectors of the input vector sequence at once and does not need to save each input vector at a single time step in its hidden state in encoded form.
+    Therefore, it can simply focus on the two marked input vectors in the sequence and add them together without repeatedly applying a model function at each time step.
+    The Recurrent Network Augmented Transformer also achieved the perfect test loss of $0.000$ by employing the attention mechanism applied to the input sequence. 
+    The added model complexity of the additional RNN in this architecture has not prevented it from learning the correct model function.
+    The next best model was the GRU architecture ($0.001$) followed by the CT-GRU architecture ($0.001$) which both performed very well on this benchmark.
+    They both outperformed their LSTM counterparts, given as the LSTM and ODE-LSTM architecture. 
+    Furthermore, the Recurrent Network Attention Transformer ($0.002$) also performed very well on this task.
+    It uses the introduced recurrent network attention mechanism together with a Unitary RNN and this combination has beaten the vanilla Unitary RNN architecture in terms of test loss.
+    This architecture is followed by the DNC ($0.007$), the CT-RNN ($0.019$) and the Matrix Exponential Unitary RNN architecture ($0.022$).
+    The DNC was able to learn the desired function using meta-learning and saving the marked values to its external memory and suprisingly also the CT-RNN architecture was able to learn the add function, even though the architecture has no gating mechanism like the LSTM or GRU architecture and no bounded loss gradient like the Unitary RNNs.
+    The Matrix Exponential Unitary RNN was also able to learn the add function and training was significantly more stable compared to the standard Unitary RNN as measured by the test loss standard deviation of $0.032$ compared to $0.076$.
+    As in the Activity Benchmark, the Matrix Exponential Unitary RNN has outperformed the Unitary RNN in terms of test loss and training duration.
+    The following models are the LSTM ($0.066$), the Unitary RNN ($0.094$), the Unitary NCP ($0.106$) and the Memory Augmented Transformer architecture ($0.122$).
+    These models are not considered to have solved the adding problem as their test loss is larger than $0.04$. 
+    All four test loss standard deviations of these models are quite high (larger than $0.075$) because in some benchmark runs they have been able to solve the adding problem, whereas in the other benchmark runs they failed to do so.
+    In case of the LSTM and Unitary RNN architecture, bad initialization values may be the cause of different behaviors on different runs, hindering the optimizer to find good parameters for the models.
+    The Matrix Exponential Unitary RNN always initializes its matrix $W$ to the identity matrix which somehow helps the optimizer in tuning the model's parameters.
+    Bad initialization values are also a possible cause in the Unitary NCP and Memory Augmented Transformer architecture, but for the Unitary NCP architecture also the very sparsely connected neurons discussed in \ref{activity_results} may be a problem.
+    The Memory Augmented Transformer architecture may be able to smoothen its loss surface which helps the optimizer by setting its embedding size equal to the length of the vector stored in each memory row.
+    Then the memory embedding can be omitted and its parameters can be used for the multi-head self-attention mechanism.
+    Furthermore, the memory control dense layer may use a residual connection which enables it to specify the memory change instead of building a new memory row vector from scratch at each time step when the enable signal is active.
+    The worst two models which were only able to learn the memory-less strategy discussed in \ref{add} are the NCP ($0.166$) and the ODE-LSTM model ($0.167$).
+    As the NCP architecture has no bounded loss gradient it suffers from the vanishing gradient problem as discussed in \cite[p. 2]{NCP} and therefore is not able to memorize the two marked numbers.
+    The sparsity problem also applies here.
+    The Unitary NCP architecture was able to perform better on this task because it incorporates a Unitary RNN for memory-related tasks.
+    Surprisingly, the ODE-LSTM architecture was not able to capture the long-term dependencies in this benchmark task.
+    Somehow the added CT-RNN in its architecture changed the loss surface such that it is more difficult for the optimizer to find suitable parameters.
     \benchmarksummary{add}{Add}
 
 
-    \section{Walker Benchmark}
+    \section{Walker Benchmark} \label{walker_results}
     \benchmarksummary{walker}{Walker}
 
 
-    \section{Memory Benchmark}
+    \section{Memory Benchmark} \label{memory_results}
     \benchmarksummary{memory}{Memory}
 
 
-    \section{MNIST Benchmark}
+    \section{MNIST Benchmark} \label{mnist_results}
     \benchmarksummary{mnist}{MNIST}
 
 
-    \section{Cell Benchmark}
+    \section{Cell Benchmark} \label{cell_results}
     \benchmarksummary{cell}{Cell}
 
 
