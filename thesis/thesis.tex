@@ -1438,7 +1438,7 @@
     \section{Benchmark Hardware and Experiment Clarifications}
     The benchmark server was equipped with an \texttt{AMD Ryzen Threadripper 2970WX} $24$-core processor and two \texttt{NVIDIA Titan RTX} graphics cards.
     Software-wise, the system used the \texttt{Ubuntu 18.04.5 LTS} operating system and a \texttt{Python 3.8.7} \cite{Python3} interpreter to execute all Python scritps.
-    The used \texttt{Tensorflow} \cite{Tensorflow} library had version \texttt{2.4.1}, the used \texttt{NVIDIA CUDA} library had version \texttt{11.0.3}, the used \texttt{NVIDIA cuDNN} library had version \texttt{8.0.5.39}, the used \texttt{NVIDIA TensorRT} library had version \texttt{7.2.2} and the \texttt{NVIDIA GPU driver} had version \texttt{460.32.03}.
+    The used \texttt{Tensorflow} \cite{Tensorflow} library had version \texttt{2.4.1}, the used \texttt{NVIDIA CUDA} library had version \texttt{11.0.3}, the used \texttt{NVIDIA cuDNN} library had version \texttt{8.0.5.39}, the used \texttt{NVIDIA TensorRT} library had version \texttt{7.2.2} and the \texttt{NVIDIA} GPU driver had version \texttt{460.32.03}.
     All benchmarks were started using the script \texttt{run\_all\_benchmarks\_and\_models.py} which invokes all applicable benchmark and model combinations once.
     The CPU and both GPUs were used as computing devices during training.
     The script can be found under the URL \url{https://github.com/Oidlichtnwoada/NeuralNetworkArena/blob/master/run_all_benchmarks_and_models.py}.
@@ -1449,6 +1449,37 @@
 
 
     \section{Activity Benchmark}
+    The statistics summary for this benchmark is shown in \ref{tab:test_loss_activity} and the validation loss during training for all models is visualized in \ref{fig:validation_loss_activity}.
+    This benchmark should test wheter a model has the capability to model a dynamic physical system.
+    The Transformer architecture achieved the lowest test loss of $0.178$ and highest accuracy of $0.937$ by incorporating the great expressivity of multi-head attention and the concept of attention.
+    Therefore, the Transformer architecture learns that more recent measurement data will have a larger impact on the final classification than measurement data from the distant past.
+    The Transformer architecture is followed by the GRU ($0.209$), CT-GRU ($0.223$), DNC ($0.229$), ODE-LSTM ($0.235$) and LSTM ($0.245$) architecture which all delivered a good test loss.
+    This benchmark reveals that GRU and LSTM architectures are not only good in memory-related tasks, they can also be used to model a sampled physical system.
+    It is remarkable that the GRU architecture which is a simplification of the LSTM architecture outperformed its mother architecture by trading model complexity for hidden state size.
+    Furthermore, the continuous-time variant of the LSTM, the ODE-LSTM, was better suited to model the physical system than the vanilla LSTM architecture, but it also had a larger parameter count.
+    The DNC architecture performed comparatively to the CT-GRU architecture and the LSTM architecture is followed by the Memory Augmented Transformer ($0.257$).
+    The DNC and the Memory Augmented Transformer employ an external memory and separate computation from memory.
+    Therefore, they solve each benchmark task by meta-learning which is a synonym for learning to learn.
+    Gradient descent learns an algorithm to solve each task in these models instead of learning the function that maps input data to output data directly.
+    The DNC has a far more complex model function than the Memory Augmented Transformer and is far more constraint in its operations.
+    These restrictions result in a better test loss than the Memory Augmented Transformer, but the latter also performed quite good with less trainable parameters.
+    Worth mentioning is that all mentioned models except the DNC and Memory Augmented Transformer trained very quickly, the two exceptions needed at least a full hour to train the required function.
+    The next best architecture was the Matrix Exponential Unitary RNN ($0.336$) in its full-space configuration, which outperformed the regular Unitary RNN in test loss and training duration, though both training durations were quite long.
+    As the regular Unitary RNN in its full-space configuration took too long to train, it was benchmarked in its partial-space configuration, therefore the parameter count difference.
+    It should be clearly visible that the unitary matrix parametrization with the matrix exponential is more efficient than the approach with rotational matrices.
+    The Matrix Exponential Unitary RNN architecture is followed by the Recurrent Network Augmented Transformer ($0.373$) and the Recurrent Network Attention Transformer ($0.410$). 
+    The hypothesis of adding more expressivity to the Transformer architecture by accumulating the information in the weighted value vectors with an LSTM in the Recurrent Network Augmented Transformer has not shown to be true.
+    The same statement holds for the newly introduced recurrent network attention using Unitary RNNs which is used in the Recurrent Network Attention Transformer.
+    As both modifications dramatically increase model complexity and training duration compared to the standard Transformer architecture, there are not a viable option for real-world applications.
+    The next best model was the CT-RNN ($0.510$) followed by the Unitary RNN architecture ($0.522$).
+    Both architectures have not  performed well on this benchmark and needed a long time to train.
+    The CT-RNN architecture should be capable of modelling physical systems as discussed in \ref{physical_systems}.
+    My hypothesis is that the additional classification task on top of the physical system modelling was the culprit of the high test loss.
+    Perhaps the Matrix Exponential Unitary RNN benefits from using also the imaginary part of its hidden state when projecting it to the model output vector using a dense layer.
+    The two remaining models, the Unitary NCP ($0.573$) and NCP ($1.088$) architecture, performed very poorly on this benchmark and took a significant amount of time to train.
+    Due to the complex model function of the NCP architecture, both models had a small amount of neurons that were very sparsely connected with chemical synapses in order to train them in reasonable time.
+    This is a likely reason for the high test loss of both models.
+    Future papers should work on approximations or simplifications of the LTC network architecture, such that bigger networks are trainable in reasonable time.
     \benchmarksummary{activity}{Activity}
 
 
