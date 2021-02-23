@@ -499,7 +499,7 @@
     This function was called \texttt{get\_model\_output\_by\_name} and can be found under \url{https://github.com/Oidlichtnwoada/NeuralNetworkArena/blob/master/experiments/models/model_factory.py}.
     This mechanism of creating the output tensor, including the internal computational graph of the Tensorflow library \cite{Tensorflow} is called the Functional API.
     Most of the models were parameterized such that they have roughly $20000$ trainable parameters in the Walker Benchmark \ref{walker} as this benchmark features the largest input and output vector size of all benchmarks.
-    The exceptions of the parameter cound are the Unitary RNN model \ref{urnn}, the NCP model \ref{ncp}, the Unitary NCP model \ref{uncp}, the Recurrent Network Augmented Transformer \ref{rnaut} and the Recurrent Network Attention Transformer \ref{rnatt}.
+    The exceptions of the parameter count are the Unitary RNN model \ref{urnn}, the NCP model \ref{ncp}, the Unitary NCP model \ref{uncp}, the Recurrent Network Augmented Transformer \ref{rnaut} and the Recurrent Network Attention Transformer \ref{rnatt}.
     All these models' computational graphs lead to high computation costs during backpropagation, which leads to training durations up to a whole day for a single benchmark.
     This high computational cost was unacceptable, and therefore their parameter count was reduced to present at least some results for these models.
 
