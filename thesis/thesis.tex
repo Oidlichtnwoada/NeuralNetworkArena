@@ -266,12 +266,12 @@
     \begin{abstract}
         The diversity of machine learning models has rapidly increased in recent years as research in the machine learning domain flourishes.
         This thesis tries to give an overview of machine learning models that are capable of dealing with regularly sampled time-series data without specifying a given history length that should be taken into account by the model.
-        Therefore, all models presented in this thesis are either derivatives of the recurrent neural network or the transformer \cite{Transformer} architecture.
+        Therefore, all models presented in this thesis are either derivatives of the recurrent neural network or the Transformer \cite{Transformer} architecture.
         Furthermore, new machine learning models have been introduced to improve the given Transformer \cite{Transformer} and unitary recurrent neural network \cite{EfficientUnitaryRNNs} architecture.
         After the introduction of all models, they are all benchmarked against five benchmarks and compared thoroughly.
         These benchmarks try to determine the model's capabilities to capture long-term dependencies and the ability to model physical systems.
-        Moreover, a time-continuous memory cell is introduced that is capable of storing a data bit over a large number of time steps without losing the stored information.
-        This memory cell is built using the LTC network \cite{LTCNetworks} architecture.
+        Moreover, the time-continuous Memory Cell architecture is introduced that is capable of storing a data bit over a large number of time steps without losing the stored information.
+        This architecture is built using the LTC network \cite{LTCNetworks} architecture.
         All code used for this thesis is available under \url{https://github.com/Oidlichtnwoada/NeuralNetworkArena}.
     \end{abstract}
 
@@ -401,7 +401,7 @@
 
     \section{Why capturing Long-Term Dependencies is difficult} \label{long_term_difficult}
     The difficulty will be outlined solely on the example of vanilla recurrent neural networks (RNNs).
-    How transformer-based and advanced RNN architectures tackle the problem will be discussed later.
+    How Transformer-based and advanced RNN architectures tackle the problem will be discussed later.
     Vanilla recurrent neural networks are discrete-time machine learning models.
     Its dynamics are given similar to the equations that govern sampled physical systems in \Cref{sampled_physical_systems}.
     The current state vector $h_{t}$ and the next input vector $x_{t+1}$ determine the next state vector $h_{t+1}$ and output vector $y_{t+1}$ deterministically.
@@ -460,7 +460,7 @@
     The other models were implemented according to the following architectures: Long Short-Term Memory \cite{LSTM}, Differentiable Neural Computer \cite{DNC}, Unitary Recurrent Neural Network \cite{EfficientUnitaryRNNs}, Transformer \cite{Transformer} and Neural Circuit Policies \cite{NCP}.
     These nine models are then complemented by five models that were newly introduced.
     All these models are benchmarked against each other.
-    Additionally, a time-continuous memory cell architecture should be introduced.
+    Additionally, the time-continuous Memory Cell architecture should be introduced.
     This architecture must have a dedicated benchmark test and should not be benchmarked against all other fully-fledged machine learning models as it is only a proof-of-concept implementation.
     All mentioned models should be implemented in the machine learning framework Tensorflow \cite{Tensorflow}.
     After implementing all models, an extensible benchmark suite had to be implemented to compare all implemented models.
@@ -468,7 +468,7 @@
     All that should be needed to implement a new benchmark is to specify the input, the expected output data, the loss function, and the model's required output vector size.
     The benchmarks regarding person activity classification, sequential MNIST classification, and kinematic physics simulation were taken from \cite{ODELSTM} and were modified slightly to be compatible with the benchmark framework.
     The other two benchmarks regarding the copying memory and the adding problem were taken from \cite{UnitaryRNNs} but were also slightly modified to fit the benchmark framework's needs.
-    The sixth benchmark that had to be implemented was the cell benchmark that should check if the memory cell can store information over many time steps.
+    The sixth benchmark that had to be implemented was the Cell Benchmark that should check if the Memory Cell can store information over many time steps.
     When this step is also done, all benchmarks should be run on all applicable models, and then the results should be thoroughly compared to filter out the strengths and weaknesses of the diverse models.
     Only after that, a summary should be written to concisely summarize the most important discoveries and fallacies that were made.
 
@@ -485,7 +485,7 @@
     The vanishing gradient problem was also tackled by the LSTM architecture \cite{LSTM} using a gating mechanism.
     This mechanism changes the subsequent state computation of the vanilla RNN.
     Another possible mitigation to the vanishing gradient problem is the transformer architecture proposed in \cite{Transformer} using a mechanism called attention.
-    In principle, the transformer architecture model has access to all past inputs simultaneously and directs its attention to the inputs most relevant for solving the required task.
+    In principle, the Transformer architecture model has access to all past inputs simultaneously and directs its attention to the inputs most relevant for solving the required task.
     This global access eliminates the need to backpropagate the error through multiple time-steps, which keeps the number of backpropagation steps low.
 
 %\todo{Enter your text here.}
@@ -931,7 +931,7 @@
     \subsection{Encoder} \label{encoder}
     At first, the Transformer architecture passes its input vectors to the encoder.
     The encoder embeds its input vectors into vectors of length $d_{model}$ (hyperparameter of the architecture) by passing them through a dense layer.
-    As the input time-series' embedded input vectors are not labeled with their corresponding time index $k$, the transformer architecture adds a positional encoding vector to each embedded input vector.
+    As the input time-series' embedded input vectors are not labeled with their corresponding time index $k$, the Transformer architecture adds a positional encoding vector to each embedded input vector.
     This positional encoding vector is only dependent on the absolute position in the input time-series of the vector, and the hyperparameter $d_{model}$ as described in-detail in \cite[p. 6]{Transformer} and should allow the architecture to infer its absolute position in the input time-series.
     After adding the positional embedding vectors, dropout with a configurable architecture-wide dropout rate $0 \leq r \leq 1$ is applied to all embedded input vectors.
     Dropout was introduced in \cite{dropout} and randomly sets vector entries to $0$ with a frequency of $r$, and vector entries not set to $0$ are scaled up by $1/(1-r)$.
@@ -1297,7 +1297,7 @@
 
 
     \section{Add Benchmark} \label{add}
-    This benchmark uses the same structure as the add benchmark introduced used in \cite{UnitaryRNNs}.
+    This benchmark uses the same structure as the Add Benchmark introduced used in \cite{UnitaryRNNs}.
     Data for this benchmark is generated randomly at each instantiation of the benchmark.
     The target function to learn is adding two marked numbers in a much longer stream of numbers.
     At each time step, a number and a marker bit are presented as an input vector to the model.
@@ -1412,13 +1412,13 @@
 
 
     \section{Cell Benchmark} \label{cell}
-    This benchmark evaluates if the newly introduced memory cell architecture can repeatedly store a single bit of information, including switching the memory state.
+    This benchmark evaluates if the newly introduced Memory Cell architecture can repeatedly store a single bit of information, including switching the memory state.
     Furthermore, it should be checked if the memory state vanishes or successfully persists over a long time horizon.
     Memory persistence requires capturing long-term dependencies as the input is provided sparsely to the model as described below.
     The benchmark has a configurable memory high symbol, memory low symbol, memory length, amount of cell switches, and amount of samples generated at each invocation of the benchmark.
     The memory high and low symbols represent the expected output symbol when either memory state is active, but the memory high symbol is also used as an input symbol to activate a specific memory state sparsely. All other inputs are then set to the memory low symbol.
     The memory high symbol was picked to $1$, the memory low symbol was picked to $0$, the memory length was picked to $128$, the number of cell switches was set to $2$, and the sample amount was set to $40000$.
-    As the memory cell is a bistable memory element, two memory states can be activated sparsely.
+    As the Memory Cell architecture is a bistable memory element, two memory states can be activated sparsely.
     The input vector at each time step has a size of $2$. If both entries are $0$, the current memory state should be kept.
     Otherwise, if a single entry is $1$ and the other entry is $0$, the corresponding memory state should be activated.
     The first part of the input sequence is constructed by activating any of the memory states sparsely, and the succeeding $127$ vectors are all-zero vectors.
@@ -1428,7 +1428,7 @@
     The required model output vector is also given as a sequence of vectors of size $2$. Therefore the error signal is provided at each time step.
     The output sequence can be quickly built from the input sequence by continuing to set its entry to $1$ at the corresponding index until a new sparsely input is provided to the model.
     Therefore, the model may get the input sequence consisting of the following vectors: $[1,0],[0,0],[0,0],...,[0,1],[0,0],[0,0]$ and is required to produce the following vectors of the expected output sequence: $[1,0],[1,0],[1,0],...,[0,1],[0,1],[0,1]$.
-    The sparse activation of the memory cell should lead to permanent storage of the activation until a new sparse input is provided to the model.
+    The sparse activation of the Memory Cell should lead to permanent storage of the activation until a new sparse input is provided to the model.
     As described above, the model output vector size is $2$, and a mean squared error loss without a metric was used, as more similar vectors lead to a better prediction.
     The results of this benchmark are presented in a later chapter.
     The implementation of this benchmark can be found under \url{https://github.com/Oidlichtnwoada/NeuralNetworkArena/blob/master/experiments/benchmarks/cell_benchmark.py}.
@@ -1568,9 +1568,9 @@
     The Recurrent Network Augmented Transformer even outperformed the LSTM architecture, though in its core an LSTM is used to accumlate the weighted value vectors of the attention mechanism.
     The Unitary NCP does a good job on delegating this memory-related task to the Unitary RNN.
     The next best model was the CT-GRU ($0.321$) followed by the Transformer ($0.362$), the GRU ($0.768$) and the DNC architecture ($1.534$).
-    All of these models were able to solve the memory benchmark in some benchmark runs, but also failed in other runs, which leads to a high test loss standard deviation of all these models.
+    All of these models were able to solve the Memory Benchmark in some benchmark runs, but also failed in other runs, which leads to a high test loss standard deviation of all these models.
     Maybe an improved initialization strategy for these models helps with this problem. 
-    Surprisingly, the Transformer architecture was not able to solve the memory benchmark in every single run, though it just needs to attend to the first input vector which contains the required category.
+    Surprisingly, the Transformer architecture was not able to solve the Memory Benchmark in every single run, though it just needs to attend to the first input vector which contains the required category.
     This bad result means that the positional encoding of the Transformer might not work as reliable as expected in \cite[p. 5-6]{Transformer}.
     The worst models which only learned the memory-less strategy discussed in \Cref{memory} were the Memory Augmented Transformer, the LSTM, the NCP, the CT-RNN and the ODE-LSTM architecture, all of which having achieved a test loss $2.303$ and a categorical accuracy of roughly $0.1$.
     The Memory Augmented Transformer may be able to improve its performance by incorporating the changes discussed in \Cref{add_results}.
@@ -1614,7 +1614,7 @@
     A downside of the architecture is the training duration of nearly two minutes per epoch for an architecture that only has $9$ trainable parameters.
     The Cell Benchmark featured an input sequence length of $384$ and $40000$ samples in total.
     Therefore, there is lots of future work to do to speed up training of this model by using simplifications or approximations in the model function.
-    Another open question is how to intelligently couple multiple memory cells together, and if they should be coupled tightly or rather loose like the memory bits in our computers.
+    Another open question is how to intelligently couple multiple Memory Cells together, and if they should be coupled tightly or rather loose like the memory bits in our computers.
     Furthermore, there must be a controller introduced like the one in the DNC architecture that provides suitable input currents to the Memory Cells.
     \benchmarksummary{cell}{Cell}
 
