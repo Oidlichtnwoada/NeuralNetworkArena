@@ -1606,13 +1606,20 @@
 
 
     \section{Cell Benchmark} \label{cell_results}
+    The statistics summary for this benchmark is shown in \Cref{tab:test_loss_cell} and the validation loss during training for the Memory Cell is visualized in \Cref{fig:validation_loss_cell}.
+    This benchmark should test wheter the Memory Cell architecture has the capability to capture long-term dependencies in time-series.
+    This was indeed the case as the Memory Cell achieved a perfect test loss of $0.000$ in each of the three benchmark runs with a test loss standard deviation of $0.000$. 
+    The total amount of epochs to train was quite low with $6$ as the initialization values of the Memory Cell were picked closely to a local minimum, otherwise the loss gradient kept diverging.
+    This test loss result validates that the architecture described in \Cref{memory_cell} is indeed able to capture long-term dependencies in time-series similar to the input time-series of the Cell Benchmark introduced in \Cref{cell}.
+    A downside of the architecture is the training duration of nearly two minutes per epoch for an architecture that only has $9$ trainable parameters.
+    The Cell Benchmark featured an input sequence length of $384$ and $40000$ samples in total.
+    Therefore, there is lots of future work to do to speed up training of this model by using simplifications or approximations in the model function.
+    Another open question is how to intelligently couple multiple memory cells together, and if they should be coupled tightly or rather loose like the memory bits in our computers.
+    Furthermore, there must be a controller introduced like the one in the DNC architecture that provides suitable input currents to the Memory Cells.
     \benchmarksummary{cell}{Cell}
 
 
-    \chapter{Summary}
-
-
-    \chapter{Future Work}
+    \chapter{Summary and Future Work}
 
 
     \chapter{Appendix}
