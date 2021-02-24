@@ -1378,6 +1378,8 @@
     As this is a classification problem, a categorical cross-entropy loss was used between the model's output logits passed through a softmax function and the one-hot encoding extension of the sparsely encoded expected category index.
     To better visualize how good a model can recall the category, a categorical accuracy metric was added to this benchmark.
     It must be pointed out that a model is only capable of recalling the category seen in the first input vector if the gradient does not vanish or explode, as the error signal is only provided after the last time step.
+    A model that is not able to capture the long-term dependencies in this benchmark will be forced to learn the memory-less strategy which entails that all output logits have the same value i.e. all categories are equally likely.
+    This will lead to a categorical crossentropy loss of $-\ln{\frac{1}{10}} \approx 2.303$ and a sparse categorical accuracy of roughly $0.1$.
     The results of this benchmark are presented in a later chapter.
     The implementation of this benchmark can be found under \url{https://github.com/Oidlichtnwoada/NeuralNetworkArena/blob/master/experiments/benchmarks/memory_benchmark.py}.
 
@@ -1544,12 +1546,33 @@
     As the test loss of both architectures is quite high, this idea has not really worked.
     The Matrix Exponential Unitary RNN was the next model with a test loss of $3.180$ and an outstanding high test loss standard deviation of $1.406$.
     In one benchmark run the model even achieved a comparitive test loss to the Unitary RNN.
-    Maybe an improvedd r initialization strategy helps to stabilize training for this model.
+    Maybe an improved initialization strategy helps to stabilize training for this model.
     The worst two models were the Unitary NCP ($3.438$) and the NCP ($4.850$) architecture, which both suffered from their sparsely connected few neurons.
     \benchmarksummary{walker}{Walker}
 
 
     \section{Memory Benchmark} \label{memory_results}
+    The statistics summary for this benchmark is shown in \Cref{tab:test_loss_memory} and the validation loss during training for all models is visualized in \Cref{fig:validation_loss_memory}.
+    This benchmark should test wheter a model has the capability to capture long-term dependencies in time-series.
+    This memory benchmark is considered to be solved when the categorical accuracy is higher than $0.9$.
+    Four architectures achieved the perfect categorical accuracy of $1.000$: the Unitary RNN ($0.000$), the Recurrent Network Attention Transformer ($0.008$), the Matrix Exponential Unitary RNN ($0.062$) and the Unitary NCP architecture ($0.205$).
+    The Unitary RNN has outperformed the Matrix Exponential Unitary RNN which has again a problem with a high test loss standard deviation of $0.042$ when compared to $0.000$ of the Unitary RNN.
+    This problem was also discussed in \Cref{walker_results} and a partial-space unitary matrix $W$ might be easier to handle by the optimizer.
+    The Unitary RNN trained very quickly and with its bounded loss gradient it also helped the Recurrent Network Attention Transformer and the Unitary NCP architecture to produce excellent results.
+    The last architecture that solved the bechmark was the Recurrent Network Augmented Transformer ($0.205$) with a categorical accuracy of $0.966$. 
+    It is impressive that both Transformer derivative models outperformed their mother architecture by better incorporating positional information and an RNN with bounded loss gradient.
+    The Recurrent Network Augmented Transformer even outperformed the LSTM architecture, though in its core an LSTM is used to accumlate the weighted value vectors of the attention mechanism.
+    The Unitary NCP does a good job on delegating this memory-related task to the Unitary RNN.
+    The next best model was the CT-GRU ($0.321$) followed by the Transformer ($0.362$), the GRU ($0.768$) and the DNC architecture ($1.534$).
+    All of these models were able to solve the memory benchmark in some benchmark runs, but also failed in other runs, which leads to a high test loss standard deviation of all these models.
+    Maybe an improved initialization strategy for these models helps with this problem. 
+    Surprisingly, the Transformer architecture was not able to solve the memory benchmark in every single run, though it just needs to attend to the first input vector which contains the required category.
+    This bad result means that the positional encoding of the Transformer might not work as reliable as expected in \cite[p. 5-6]{Transformer}.
+    The worst models which only learned the memory-less strategy discussed in \Cref{memory} were the Memory Augmented Transformer, the LSTM, the NCP, the CT-RNN and the ODE-LSTM architecture, all of which having achieved a test loss $2.303$ and a categorical accuracy of roughly $0.1$.
+    The Memory Augmented Transformer may be able to improve its performance by incorporating the changes discussed in \Cref{add_results}.
+    Outstandingly, both LSTM architectures failed to solve the benchmark, even though they employ gating on their cell state.
+    Not very surprisingly, the NCP and CT-RNN architecture failed to solve the task, as none has a bounded loss gradient and therefore both suffer from the vanishing gradient problem.
+    If the gradients were exploding the training loop would have terminated itself as specified by the TerminateOnNan callback described in \Cref{benchmark_framework}.
     \benchmarksummary{memory}{Memory}
 
 
