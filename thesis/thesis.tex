@@ -1455,6 +1455,7 @@
     \section{Activity Benchmark} \label{activity_results}
     The statistics summary for this benchmark is shown in \Cref{tab:test_loss_activity} and the validation loss during training for all models is visualized in \Cref{fig:validation_loss_activity}.
     This benchmark should test wheter a model has the capability to model a dynamic physical system.
+    The Activity Benchmark is considered to be solved when the categorical accuracy is higher than $0.9$.
     The Transformer architecture achieved the lowest test loss of $0.178$ and highest accuracy of $0.937$ by incorporating the great expressivity of multi-head attention and the concept of attention.
     Therefore, the Transformer architecture learns that more recent measurement data will have a larger impact on the final classification than measurement data from the distant past.
     The Transformer architecture is followed by the GRU ($0.209$), CT-GRU ($0.223$), DNC ($0.229$), ODE-LSTM ($0.235$) and LSTM ($0.245$) architecture which all delivered a good test loss.
@@ -1468,6 +1469,7 @@
     The DNC has a far more complex model function than the Memory Augmented Transformer and is far more constraint in its operations.
     These restrictions result in a better test loss than the Memory Augmented Transformer, but the latter also performed quite good with less trainable parameters.
     Worth mentioning is that all mentioned models except the DNC and Memory Augmented Transformer trained very quickly, the two exceptions needed at least a full hour to train the required function.
+    Up until now all architectures were able to solve the benchmark i.e. reached a categorical accuracy of more than $0.9$, all succeeding models failed to do so.
     The next best architecture was the Matrix Exponential Unitary RNN ($0.336$) in its full-space configuration, which outperformed the regular Unitary RNN in test loss and training duration, though both training durations were quite long.
     As the regular Unitary RNN in its full-space configuration took too long to train, it was benchmarked in its partial-space configuration, therefore the parameter count difference.
     It should be clearly visible that the unitary matrix parametrization with the matrix exponential is more efficient than the approach with rotational matrices.
@@ -1526,6 +1528,7 @@
     \section{Walker Benchmark} \label{walker_results}
     The statistics summary for this benchmark is shown in \Cref{tab:test_loss_walker} and the validation loss during training for all models is visualized in \Cref{fig:validation_loss_walker}.
     This benchmark should test wheter a model has the capability to model a dynamic physical system.
+    The Walker Benchmark is considered to be solved when the test loss is smaller than $1.5$.
     The ODE-LSTM architecture achieved the lowest test loss of $1.159$ by incorporating the capability to model physical systems of the CT-RNN together with the capability to capture long-term dependencies of the LSTM architecture.
     Even though the next state of the physics simulation is very accurately determined by the most recent states, additional memory helps in this task as the CT-RNN is the only second best architecture with a test loss of $1.205$, but with a smaller parameter count.
     This architecture seems to benefit from its model structure as hypothesized in \Cref{physical_systems}, as the benchmark task is just about finding the input-output relation of a physical system without an additional classification task.
@@ -1533,6 +1536,7 @@
     Both of these architectures have an external memory and employ meta-learning.
     Suprinsingly, the Memory Augmented Transformer with its more flexible model function when compared to the DNC achieved a lower test loss in this benchmark.
     The DNC was followed by the GRU ($1.339$), the LSTM ($1.363$) and the CT-GRU ($1.526$) architecture, which all performed quite well on this benchmark task.
+    Up until the LSTM all architectures were able to solve the benchmark i.e. reached a test loss of less than $1.5$, all succeeding models failed to do so.
     It seems that employing continuous-time models like the ODE-LSTM helps to achieve better results than employing discrete-time models even when regularly sampled input data is used.
     This may be the case because of the ability to generalize to arbitrary time inputs of continous-time models as discussed in \Cref{odelstm} and computing the state change may be easier than computing a new state at each time step.
     The next best architecture was the Transformer which achieved a test loss of $1.599$.
@@ -1554,7 +1558,7 @@
     \section{Memory Benchmark} \label{memory_results}
     The statistics summary for this benchmark is shown in \Cref{tab:test_loss_memory} and the validation loss during training for all models is visualized in \Cref{fig:validation_loss_memory}.
     This benchmark should test wheter a model has the capability to capture long-term dependencies in time-series.
-    This memory benchmark is considered to be solved when the categorical accuracy is higher than $0.9$.
+    The Memory Benchmark is considered to be solved when the categorical accuracy is higher than $0.9$.
     Four architectures achieved the perfect categorical accuracy of $1.000$: the Unitary RNN ($0.000$), the Recurrent Network Attention Transformer ($0.008$), the Matrix Exponential Unitary RNN ($0.062$) and the Unitary NCP architecture ($0.205$).
     The Unitary RNN has outperformed the Matrix Exponential Unitary RNN which has again a problem with a high test loss standard deviation of $0.042$ when compared to $0.000$ of the Unitary RNN.
     This problem was also discussed in \Cref{walker_results} and a partial-space unitary matrix $W$ might be easier to handle by the optimizer.
@@ -1577,6 +1581,27 @@
 
 
     \section{MNIST Benchmark} \label{mnist_results}
+    The statistics summary for this benchmark is shown in \Cref{tab:test_loss_mnist} and the validation loss during training for all models is visualized in \Cref{fig:validation_loss_mnist}.
+    This benchmark should test wheter a model has the capability to capture long-term dependencies in time-series.
+    The MNIST classification problem is considered to be solved when the categorical accuracy is higher than $0.9$.
+    The DNC architecture achieved the lowest test loss of $0.201$ by incorporating meta-learning and its external memory and it also achieved the highest categorical accuracy of $0.940$.
+    As mentioned in \Cref{activity_results} this architecture learns an algorithm to solve the problem by gradient descent and this approach seems to work quite well on this task.
+    The other models that were able to solve the benchmark were the GRU ($0.221$), the LSTM ($0.285$) and the Unitary RNN architecture ($0.365$). 
+    The Recurrenent Network Attention Transformer had a slightly lower test loss than the Unitary RNN with $0.345$, but its categorical accuracy was slightly lower than $0.9$ with $0.893$.
+    As the Unitary RNN has a bounded loss gradient and it performs quite well on this benchmark, also the Transformer derivative model that uses it performed good.
+    The gating mechanism of the GRU and LSTM architecture seems to work as expected in this benchmark and as in the memory-related Add Benchmark the ODE-LSTM performed worse than the vanilla LSTM architecture.
+    It seems that the additional postprocessing of the hidden state vector with a CT-RNN in the ODE-LSTM has a negative influence on the gating mechanism in memory-related tasks.
+    The next best model was the ODE-LSTM ($0.372$) followed by the CT-GRU ($0.588$), the Transformer ($0.654$), the Matrix Exponential Unitary RNN ($0.712$) and the Recurrent Network Augmented Transformer architecture ($0.754$).
+    All of these models were not able to solve the benchmark task as defined, but nonetheless they all delivered decent results.
+    It is interesting that the CT-GRU with its multi-dimensional exponentially decaying state performs worse than the vanilla GRU model, even though it was constructed to be a generalization of the GRU architecture.
+    The Transformer architecture should also perform better on this benchmark, as it could simply attend to image chunks which are different between the ten digits.
+    As this was not the case, the hypothesis that the positional encoding might not work as expected formulated in \Cref{memory_results} is further strengthened.
+    The Recurrent Network Augmented Transformer that was designed to be a generalization of the Transformer architecture performed worse than its mother architecture and did not show any advantages in this benchmark task.
+    The Matrix Exponential Unitary RNN was outperformed by the Unitary RNN in this benchmark, which only uses a partial-space unitary matrix $W$ and this seems to ease optimization.
+    The worst models in this benchmark were the CT-RNN ($1.164$), the Memory Augmented Transformer ($1.313$), the NCP ($1.624$) and the Unitary NCP architecture ($1.876$).
+    As already discussed in \Cref{memory_results}, the CT-RNN and NCP architecure both suffer from the vanishing gradient problem, which leads to bad results.
+    Furthermore, the sparsely connected few neurons in the NCP and Unitary NCP architecture may be a reason for inferior performanc when compared to other models.
+    The Memory Augmented Transformer was not able to apply the concept of meta-learning as effective as the DNC in this benchmark, but it may be able to improve its performance by incorporating the changes discussed in \Cref{add_results}.
     \benchmarksummary{mnist}{MNIST}
 
 
