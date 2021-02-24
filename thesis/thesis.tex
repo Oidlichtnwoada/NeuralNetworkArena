@@ -308,9 +308,9 @@
         \caption{visualized loss surface \cite[p. 1]{loss_vis}}
         \label{fig:loss_vis}
     \end{figure}
-    As this is a problem that cannot be solved analytically in most cases, it is approximated by using gradient descent \cite{GradientDescent}.
+    As this is a problem that cannot be solved analytically in most cases, it is approximated by using gradient descent \cite[p. 6-12]{GradientDescent}.
     This method incrementally changes each parameter depending on the gradient of each parameter's loss function in a lockstep fashion.
-    By denoting the loss function with $L$, the learning rate with $\alpha$, the whole old parameter set with $p$, the old single scalar parameter with $p_i$ and the new single scalar parameter with $p_i'$, the formula to update the individual parameters $p_i$ in a single gradient descent step can be given as follows \cite{GradientDescent}:
+    By denoting the loss function with $L$, the learning rate with $\alpha$, the whole old parameter set with $p$, the old single scalar parameter with $p_i$ and the new single scalar parameter with $p_i'$, the formula to update the individual parameters $p_i$ in a single gradient descent step can be given as follows \cite[p. 6-12]{GradientDescent}:
     \begin{align}
         \label{gradient_descent_update}
         \forall p_i:~p_i' &= p_i - \alpha * \frac{\partial{L}}{\partial{p_i}}(p)
@@ -332,7 +332,7 @@
         \label{fig:gradient_descent_vis}
     \end{figure}
     The differentiation of the loss function, which can be represented as a computational graph with lots of nested functions, involves many chain rule applications for the individual model parameter derivatives. The machine learning term for repeatedly applying the chain rule is backpropagation.
-    If these nested functions correspond to applying the same machine learning model function across multiple input time steps as done in recurrent neural networks, then this backpropagation procedure can also be called backpropagation through time as introduced in \cite{GradientDescent}.
+    If these nested functions correspond to applying the same machine learning model function across multiple input time steps as done in recurrent neural networks, then this backpropagation procedure can also be called backpropagation through time as introduced in \cite[p. 6-12]{GradientDescent}.
     The chain rule for differentiating $z(y(x_0))$ with respect to $x$ for $x=x_0$ where $z$ and $y$ are both functions in a single variable is given by:
     \begin{align}
         \label{chain_rule}
@@ -349,7 +349,7 @@
     Additionally, ideas for possible improvements in existing architectures should be implemented and benchmarked against existing ones.
     All benchmarked models should be implemented in the same machine learning framework, and the benchmark suite should be extensible and reusable for other machine learning research projects.
     The whole implementation work done for this thesis should be accessible for everyone by open-sourcing all the code.
-    As mentioned in the abstract, all the models covered in this thesis are either derivatives of the recurrent neural network or the transformer \cite{Transformer} architecture.
+    As mentioned in the abstract, all the models covered in this thesis are either derivatives of the recurrent neural network or the Transformer \cite{Transformer} architecture.
     The benchmarks used in this thesis either test the models for their capabilities to capture long-term dependencies or their ability to model physical systems.
 
 
@@ -860,8 +860,8 @@
     As presented in \Cref{urnn}, the parametrization is quite involved, and therefore the new way of parameterizing the unitary matrix is using an approximated matrix exponential.
     Any unitary matrix $W$ of dimension $N \times N$ can be written as the matrix exponential of a skew-Hermitian matrix $A$ of dimension $N \times N$ as $W=e^A$. The problem is therefore reduced to parameterizing a skew-Hermitian matrix $A$.
     This matrix exponential is the matrix generalization of $|e^j|=1$ in the scalar case where $j$ is an imaginary number.
-    The approximated matrix exponential implementation used for this model is exposed under the function \texttt{tf.linalg.expm} in the Tensorflow library \cite{Tensorflow} which uses PadÃ© approximation as desribed in \cite{expm}.
-    The fundamental idea is that $e^A = (e^{2^{-s}A})^{2^s} \approx (r_m(2^{-s}A))^{2^s}$ where $r_m(X)$ is the $[m/m]$ PadÃ© approximant to $e^X$ and the non-negative integers $m$ and $s$ are to be chosen \cite[p. 1]{expm}.
+    The approximated matrix exponential implementation used for this model is exposed under the function \texttt{tf.linalg.expm} in the Tensorflow library \cite{Tensorflow} which uses Padé approximation as desribed in \cite{expm}.
+    The fundamental idea is that $e^A = (e^{2^{-s}A})^{2^s} \approx (r_m(2^{-s}A))^{2^s}$ where $r_m(X)$ is the $[m/m]$ Padé approximant to $e^X$ and the non-negative integers $m$ and $s$ are to be chosen \cite[p. 1]{expm}.
     An approximation is needed as the matrix exponential $e^A$ is defined by an infinite sum as follows:
     \begin{align}
         \label{expm_definition}
@@ -1440,7 +1440,7 @@
     \section{Benchmark Hardware and Experiment Clarifications}
     The benchmark server was equipped with an \texttt{AMD Ryzen Threadripper 2970WX} $24$-core processor and two \texttt{NVIDIA Titan RTX} graphics cards.
     Software-wise, the system used the \texttt{Ubuntu 18.04.5 LTS} operating system and a \texttt{Python 3.8.7} \cite{Python3} interpreter to execute all Python scritps.
-    The used \texttt{Tensorflow} \cite{Tensorflow} library had version \texttt{2.4.1}, the used \texttt{NVIDIA CUDA} library had version \texttt{11.0.3}, the used \texttt{NVIDIA cuDNN} library had version \texttt{8.0.5.39}, the used \texttt{NVIDIA TensorRT} library had version \texttt{7.2.2} and the \texttt{NVIDIA} GPU driver had version \texttt{460.32.03}.
+    The used \texttt{Tensorflow} \cite{Tensorflow} library had version \texttt{2.4.1}, the used \texttt{NVIDIA CUDA} library had version \texttt{11.0.3}, the used \texttt{NVIDIA cuDNN} library \cite{cuDNN} had version \texttt{8.0.5.39}, the used \texttt{NVIDIA TensorRT} library had version \texttt{7.2.2} and the \texttt{NVIDIA} GPU driver had version \texttt{460.32.03}.
     All benchmarks were started using the script \texttt{run\_all\_benchmarks\_and\_models.py} which invokes all applicable benchmark and model combinations once.
     The CPU and both GPUs were used as computing devices during training.
     The script can be found under the URL \url{https://github.com/Oidlichtnwoada/NeuralNetworkArena/blob/master/run_all_benchmarks_and_models.py}.
