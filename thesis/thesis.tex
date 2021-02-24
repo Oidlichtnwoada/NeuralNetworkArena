@@ -1620,6 +1620,30 @@
 
 
     \chapter{Summary and Future Work}
+    The Transformer architecture has a superior expressivity, but shows deficiencies in tasks where exact positional information is required. 
+    Possible future research should be directed on how the positional data in input time-series can be more effectively used by the Transformer architecture.
+    The GRU and LSTM architecture showed that the gating mechanism works as expected in most cases and the GRU architecture is a meaningful simplification of the LSTM architecture.
+    In all benchmarks the GRU architecture outperformed the LSTM architecture by tradining in model complexity for hidden state size.
+    In most benchmark the CT-GRU performed comparatively to the vanilla GRU and does not show increased performance due to the more general model function.
+    The ODE-LSTM was especially good on tasks invoking dynamic physical systems, but showed deficiencies in memory-related tasks.
+    The Unitary RNN and Matrix Exponential Unitary RNN both performed very good on memory-related tasks, but had their problems on modelling physical systems.
+    Some problems might be mitigated by doing research on how to better initialize these models.
+    Furthermore, the influence of the used capacities in both models on the test loss would be quite interesting.
+    The DNC architecture was able to employ the mechanism of meta-learning more effectively than the Memory Augmented Transformer, most likely because of its more constraint memory operations.
+    The Memory Augmented Transformer also showed some promising results, but training is not stable enough.
+    It would be intersting to implement the possible improvements mentioned in \Cref{add_results} in a future work and evaluate their effect on test loss and training stability.
+    The Recurrent Network Augmented Transformer and the Recurrent Network Attention Transformer, both Transformer derivatives, performed inferior in all tasks where the Transformer architecture delivered good results.
+    In tasks where the Transformer architecture struggled, the added RNNs in these architectures helped both to achieve superior results compared to the Transformer in some cases.
+    The very sparsely connected few neurons in the NCP and Unitary NCP architecture clearly held both architectures back.
+    A simplification or approximation of the LTC network model function without losing its expressivity should be a desired goal. 
+    This improvement would also help the Memory Cell architecture.
+    Furthermore, there were some other research topics with regards to the Memory Cell discussed in \Cref{cell_results}.
+    In some benchmarks the Unitary RNN inside the Unitary NCP was responsible for decent test loss results.
+    The CT-RNN architecture only delivered good results on benchmarks which asked for the pure input-output relation of a physical system.
+    Surprisingly, there was the exception of the Add Benchmark which was solved by the CT-RNN, even though the loss gradient is not bounded in this model.
+    This unbounded gradient leads to weak results in other long-term dependency benchmarks where the vanishing gradient problem appeared.
+    Moreover, better tuning on the hyperparameters of each benchmarked model can be applied in a future work to use the given number of parameters in the most efficient way.
+    Also the effect of different batch sizes, learning rates and optimizers on the test loss may be an interesting subject for a future work based in this thesis.
 
 
     \chapter{Appendix}
