@@ -1123,7 +1123,14 @@
     The input vector entries are the two scalar inputs passed on to the two neurons with a synaptic activation.
     As this model is built out of two neurons, this model's output vector size is fixed to $2$, and the output vector contains both neurons' potentials.
     Each neuron has an input synapse, an inhibitory synapse, and a recurrent synapse.
-    Each neuron's three synapses share the same parameters as the Memory Cell model should employ similar mechanisms when storing a $0$ or a $1$ bit.
+    This architecture can be visualized using circles for neurons, solid arrows for chemical synapses, and dashed arrows for leakage currents as follows:
+    \begin{figure}[H]
+        \centering{}
+        \includegraphics[width=\linewidth]{graphics/memory_cell.pdf}
+        \caption{visualized Memory Cell architecture}
+        \label{fig:memory_cell_vis}
+    \end{figure}
+    Each neuron's three synapses visible in \Cref{fig:memory_cell_vis} share the same parameters as the Memory Cell model should employ similar mechanisms when storing a $0$ or a $1$ bit.
     The behavior should be symmetric, and the decision which bit to store should only be dependent on the current input.
     The current memory content of this architecture is encoded in the potentials of both neurons.
     If the first neuron has high potential ($\approx 1$) and the second neuron low potential ($\approx 0$), the bit $1$ is currently stored, and if the second neuron has high potential ($\approx 1$) and the first neuron low potential ($\approx 0$) the bit $0$ is currently stored.
@@ -1131,7 +1138,7 @@
     It is only applicable that at most one neuron gets a large input vector entry ($\approx 1$) at a single time step.
     This single large vector entry leads to a switch of the stored memory bit or the current memory state's persistence.
     It can also be the case that both neurons receive a small input vector entry ($\approx 0$). Therefore both neurons receive little to no input current, and the memory state is kept as ensured by the inhibitory and recurrent synapse.
-    The inhibitory synapse that connects a neuron with the other neuron is responsible for suppressing the other neuron when a neuron itself has high potential. Therefore it ensures that the second neuron's potential is kept low such that only one neuron can have a high potential.
+    The inhibitorizy synapse that connects a neuron with the other neuron is responsible for suppressing the other neuron when a neuron itself has high potential. Therefore it ensures that the second neuron's potential is kept low such that only one neuron can have a high potential.
     The recurrent synapse that connects a neuron with itself is responsible that a single neuron keeps its potential if the other neuron does not inhibit it.
     Three synapses per neuron were at least necessary for a working Memory Cell architecture.
     The theoretical lower bound may be two synapses per neuron, as only an input synapse and a communication synapse that handles communication between the two neurons are needed.
