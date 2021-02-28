@@ -1479,7 +1479,7 @@
     Until now, all architectures were able to solve the benchmark, i.e., reached a categorical accuracy of more than $0.9$, all succeeding models failed to do so.
     The next best architecture was the Matrix Exponential Unitary RNN ($0.336$) in its full-space configuration, which outperformed the regular Unitary RNN in test loss and training duration, though both training durations were quite long.
     As the regular Unitary RNN in its full-space configuration took too long to train, it was benchmarked in its partial-space configuration, therefore the parameter count difference.
-    It should be visible that the unitary matrix parameterization with the matrix exponential is more efficient than the approach with rotational matrices.
+    It should be visible that the unitary matrix parameterization with a matrix exponential is computationally more efficient than the approach with rotational matrices.
     The Matrix Exponential Unitary RNN architecture is followed by the Recurrent Network Augmented Transformer ($0.373$) and the Recurrent Network Attention Transformer ($0.410$).
     The hypothesis of adding more expressivity to the Transformer architecture by accumulating the weighted value vectors with an LSTM in the Recurrent Network Augmented Transformer is not valid in this case.
     The same statement holds for the newly introduced recurrent network attention using Unitary RNNs used in the Recurrent Network Attention Transformer.
@@ -1547,7 +1547,7 @@
     It seems that employing continuous-time models like the ODE-LSTM helps to achieve better results than employing discrete-time models even when regularly sampled input data is used.
     This ability to generalize to arbitrary time inputs of continuous-time models is discussed in \Cref{odelstm} and computing the state change may be easier than computing a new state at each time step.
     The next best architecture was the Transformer which achieved a test loss of $1.599$.
-    This benchmark task seemed to be challenging for the Transformer architecture, as maybe the positional encoding cannot be appropriately incorporated when attention to several individual positions is required.
+    This benchmark task seemed challenging for the Transformer architecture, as maybe the positional encoding cannot be appropriately incorporated when attention to several individual positions is required.
     That is probably why recurrent neural network architectures perform better on this task, as they naturally incorporate positional information in their model functions.
     This deficiency of the Transformer was not such a significant issue in the Activity Benchmark from \Cref{activity_results}, as the activity labels changed very infrequently.
     The Transformer was followed by the Unitary RNN ($1.622$), which outperformed the Matrix Exponential Unitary RNN in this benchmark.
@@ -1575,7 +1575,7 @@
     The Recurrent Network Augmented Transformer even outperformed the LSTM architecture, though its core uses an LSTM to accumulate the attention mechanism's weighted value vectors.
     The Unitary NCP does an excellent job of delegating this memory-related task to the Unitary RNN.
     The next best model was the CT-GRU ($0.321$), followed by the Transformer ($0.362$), the GRU ($0.768$), and the DNC architecture ($1.534$).
-    All of these models were able to solve the Memory Benchmark in some benchmark runs and failed in other runs, leading to a high test loss standard deviation of all these models.
+    These models were able to solve the Memory Benchmark in some benchmark runs and failed in other runs, leading to a high test loss standard deviation of all these models.
     Maybe an improved initialization strategy for these models helps with this problem.
     Surprisingly, the Transformer architecture could not solve the Memory Benchmark in every single run, though it just needs to attend to the first input vector that contains the required category.
     This lousy result means that the Transformer's positional encoding might not work as reliable as expected in \cite[p. 5-6]{Transformer}.
@@ -1599,7 +1599,7 @@
     The GRU and LSTM architecture's gating mechanism seems to work as expected in this benchmark, and as in the memory-related Add Benchmark, the ODE-LSTM performed worse than the vanilla LSTM architecture.
     It seems that the additional postprocessing of the hidden state vector with a CT-RNN in the ODE-LSTM has a negative influence on the gating mechanism in memory-related tasks.
     The next best model was the ODE-LSTM ($0.372$) followed by the CT-GRU ($0.588$), the Transformer ($0.654$), the Matrix Exponential Unitary RNN ($0.712$), and the Recurrent Network Augmented Transformer architecture ($0.754$).
-    All of these models could not solve the benchmark task as defined, but they all delivered decent results.
+    These models could not solve the benchmark task as defined, but they all delivered decent results.
     Interestingly, the CT-GRU with its multi-dimensional exponentially decaying state performs worse than the vanilla GRU model, even though it was constructed to generalize the GRU architecture.
     The Transformer architecture should have also performed better on this benchmark, as it could merely attend to image chunks that are different between the ten digits.
     As this was not the case, the hypothesis that the positional encoding might not work as expected formulated in \Cref{memory_results} is further strengthened.
@@ -1620,7 +1620,7 @@
     This test loss result validates that the architecture described in \Cref{memory_cell} is indeed able to capture long-term dependencies in time series similar to the input time series of the Cell Benchmark introduced in \Cref{cell}.
     A downside of the architecture is the training duration of nearly two minutes per epoch for an architecture that only has $9$ trainable parameters.
     The Cell Benchmark featured an input sequence length of $384$ and $40000$ samples in total.
-    Therefore, there is lots of future work to do to speed up this model's training by using simplifications or approximations in the model function.
+    Therefore, there is lots of future work to do to speed up this model's training using simplifications or approximations in the model function.
     Another open question is how to intelligently couple multiple Memory Cells together. A further question is if these Memory Cells should be coupled tightly or instead loosely like the memory bits in our personal computers.
     Furthermore, a controller should be introduced like the one in the DNC architecture that provides suitable input currents to the Memory Cells.
     \benchmarksummary{cell}{Cell}
@@ -1630,21 +1630,23 @@
     The Transformer architecture has a superior expressivity but shows deficiencies in tasks where exact positional information is required.
     Possible future research should be directed on how the Transformer architecture can more effectively use the positional data in input time series.
     The GRU and LSTM architecture showed that the gating mechanism works as expected in most cases, and the GRU architecture is a meaningful simplification of the LSTM architecture.
-    The GRU architecture outperformed the LSTM architecture by tradining in model complexity for hidden state size in all benchmarks.
+    The GRU architecture outperformed the LSTM architecture by trading in model complexity for hidden state size in all benchmarks.
     In most benchmarks, the CT-GRU performed comparatively to the vanilla GRU and did not show increased performance due to the more general model function.
     The ODE-LSTM was especially good on tasks invoking dynamic physical systems but showed deficiencies in memory-related tasks.
     The Unitary RNN and Matrix Exponential Unitary RNN performed very well on memory-related tasks but had their problems modeling physical systems.
     Some problems might be mitigated by researching how to initialize these models better.
     Furthermore, the influence of both models' used capacities on the test loss would be quite interesting.
+    The benchmarks showed that the unitary matrix parameterization with a matrix exponential is computationally more efficient than the approach with rotational matrices used in \cite{EfficientUnitaryRNNs}.
     The DNC architecture employed the meta-learning mechanism more effectively than the Memory Augmented Transformer, most likely because of its more constrained memory operations.
     The Memory Augmented Transformer also showed some promising results, but training is not stable enough.
     It would be interesting to implement the possible improvements mentioned in \Cref{add_results} in future work and evaluate their effect on test loss and training stability.
     The Recurrent Network Augmented Transformer and the Recurrent Network Attention Transformer, both Transformer derivatives, performed inferior in all tasks where the Transformer architecture delivered good results.
     In tasks where the Transformer architecture struggled, the added RNNs in these architectures helped both to achieve superior results compared to the Transformer in some cases.
+    Furthermore, an intriguing subject for future research would be to use the recurrent network attention mechanism introduced in \Cref{rnatt} with various RNN architectures.
     The very sparsely connected few neurons in the NCP and Unitary NCP architecture held both architectures back.
     A simplification or approximation of the LTC network model function without losing its expressivity should be desired.
     This improvement would also help the Memory Cell architecture.
-    Furthermore, there were some other research topics regarding the Memory Cell discussed in \Cref{cell_results}.
+    Furthermore, some other research topics regarding the Memory Cell were discussed in \Cref{cell_results}.
     In some benchmarks, the Unitary RNN inside the Unitary NCP was responsible for decent test loss results.
     The CT-RNN architecture only delivered good results on benchmarks that asked for a physical system's pure input-output relation with the following exception.
     Surprisingly, the Add Benchmark was also solved by the CT-RNN, even though the loss gradient is not bounded in this model.
