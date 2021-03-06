@@ -1181,7 +1181,12 @@
     A parser config is itself a tuple consisting of the argument name, the argument default value, and the argument type.
     This argument determines which values should be settable and usable when calling the benchmark from the command line.
     There are at least three parser configs required that set the loss name, the loss config, and the metric name.
-    A sample \texttt{parser\_configs} argument would be: \texttt{(('-{}-loss\_name', 'SparseCategoricalCrossentropy', str), ('-{}-loss\_config', {'from\_logits': True}, dict), ('-{}-metric\_name', 'SparseCategoricalAccuracy', str))}.
+    A sample \texttt{parser\_configs} argument would be: 
+    \begin{lstlisting}[language=Python]
+    (('--loss_name', 'SparseCategoricalCrossentropy', str), 
+     ('--loss_config', {'from_logits': True}, dict), 
+     ('--metric_name', 'SparseCategoricalAccuracy', str))
+    \end{lstlisting}
     If loss config or metric name does not apply to the benchmark, set the default loss config to \texttt{\{\}} or the default metric name to \texttt{''}.
     Furthermore, if the benchmark needs additional parameters, extend the \texttt{parser\_configs} parameter also to include the desired command-line arguments.
     All individual benchmark implementations use this feature.
@@ -1189,7 +1194,7 @@
     For example the loss name can be accessed by \texttt{self.args.loss\_name}.
     If some parameters were set through the command line, they would have the corresponding value. Otherwise, the configured default values will be applied.
     After that, the benchmark base class will create paths for some required directories.
-    There are five directories required during benchmark execution: a saved model directory (will be created to save the models together with their best weights during training), a TensorBoard directory (will be created to save TensorBoard logs for eventual later evaluation), a supplementary data directory (already present in the repo to pass input data to the benchmark), a result directory (will be created to save CSV files with relevant information about the training process) and a visualization directory (will be created to save visualizations created after each training of a model).
+    There are five directories required during benchmark execution: a saved model directory (will be created to save the models together with their best weights during training), a \texttt{TensorBoard} directory (will be created to save \texttt{TensorBoard} logs for eventual later evaluation), a supplementary data directory (already present in the repo to pass input data to the benchmark), a result directory (will be created to save CSV files with relevant information about the training process) and a visualization directory (will be created to save visualizations created after each training of a model).
     All these paths start in the root folder of the repository called \texttt{NeuralNetworkArena}.
     The structure of how these paths continue is the same for all five kinds of folders.
     For the next step in path creation, the required folder's name will be appended to the root folder.
@@ -1218,9 +1223,9 @@
     The default batch size is set to $128$ and can be changed by a command-line parameter.
     After that, the whole samples are divided into the test, validation, and training samples. The amount of test and validation samples can be set via command line parameters, which default to $10\%$ each.
     It is ensured that each sample set is exactly divisible by the batch size, as the computational graph was optimized by only allowing inputs of a fixed batch size as described above.
-    After all the setup work is done, the folder paths to the result, the saved model, and the TensorBoard directory will be augmented with the model name currently under test and passed via a command-line parameter.
-    The TensorBoard directory for that model will then be deleted, as each training run creates a significant amount of log files.
-    After that, the TensorBoard, the result, the saved model, and visualization directory will be created if they do not already exist.
+    After all the setup work is done, the folder paths to the result, the saved model, and the \texttt{TensorBoard} directory will be augmented with the model name currently under test and passed via a command-line parameter.
+    The \texttt{TensorBoard} directory for that model will then be deleted, as each training run creates a significant amount of log files.
+    After that, the \texttt{TensorBoard}, the result, the saved model, and visualization directory will be created if they do not already exist.
     Then it will be checked if the passed model name is present in the list constant \texttt{MODEL\_ARGUMENTS} in the file \texttt{model\_factory.py}.
     When this check is passed, the benchmark framework either loads a saved model with the corresponding model name or creates a new one using the model output functions in the previously described model factory depending on the command line parameter \texttt{use\_saved\_model}.
     These output functions get an output vector size and the tensor inputs and create an output tensor that contains all the information about the operations in between.
@@ -1242,15 +1247,27 @@
     If the loss function results for training and validation data are similar, it is said that the model generalizes well.
     When the validation step is finished, the training loop proceeds with the next epoch. Therefore, it starts the same cycle again by providing the first batch of inputs from the training sample set.
     This cycle is repeated as often as the set value of the epochs.
-    The callbacks are invoked after each completed epoch. There were five callbacks added: a ModelCheckpoint callback (saves the model with the best validation loss), an EarlyStopping callback (terminates training if the validation loss has not improved for a configurable number of epochs), a TerminateOnNan callback (terminates the training when a nan loss is encountered), a ReduceLROnPlateau callback (multiplies the learning rate by a configurable factor after no improvement of the validation loss for a configurable number of epochs) and a TensorBoard callback (saves TensorBoard log data for eventual later inspection).
-    The default number of epochs used in this thesis for the EarlyStopping callback is $5$.
-    Another necessary callback is the TerminateOnNan callback, which terminates the training loop if the loss evaluates to nan.
-    This nan return value can, for example, happen when the loss function diverges towards infinity, therefore, if the exploding gradient problem appears.
-    It may also be the case that there is a division through zero somewhere in the computational graph, which may also lead to a nan loss.
-    The term nan stands for \texttt{not a number}.
-    As all benchmarked models are trained until convergence in this thesis, the ReduceLROnPlateau callback is especially important.
+    The callbacks are invoked after each completed epoch. There were five callbacks added: 
+    \begin{itemize}
+    \item{}
+    a \texttt{ModelCheckpoint} callback - saves the model with the best validation loss
+    \item{}
+    an \texttt{EarlyStopping} callback - terminates training if the validation loss has not improved for a configurable number of epochs
+    \item{}
+    a \texttt{TerminateOnNan} callback - terminates the training when a \texttt{nan} loss is encountered
+    \item{}
+    a \texttt{ReduceLROnPlateau} callback - multiplies the learning rate by a configurable factor after no improvement of the validation loss for a configurable number of epochs
+    \item{}
+    a \texttt{TensorBoard} callback - saves \texttt{TensorBoard} log data for eventual later inspection
+    \end{itemize}
+    The default number of epochs used in this thesis for the \texttt{EarlyStopping} callback is $5$.
+    Another necessary callback is the \texttt{TerminateOnNan} callback, which terminates the training loop if the loss evaluates to \texttt{nan}.
+    This \texttt{nan} return value can, for example, happen when the loss function diverges towards infinity, therefore, if the exploding gradient problem appears.
+    It may also be the case that there is a division through zero somewhere in the computational graph, which may also lead to a \texttt{nan} loss.
+    The term \texttt{nan} stands for: \texttt{not a number}.
+    As all benchmarked models are trained until convergence in this thesis, the \texttt{ReduceLROnPlateau} callback is especially important.
     The corresponding default parameters are a learning rate factor of $10^{-1}$ and a default number of epochs equal to $2$, both of which are used throughout all benchmark invocations.
-    The EarlyStopping and the ReduceLROnPlateau do not see an improvement if the absolute change in the validation loss is less than $0.0001$.
+    The \texttt{EarlyStopping} and the \texttt{ReduceLROnPlateau} do not see an improvement if the absolute change in the validation loss is less than $0.0001$.
     This minimum delta can also be configured via the command line, but this thesis uses the default value throughout all benchmarks.
     Furthermore, all these parameters are configurable by passing alternative values in the command line.
     After the training loop has terminated, another UNIX timestamp is taken to compute the total training duration.
@@ -1258,8 +1275,8 @@
     \subsection{Evaluation}
     The model is then evaluated using the parameters that led to the smallest validation loss during the whole training loop.
     Evaluation means that the model function is applied to the test sample set inputs, and the resulting loss function result on that inputs is saved.
-    The created model also provides an \texttt{evaluate} function, which takes the test sample set a batch size and another callback tuple as arguments.
-    The only callback passed in the tuple is the TensorBoard callback already used in the \texttt{fit} method invocation.
+    The created model also provides an \texttt{evaluate} method, which takes the test sample set a batch size and another callback tuple as arguments.
+    The only callback passed in the tuple is the \texttt{TensorBoard} callback already used in the \texttt{fit} method invocation.
 
     \subsection{Data Processing}
     The return values of the \texttt{fit} and \texttt{evaluate} method invocations now contain information about the means of the loss and metric function results. These results are available for the training, validation, and test sample set.
@@ -1583,7 +1600,7 @@
     The Memory Augmented Transformer may improve its performance by incorporating the changes discussed in \Cref{add_results}.
     Outstandingly, both LSTM architectures failed to solve the benchmark, even though they employ gating on their cell state.
     Not very surprisingly, the NCP and CT-RNN architecture failed to solve the task, as none has bounded loss gradient, and therefore both suffer from the vanishing gradient problem.
-    If the gradients were exploding, the training loop would have terminated itself as specified by the TerminateOnNan callback described in \Cref{benchmark_framework}.
+    If the gradients were exploding, the training loop would have terminated itself as specified by the \texttt{TerminateOnNan} callback described in \Cref{benchmark_framework}.
     \benchmarksummary{memory}{Memory}
 
 
