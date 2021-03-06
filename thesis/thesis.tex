@@ -1001,7 +1001,7 @@
 
 
     \section{Recurrent Network Augmented Transformer} \label{rnaut}
-    The Recurrent Network Augmented Transformer architecture is a novel contribution similar to the Transformer architecture introduced in \Cref{Transformer}.
+    The Recurrent Network Augmented Transformer architecture is a novel contribution similar to the Transformer architecture introduced in \cite{Transformer}.
     The only difference is that it uses a slightly changed attention mechanism.
     As given in \Cref{sdpa}, the final output $Y$ is constructed by matrix multiplication of the attention weights and the value matrix $V$, which means a new representation for the query vectors is computed by summing up the weighted value vectors per query vector.
     The idea now is that instead of summing up the weighted value vectors by ordinary summation, maybe the use of a recurrent neural network to accumulate the information present in the weighted value vectors can increase the Transformer architecture's expressivity.
@@ -1015,7 +1015,7 @@
 
 
     \section{Recurrent Network Attention Transformer} \label{rnatt}
-    The Recurrent Network Augmented Transformer architecture is a novel contribution similar to the Transformer architecture introduced in \Cref{Transformer}.
+    The Recurrent Network Augmented Transformer architecture is a novel contribution similar to the Transformer architecture introduced in \cite{Transformer}.
     The only difference is that it uses an entirely new attention mechanism called recurrent network attention, which uses recurrent neural networks.
     As in the Transformer architecture, this attention mechanism gets the four arguments: queries, keys, values, and an attention mask.
     The attention mask and keys argument is not used in this mechanism.
@@ -1068,7 +1068,7 @@
     The architecture was introduced by \cite{DNC} and is an enhancement to the NTM (Neural Turing Machine) architecture first proposed \cite{NTM}.
     The NTM introduced differentiable read and write functions that act to a greater or lesser degree with all rows in the memory \cite[p. 5]{NTM}.
     The degree at time step $t$ for row $i$ is determined by the weighting $w_t(i)$ that the corresponding read or write head emits.
-    The weighting is similar to the attention weights used in the Transformer architecture introduced in \Cref{Transformer}. They all lie between $0$ and $1$, and the weightings for all rows add up to $1$.
+    The weighting is similar to the attention weights used in the Transformer architecture introduced in \cite{Transformer}. They all lie between $0$ and $1$, and the weightings for all rows add up to $1$.
     The read vector $r_t$ returned by the read function of a single read head is given as follows where $M_t(i)$ denotes row $i$ in the memory at time step $t$ \cite[p. 1]{DNC}:
     \begin{align}
         \label{dnc_read}
