@@ -623,42 +623,42 @@ der Quelle als Entlehnung kenntlich gemacht habe.}]{Statement}%
 \newsetlength{\vutinfth@placedate@width}{50mm}%
 \newcommand{\SignatureFields}[3][n]{%
         {\vutinfth@normalsize
-        \ifstrequal{#1}{y}{%
-            \begin{minipage}[b][\vutinfth@signature@height]{%
-                \vutinfth@placedate@width
-            }%
-                \vutinfth@polylingual@Place,
-                \displaydate{vutinfth@date@signing}\vspace*{\baselineskip}%
-            \end{minipage}%
-            \hfill
-        }{}%
-        \ifstrequal{#1}{n}{}{}%
-        \ifstrequal{#1}{h}{%
-            \hspace*{\vutinfth@placedate@width}%
-            \hfill
-        }{}%
-        \ifstrempty{#2}{%
-            \hspace*{\vutinfth@signature@width}%
-            \hfill
-        }{%
-            \begin{minipage}[b][\vutinfth@signature@height]{%
-                \vutinfth@signature@width
-            }%
-                \centering
-                \rule{\vutinfth@signature@width}{0.5pt}\\
-                #2%
-            \end{minipage}%
-            \hfill
+    \ifstrequal{#1}{y}{%
+        \begin{minipage}[b][\vutinfth@signature@height]{%
+            \vutinfth@placedate@width
         }%
-        \ifstrempty{#3}{}{%
-            \begin{minipage}[b][\vutinfth@signature@height]{%
-                \vutinfth@signature@width
-            }%
-                \centering
-                \rule{\vutinfth@signature@width}{0.5pt}\\
-                #3%
-            \end{minipage}%
+            \vutinfth@polylingual@Place,
+            \displaydate{vutinfth@date@signing}\vspace*{\baselineskip}%
+        \end{minipage}%
+        \hfill
+    }{}%
+    \ifstrequal{#1}{n}{}{}%
+    \ifstrequal{#1}{h}{%
+        \hspace*{\vutinfth@placedate@width}%
+        \hfill
+    }{}%
+    \ifstrempty{#2}{%
+        \hspace*{\vutinfth@signature@width}%
+        \hfill
+    }{%
+        \begin{minipage}[b][\vutinfth@signature@height]{%
+            \vutinfth@signature@width
         }%
+            \centering
+            \rule{\vutinfth@signature@width}{0.5pt}\\
+            #2%
+        \end{minipage}%
+        \hfill
+    }%
+    \ifstrempty{#3}{}{%
+        \begin{minipage}[b][\vutinfth@signature@height]{%
+            \vutinfth@signature@width
+        }%
+            \centering
+            \rule{\vutinfth@signature@width}{0.5pt}\\
+            #3%
+        \end{minipage}%
+    }%
     }%
 }%
 
@@ -666,21 +666,21 @@ der Quelle als Entlehnung kenntlich gemacht habe.}]{Statement}%
     \ifgraduate{%
         \ifdoctor{%
                 {\vutinfth@normalsize
-                \vutinfth@polylingual@Reviewed\\
-                \SignatureFields[h]{%
-                    \vutinfth@person@firstreviewer@name
-                }{%
-                    \vutinfth@person@secondreviewer@name
-                }%
+            \vutinfth@polylingual@Reviewed\\
+            \SignatureFields[h]{%
+                \vutinfth@person@firstreviewer@name
+            }{%
+                \vutinfth@person@secondreviewer@name
+            }%
             }%
         }%
         \ifphd{%
                 {\vutinfth@normalsize
-                \vutinfth@polylingual@Reviewers\\
-                \vutinfth@person@firstreviewer@name.
-                \vutinfth@data@firstreviewerdata.\\
-                \vutinfth@person@secondreviewer@name.
-                \vutinfth@data@secondreviewerdata.\\
+            \vutinfth@polylingual@Reviewers\\
+            \vutinfth@person@firstreviewer@name.
+            \vutinfth@data@firstreviewerdata.\\
+            \vutinfth@person@secondreviewer@name.
+            \vutinfth@data@secondreviewerdata.\\
             }%
         }%
     }%
@@ -688,27 +688,27 @@ der Quelle als Entlehnung kenntlich gemacht habe.}]{Statement}%
 \newcommand{\SignatureBlock}{%
     \ifundergraduate{%
             {\vutinfth@normalsize
+        \SignatureFields[y]{%
+            \vutinfth@person@author@name
+        }{%
+            \vutinfth@person@advisor@name
+        }%
+        }%
+    }%
+    \ifgraduate{%
+            {\vutinfth@normalsize
+        \ifdoctor{%
+            \SignatureFields[y]{}{%
+                \vutinfth@person@author@name
+            }%
+        }%
+        \ifphd{%
             \SignatureFields[y]{%
                 \vutinfth@person@author@name
             }{%
                 \vutinfth@person@advisor@name
             }%
         }%
-    }%
-    \ifgraduate{%
-            {\vutinfth@normalsize
-            \ifdoctor{%
-                \SignatureFields[y]{}{%
-                    \vutinfth@person@author@name
-                }%
-            }%
-            \ifphd{%
-                \SignatureFields[y]{%
-                    \vutinfth@person@author@name
-                }{%
-                    \vutinfth@person@advisor@name
-                }%
-            }%
         }%
     }%
 }%

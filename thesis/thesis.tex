@@ -1,5 +1,4 @@
-﻿
-% Copyright (C) 2014-2020 by Thomas Auzinger <thomas@auzinger.name>
+﻿% Copyright (C) 2014-2020 by Thomas Auzinger <thomas@auzinger.name>
 
 \documentclass[draft,final]{vutinfth} % Remove option 'final' to obtain debug information.
 
@@ -137,7 +136,7 @@
 
 \newcommand{\benchmarkplots}[2]{
     \subsection{#2 Benchmark}
-    The individual training plots for the #2 Benchmark and each model will be shown on the following pages.
+    The training plots for the #2 Benchmark and each individual model will be shown on the following pages.
     \clearpage{}
     \begin{sidewaysfigure}[h]
         \centerline{
@@ -288,7 +287,7 @@
 
 
     \chapter{Introduction}
-    
+
     A machine learning model is a mathematical parametrized function that gets input and produces an output.
     For example, the machine learning model GPT-3 proposed in \cite{GPT-3} has 175 billion scalar parameters.
     This thesis will use imitation learning to set the parameters of machine learning models optimally.
@@ -908,8 +907,8 @@
     The Unitary NCP model implementation used in this thesis is exposed under the \texttt{get\_unitary\_ncp\_output} function defined in the file \url{https://github.com/Oidlichtnwoada/NeuralNetworkArena/blob/master/experiments/models/model_factory.py}.
     The in-detail implementation is provided in the file \url{https://github.com/Oidlichtnwoada/NeuralNetworkArena/blob/master/experiments/models/unitary_ncp.py}.
 
-   
- \section{Transformer} \label{transformer}
+
+    \section{Transformer} \label{transformer}
 
     \subsection{Introduction}
     The Transformer architecture introduced in \cite{Transformer} is no recurrent neural network architecture in the strict sense like the LSTM or the GRU architecture.
@@ -1182,7 +1181,7 @@
     A parser config is itself a tuple consisting of the argument name, the argument default value, and the argument type.
     This argument determines which values should be settable and usable when calling the benchmark from the command line.
     There are at least three parser configs required that set the loss name, the loss config, and the metric name.
-    A sample \texttt{parser\_configs} argument would be: 
+    A sample \texttt{parser\_configs} argument would be:
     \begin{lstlisting}[language=Python]
     (('--loss_name', 'SparseCategoricalCrossentropy', str), 
      ('--loss_config', {'from_logits': True}, dict), 
@@ -1248,18 +1247,18 @@
     If the loss function results for training and validation data are similar, it is said that the model generalizes well.
     When the validation step is finished, the training loop proceeds with the next epoch. Therefore, it starts the same cycle again by providing the first batch of inputs from the training sample set.
     This cycle is repeated as often as the set value of the epochs.
-    The callbacks are invoked after each completed epoch. There were five callbacks added: 
+    The callbacks are invoked after each completed epoch. There were five callbacks added:
     \begin{itemize}
-    \item{}
-    a \texttt{ModelCheckpoint} callback - saves the model with the best validation loss
-    \item{}
-    an \texttt{EarlyStopping} callback - terminates training if the validation loss has not improved for a configurable number of epochs
-    \item{}
-    a \texttt{TerminateOnNan} callback - terminates the training when a \texttt{nan} loss is encountered
-    \item{}
-    a \texttt{ReduceLROnPlateau} callback - multiplies the learning rate by a configurable factor after no improvement of the validation loss for a configurable number of epochs
-    \item{}
-    a \texttt{TensorBoard} callback - saves \texttt{TensorBoard} log data for eventual later inspection
+        \item{}
+        a \texttt{ModelCheckpoint} callback - saves the model with the best validation loss
+        \item{}
+        an \texttt{EarlyStopping} callback - terminates training if the validation loss has not improved for a configurable number of epochs
+        \item{}
+        a \texttt{TerminateOnNan} callback - terminates the training when a \texttt{nan} loss is encountered
+        \item{}
+        a \texttt{ReduceLROnPlateau} callback - multiplies the learning rate by a configurable factor after no improvement of the validation loss for a configurable number of epochs
+        \item{}
+        a \texttt{TensorBoard} callback - saves \texttt{TensorBoard} log data for eventual later inspection
     \end{itemize}
     The default number of epochs used in this thesis for the \texttt{EarlyStopping} callback is $5$.
     Another necessary callback is the \texttt{TerminateOnNan} callback, which terminates the training loop if the loss evaluates to \texttt{nan}.
@@ -1320,8 +1319,7 @@
     The implementation of this benchmark can be found under \url{https://github.com/Oidlichtnwoada/NeuralNetworkArena/blob/master/experiments/benchmarks/activity_benchmark.py}.
 
 
-    
-\section{Add Benchmark} \label{add}
+    \section{Add Benchmark} \label{add}
     This benchmark uses the same structure as the Add Benchmark introduced used in \cite{UnitaryRNNs}.
     Data for this benchmark is generated randomly at each instantiation of the benchmark.
     The target function to learn is adding two marked numbers in a much longer stream of numbers.
@@ -1684,7 +1682,7 @@
     \benchmarkplots{memory}{Memory}
     \benchmarkplots{mnist}{MNIST}
 
-    
+
 %\todo{Enter your text here.}
 
 % Remove the following line for the final thesis.

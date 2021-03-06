@@ -140,7 +140,9 @@ class Benchmark(abc.ABC):
         x_data = np.array(range(1, fit_table.shape[0] + 1))
         figure, first_axis = plt.subplots()
         first_axis.set_xlabel('epochs')
+        first_axis.set_ylabel(' '.join(evaluate_table.columns[0].split()[1:]))
         first_axis.xaxis.set_major_locator(ticker.MaxNLocator(integer=True))
+        first_axis.yaxis.set_major_locator(ticker.AutoLocator())
         first_axis.set_title(f'{self.args.model} @ {self.name}_benchmark')
         first_axis.set_prop_cycle(color=['red', 'green'])
         if self.args.metric_name == '':
@@ -148,6 +150,8 @@ class Benchmark(abc.ABC):
         else:
             second_axis = first_axis.twinx()
             second_axis.set_prop_cycle(color=['blue', 'orange'])
+            second_axis.yaxis.set_major_locator(ticker.AutoLocator())
+            second_axis.set_ylabel(' '.join(evaluate_table.columns[1].split()[1:]))
             axes = [first_axis, second_axis]
         hline_colors = ['black', 'grey']
         legend_positions = ['center left', 'center right']
@@ -159,6 +163,7 @@ class Benchmark(abc.ABC):
             legend = axis.legend(loc=legend_positions[index % len(legend_positions)], prop={'size': 6})
             legend.remove()
             axes[-1].add_artist(legend)
+        plt.tight_layout()
         plt.savefig(os.path.join(self.visualization_dir, f'{self.args.model}.pdf'))
         plt.close()
 
