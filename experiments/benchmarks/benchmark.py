@@ -1,5 +1,6 @@
 import abc
 import argparse
+import math
 import os
 import shutil
 import time
@@ -188,15 +189,19 @@ class Benchmark(abc.ABC):
         max_len = max([len(x[1]) for x in val_loss_data])
         x_data = np.array(range(1, max_len + 1))
         fig, axis = plt.subplots()
-        axis.set_title(f'{val_loss_column} @ {self.name}_benchmark')
+        axis.set_title(f'validation loss evolution @ {self.name}_benchmark')
         axis.set_xlabel('epochs')
+        axis.set_ylabel(' '.join(val_loss_column.split()[1:]))
         axis.xaxis.set_major_locator(ticker.MaxNLocator(integer=True))
         color_cycle = plt.rcParams['axes.prop_cycle'].by_key()['color']
         axis.set_prop_cycle(color=color_cycle * 2, linestyle=['solid'] * len(color_cycle) + ['dashed'] * len(color_cycle))
         axis.set_yscale('log')
+        axis.yaxis.set_major_locator(ticker.LogLocator(subs=(1, 2, 5)))
+        axis.yaxis.set_major_formatter(ticker.LogFormatterSciNotation(minor_thresholds=(math.inf, math.inf)))
         for model_name, val_losses in val_loss_data:
             axis.plot(x_data[:len(val_losses)], val_losses, label=model_name)
         axis.legend(loc='upper right', prop={'size': 6})
+        plt.tight_layout()
         plt.savefig(os.path.join(self.visualization_dir, 'merged_visualizations.pdf'))
         plt.close()
 
