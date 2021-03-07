@@ -491,9 +491,19 @@
 
 
     \chapter{Models}
+    In this chapter all benchmarked models are introduced and theoretically discussed.
+    At first, \Cref{model_factory} describes how the models with the correct output vector size used in the benchmark framework introduced in \Cref{benchmark_framework} are constructed.
+    Then machine learning models that use a gating mechanism to capture long-term dependencies are introduced.
+    These are the LSTM introduced in \Cref{lstm}, the ODE-LSTM introduced in \Cref{odelstm}, the GRU introduced in \Cref{gru} and the CT-GRU introduced in \Cref{ctgru}.
+    Furthermore, three continuous-time models (the Neural Circuit Policies, the CT-RNN and the Memory Cell) are introduced in \Cref{ncp}, \Cref{ctrnn} and \Cref{memory_cell}.
+    Moreover, two discrete-time architectures with bounded loss gradients are introduced which are given as the Unitary RNN introduced in \Cref{urnn} and the Matrix Exponential Unitary RNN introduced in \Cref{meurnn}.
+    In \Cref{transformer} the Transformer architecture is introduced which has an encoder-decoder structure and uses an attention mechanism to capture long-term dependencies.
+    The two MANN (memory-augmented neural network) architectures given as the Memory Augmented Transformer and the Differentiable Neural Computer are introduced in \Cref{mat} and \Cref{dnc}.
+    Three architectures (the Unitary NCP, the Recurrent Network Augmented Transformer and the Recurrent Network Attention Transformer) mix approaches from other models and try to combine their advantages.
+    These models are elaborated in \Cref{uncp}, \Cref{rnaut} and \Cref{rnatt}.
 
 
-    \section{Model Factory}
+    \section{Model Factory} \label{model_factory}
     As all the benchmarks require variants of the same models with different output vector sizes, a model factory function was implemented to produce an output tensor given the model's name, the output vector size, and the input tensor tuple.
     This function was called \texttt{get\_model\_output\_by\_name} and can be found under \url{https://github.com/Oidlichtnwoada/NeuralNetworkArena/blob/master/experiments/models/model_factory.py}.
     This mechanism of creating the output tensor, including the internal computational graph of the Tensorflow library \cite{Tensorflow} is called the Functional API.
@@ -1167,7 +1177,7 @@
 
 
     \section{Benchmark Framework} \label{benchmark_framework}
-    The Benchmark Framework is split up into its four execution phases:
+    The benchmark framework is split up into its four execution phases:
     \begin{itemize}
         \item{}
         Setup - prepares the model and data for training and evaluation, described in \Cref{benchmark_setup}
