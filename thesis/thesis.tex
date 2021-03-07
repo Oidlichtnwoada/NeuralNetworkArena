@@ -107,7 +107,7 @@
     options/.style={
         after head=\csv@pretable\begin{tabular}{|?l|*{\csv@columncount}{^c|}}
                                     \csv@tablehead,
-                                    table head=\hline \rowstyle{\bfseries}\csvlinetotablerow \\\hline\hline,
+                                    table head=\hline \rowstyle{\bfseries}\csvlinetotablerow \\\hline\hline \rowstyle{\bfseries},
                                     late after line=                                         \\\hline,
                                     table foot=                                              \\\hline,
                                     late after last line=\csv@tablefoot
