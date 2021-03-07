@@ -1174,7 +1174,14 @@
 
 
     \chapter{Benchmarks}
-
+    In this chapter the implemented benchmark framework is first described in \Cref{benchmark_framework}.
+    This framework is responsible for initiating the creation of the model, the start of the training and evalution process and the saving and visualization of the data produced during these processes.
+    Then each benchmark is discussed in detail including its expected input to output data mapping, its individual command-line arguments and its specific loss function used to quantify the error a model makes.
+    Four benchmarks (the Add Benchmark, the Memory Benchmark, the MNIST Benchmark and the Cell Benchmark) were used to evaluate the models' capability to capture long-term dependencies.
+    These benchmarks are elaborated in \Cref{add}, \Cref{memory}, \Cref{mnist} and \Cref{cell}.
+    The other two benchmarks, the Activity Benchmark and the Walker Benchmark, should test the models' capability to model dynamic physical systems.
+    These two benchmarks are described in \Cref{activity} and \Cref{walker}.
+    
 
     \section{Benchmark Framework} \label{benchmark_framework}
     The benchmark framework is split up into its four execution phases:
