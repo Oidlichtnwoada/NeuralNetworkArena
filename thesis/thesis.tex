@@ -548,7 +548,7 @@
         \centering{}
         \includegraphics[width=0.5\linewidth]{graphics/dense.png}
         \caption{visualized dense layers \cite{dense_vis}}
-        \label{fig:lstm_vis}
+        \label{fig:dense_vis}
     \end{figure}
     Training the LSTM model from the Keras library is fast as it uses an optimized cuDNN \cite{cuDNN} implementation.
     The LSTM model implementation used in this thesis is exposed under the \texttt{get\_lstm\_output} function defined in the file \url{https://github.com/Oidlichtnwoada/NeuralNetworkArena/blob/master/experiments/models/model_factory.py}.
@@ -909,8 +909,10 @@
 
 
     \section{Transformer} \label{transformer}
+    The Transformer architecture \cite{Transformer} is summarized in \Cref{transformer_introduction} and its components, the encoder and decoder, are described in detail in \Cref{transformer_encoder} and \Cref{transformer_decoder}.
+    The chosen hyperparameters and links to the implementation are provided in \Cref{transformer_implementation}.
 
-    \subsection{Introduction}
+    \subsection{Introduction} \label{transformer_introduction}
     The Transformer architecture introduced in \cite{Transformer} is no recurrent neural network architecture in the strict sense like the LSTM or the GRU architecture.
     It encodes its input sequence using an encoder, whose output is then decoded to the output sequence by a decoder.
     However, this model has a recurrence in its decoder part, as explained later.
@@ -927,7 +929,7 @@
         \label{fig:transformer_vis}
     \end{figure}
 
-    \subsection{Encoder} \label{encoder}
+    \subsection{Encoder} \label{transformer_encoder}
     At first, the Transformer architecture passes its input vectors to the encoder.
     The encoder embeds its input vectors into vectors of length $d_{model}$ (hyperparameter of the architecture) by passing them through a dense layer.
     As the input time series' embedded input vectors are not labeled with their corresponding time index $k$, the Transformer architecture adds a positional encoding vector to each embedded input vector.
@@ -978,7 +980,7 @@
     The second sub-layer in the encoder layer is the fully-connected feed-forward layer, which consists of a dense layer that maps the input vectors to size $d_{ff}$ with a relu activation function and a second dense layer that maps the vector back to size $d_{model}$ without an activation function.
     This process can be thought of as exchanging information within all vectors.
 
-    \subsection{Decoder} \label{decoder}
+    \subsection{Decoder} \label{transformer_decoder}
     The last encoder layer's output is then used in decoder layers of the same amount as encoder layers.
     The decoder gets a single start vector as input vector, which was picked to the all-one vector.
     All input vectors to the decoder are then embedded, positional encoded, and dropout is applied in the same fashion as for input vectors to the encoder.
@@ -992,7 +994,7 @@
     These reruns lead to the recurrence of the Transformer model.
     The Transformer's output is then a flattened version of the decoder's output vectors, excluding the first start vector.
 
-    \subsection{Implementation}
+    \subsection{Implementation} \label{transformer_implementation}
     The implementation used for benchmarking had $token\_amount$ set to $1$ and $token\_size$ set to the required output vector size.
     The hyperparameter $d_{model}$ was set to $16$, $h$ was set to $2$, $d_{ff}$ was set to $64$, there were $2$ encoder and decoder layers used and the dropout rate was set to $0$.
     The dimension $d_k$ and $d_v$ were always equal to $d_{model}$ in the benchmarked implementation.
@@ -1037,8 +1039,8 @@
     All memory fields are prefilled with a small value set to $10^{-6}$.
     There are two embedding dense layers defined, the input embedding $IE$ to embed the current step input and the memory embedding $ME$ to embed each memory row of the external memory $M$.
     Both embeddings map the input vectors to size $embedding\_size$ and are computed at each time step. The resulting vectors are then concatenated together to a vector sequence of length $r+1$.
-    Then positional encoding vectors (denoted as $PE$ in matrix form) are added to each vector in this sequence as described in \Cref{encoder}.
-    Moreover, dropout with rate $dr$ is further applied on this vector sequence, which is then fed through a single encoder layer with the functionality described in \Cref{encoder}.
+    Then positional encoding vectors (denoted as $PE$ in matrix form) are added to each vector in this sequence as described in \Cref{transformer_encoder}.
+    Moreover, dropout with rate $dr$ is further applied on this vector sequence, which is then fed through a single encoder layer with the functionality described in \Cref{transformer_encoder}.
     The first vector of the encoder layer vector outputs is used to build the output $y$ of the model by projecting it to the required output vector size through the dense output layer $DOL$.
     All other $r$ output vectors of the encoder layers are then projected with the memory control dense layer $MCDL$ to a memory control signal vector per memory row of size $1 + c$ (denoted as $MCS$ in matrix form).
     This vector's first entry is called the enable signal and is used to activate the memory and write the remaining $c$ entries to the memory.
@@ -1165,8 +1167,19 @@
 
 
     \section{Benchmark Framework} \label{benchmark_framework}
+    The Benchmark Framework is split up into its four execution phases:
+    \begin{itemize}
+        \item{}
+        Setup - prepares the model and data for training and evaluation, described in \Cref{benchmark_setup}
+        \item{}
+        Training - optimizes the model parameters using the given training data, described in \Cref{benchmark_training}
+        \item{}
+        Evaluation - evaluates the model with optimized parameters using the given evaluation data, described in \Cref{benchmark_evaluation}
+        \item{}
+        Data Processing - stores and visualizes data from the training and testing phase, described in \Cref{benchmark_data}
+    \end{itemize}
 
-    \subsection{Setup}
+    \subsection{Setup} \label{benchmark_setup}
     A single code base to run and evaluate the diverse set of benchmarks and models was inevitable.
     Otherwise, the whole project would have been unmanageable.
     As the implementation of all models occurred in the \texttt{Python} programming language \cite{Python3} using the framework Tensorflow \cite{Tensorflow}, also the benchmark framework used the same set of tools.
@@ -1237,7 +1250,7 @@
     A debug mode can also be enabled via the command line, which puts the newly created model in eager execution mode, making it easier to debug the model. Furthermore, the model will be called on a single batch of inputs without invoking the model's \texttt{fit} method. This invocation happens only in debug mode.
     In any case, a model ready to train should now have been constructed, and all the model characteristics, including input and output shape, will then be printed to the command line enabling to check if all the dimensions match the expectations.
 
-    \subsection{Training}
+    \subsection{Training} \label{benchmark_training}
     After printing the model's available information to the command line, a UNIX timestamp is retrieved from the system to track the total training duration.
     Then the training is ultimately started by invoking the model's \texttt{fit} method. This method takes the training and validation sample set, the batch size, the number of epochs, and a tuple of callbacks as arguments.
     The number of epochs is configurable via the command line, but the default value of $128$ is used throughout the thesis.
@@ -1272,13 +1285,13 @@
     Furthermore, all these parameters are configurable by passing alternative values in the command line.
     After the training loop has terminated, another UNIX timestamp is taken to compute the total training duration.
 
-    \subsection{Evaluation}
+    \subsection{Evaluation} \label{benchmark_evaluation}
     The model is then evaluated using the parameters that led to the smallest validation loss during the whole training loop.
     Evaluation means that the model function is applied to the test sample set inputs, and the resulting loss function result on that inputs is saved.
     The created model also provides an \texttt{evaluate} method, which takes the test sample set a batch size and another callback tuple as arguments.
     The only callback passed in the tuple is the \texttt{TensorBoard} callback already used in the \texttt{fit} method invocation.
 
-    \subsection{Data Processing}
+    \subsection{Data Processing} \label{benchmark_data}
     The return values of the \texttt{fit} and \texttt{evaluate} method invocations now contain information about the means of the loss and metric function results. These results are available for the training, validation, and test sample set.
     The arithmetic means for the training and validation sample set are available for each training epoch together with the currently applied learning rate.
     All information is automatically accumulated in a single CSV file per model for the training and the testing process.
@@ -1418,7 +1431,7 @@
         \centering{}
         \includegraphics[width=0.8\linewidth]{graphics/mnist.png}
         \caption{images from the MNIST dataset \cite{mnist}}
-        \label{fig:walker2d_vis}
+        \label{fig:mnist_vis}
     \end{figure}
     The images were vectorized to a vector containing $784$ entries and then split up to a sequence of vector chunks of size $8$, which results in an input sequence length of $98$.
     The expected output class index is just the digit the current image is representing.
