@@ -1488,9 +1488,13 @@
 
 
     \chapter{Results} \label{chapter_results}
+    In this chapter the used benchmark hardware is first specified in \Cref{benchmark_hardware} which also includes the overall structure of the experiments.
+    After that the results of all models for each benchmark are discussed in detail.
+    This discussion per benchmark includes an elaboration on the relative performances of all models, a result summary presented in a table and a plot showing the validation loss evolution of all models for this benchmark and a single run.
+    The results of the Activity Benchmark are presented in \Cref{activity_results}, the results of the Add Benchmark are presented in \Cref{add_results}, the results of the Walker Benchmark are presented in \Cref{walker_results}, the results of the Memory Benchmark are presented in \Cref{memory_results}, the results of the MNIST Benchmark are presented in \Cref{mnist_results} and the results of the Cell Benchmark are presented in \Cref{cell_results}.
 
 
-    \section{Benchmark Hardware and Experiment Clarifications}
+    \section{Benchmark Hardware and Experiment Clarifications} \label{benchmark_hardware}
     The benchmark server was equipped with an \texttt{AMD Ryzen Threadripper 2970WX} $24$-core processor and two \texttt{NVIDIA Titan RTX} graphics cards.
     Software-wise, the system used the \texttt{Ubuntu 18.04.5 LTS} operating system and a \texttt{Python 3.8.7} \cite{Python3} interpreter to execute all Python scritps.
     The used \texttt{Tensorflow} \cite{Tensorflow} library had version \texttt{2.4.1}, the used \texttt{NVIDIA CUDA} library had version \texttt{11.0.3}, the used \texttt{NVIDIA cuDNN} library \cite{cuDNN} had version \texttt{8.0.5.39}, the used \texttt{NVIDIA TensorRT} library had version \texttt{7.2.2} and the \texttt{NVIDIA} GPU driver had version \texttt{460.32.03}.
@@ -1502,7 +1506,7 @@
     All values in the measured metrics are reported with a precision of three decimal digits.
     The test loss of models is reported in brackets after their names in the following sections.
     This script can be found under the URL \url{https://github.com/Oidlichtnwoada/NeuralNetworkArena/blob/master/apply_and_save_statistics.py}.
-    To achieve transparency on how the results were obtained, all logs generated during the three benchmarks run by the benchmark framework described in \Cref{benchmark_framework} are available under \url{https://github.com/Oidlichtnwoada/NeuralNetworkArena/tree/master/benchmark_logs}.
+    To achieve transparency on how the results were obtained, all logs generated during the three runs are available under \url{https://github.com/Oidlichtnwoada/NeuralNetworkArena/tree/master/benchmark_logs}.
 
 
     \section{Activity Benchmark} \label{activity_results}
