@@ -270,9 +270,9 @@
         Therefore, all models presented in this thesis are either derivatives of the recurrent neural network or the Transformer \cite{Transformer} architecture.
         Furthermore, new machine learning models have been introduced to improve the given Transformer \cite{Transformer} and unitary recurrent neural network \cite{EfficientUnitaryRNNs} architecture.
         After the introduction of all models, they are all benchmarked against five benchmarks and compared thoroughly.
-        These benchmarks try to determine the model's capabilities to capture long-term dependencies and the ability to model physical systems.
+        These benchmarks try to determine the model's capabilities to capture long-term dependencies and their abilities to model physical systems.
         Moreover, the time-continuous Memory Cell architecture is introduced that is capable of storing a data bit over a large number of time steps without losing the stored information.
-        This architecture is built using the LTC network \cite{LTCNetworks} architecture.
+        This architecture is built using the LTC Network \cite{LTCNetworks} architecture.
         All code used for this thesis is available under \url{https://github.com/Oidlichtnwoada/NeuralNetworkArena}.
     \end{abstract}
 
@@ -473,19 +473,57 @@
 
 
     \section{State of the Art}
-    The whole field of sequence modeling started with recurrent neural networks.
-    More and more modern machine learning architectures exploit the fact that continuous-time models are very well suited for tasks related to dynamical physical systems as explained in \Cref{physical_systems}.
-    A few examples for such models would be the CT-GRU \cite{CTGRU}, the LTC network \cite{LTCNetworks} and the ODE-LSTM architecture \cite{ODELSTM}.
-    Nevertheless, some older architectures exploit continuous-time dynamics in machine learning models like the CT-RNN architecture \cite{CTRNN}.
-    The other problem described in the previous chapters is the challenging task of capturing long-term dependencies in time series.
-    One solution for the problem was proposed in \cite{UnitaryRNNs}, which introduced the Unitary RNN architecture.
-    In principle, this architecture uses the vanilla RNN architecture described above. The difference is that the matrix $W$ fulfills $\left\Vert W \right\Vert_{2,ind} = 1$ to tackle the vanishing and exploding gradient problem.
-    This idea was later refined by \cite{EfficientUnitaryRNNs}.
-    The vanishing gradient problem was also tackled by the LSTM architecture \cite{LSTM} using a gating mechanism.
-    This mechanism changes the subsequent state computation of the vanilla RNN.
-    Another possible mitigation to the vanishing gradient problem is the transformer architecture proposed in \cite{Transformer} using a mechanism called attention.
-    In principle, the Transformer architecture model has access to all past inputs simultaneously and directs its attention to the inputs most relevant for solving the required task.
-    This global access eliminates the need to backpropagate the error through multiple time-steps, which keeps the number of backpropagation steps low.
+    The presented evolution of sequence models beginning with the introduction of the first RNN until the recent Transformer-based architectures was heavily inspired by the overview provided in \cite[p. 1]{rnn_overview}.
+    RNN models are trained using a procedure called backpropagation through time introduced in \cite{GradientDescent}.
+    This procedure is further elaborated in \cite{BPTT}.
+    The first discrete-time RNN was the Elman network proposed in \cite{elman_network} with a structure similar to the vanilla RNN architecture described in \Cref{long_term_difficult}.
+    After that, the first continuous-time RNN, the CT-RNN, was proposed in \cite{CTRNN}.
+    Moreover, \cite{teacher_forcing} introduced teacher forcing which is a procedure that provides the RNN model with the expected output at time step $t$ as input for time step $t+1$ during training.
+    This procedure is especially used in encoder-decoder RNN architectures used for example in machine translation.
+    Then \cite{LongTermDependenciesGradientDescent} showed why learning long-term dependencies in RNNs with gradient descent is difficult.
+    The gating mechanism for RNNs to capture long-term dependencies was first introduced in the LSTM architecture \cite{LSTM}.
+    Furthermore, bidirectional RNNs \cite{bidirectional_rnn} were introduced that are trained in positive and negative time direction simultaneously to partially mitigate the issue of learning long-term dependencies in RNNs.
+    After that, \cite{efficient_backprop} proposed second-order optimization methods that are advantageous for backpropagation.
+    The LSTM architecture was improved in \cite{LSTM_forget} by adding a forget gate.
+    Then \cite{maximum_entropy_training} sped up the training of maximum entropy models by changing the form of the models to use classes.
+    Echo State Networks (ESNs) were introduced in \cite{esn} which are RNNs with trainable weights only to the output units.
+    Furthermore, \cite{hierarchical_softmax} introduced a hierarchical softmax function for language modeling.
+    Bidirectional LSTM networks were used in \cite{bidirectional_lstm} to improve the state of the art in phoneme classification and recognition.
+    Echo State Networks whose reservoir units are leaky integrator units were introduced in \cite{leaky_integrator}.
+    Moreover, \cite{multidimensional_rnn} introduced multidimensional RNNs that are able to handle input data with more than one spatio-temporal dimension.
+    This model was successfully used in \cite{offline_handwriting} for the transcription of images of handwritten text.
+    An Elman network-based language model was successfully applied to speech recognition in \cite{language_model_rnn}.
+    The rectified linear unit activation function was introduced in \cite{relu} which helps dealing with the vanishing gradient problem in RNNs.
+    A Hessian-free optimization approach \cite{hessian_free_optimization} was successfully applied to RNNs when learning to capture long-term dependencies in \cite{hessian_free_application} by using a novel damping scheme.
+    The language model introduced in \cite{language_model_rnn} was further improved in \cite{bptt_lm} by using the backpropagation through time at training.
+    A novel adaptive subgradient method for optimization was described in \cite{adagrad} which introduces adaptive learning rates for each weight.
+    Noise-contrastive estimation \cite{NCE} proposes a new objective function as alternative to the hierarchical softmax for probabilistic models which performs nonlinear logistic regression to discriminate between the observed data and artificially generated noise.
+    This objective function was successfully applied to neural probabilistic language models in \cite{NCE_Application}.
+    Gradient clipping \cite{gradient_clipping} was proposed to deal with exploding gradients which clips the gradients using a gradient norm clipping strategy.
+    An alternative to the hierarchical softmax objective function was introduced in \cite{negative_sampling} with negative sampling.
+    RNNs were successfully trained using stochastic gradient descent with momentum by incorporating a well-designed random initialization and a particular type of slowly increasing schedule for the momentum parameter \cite{sgd_momentum}.
+    Stacking RNNs was first proposed by \cite{rnn_stack} which used stacked LSTM cells for speech recognition.
+    A simplified LSTM architecture called the Gated Recurrent Unit (GRU) with comparable expressivity was introduced in \cite{GRU}.
+    Furthermore, dropout was proposed as a technique to reduce overfitting \cite{dropout}.
+    Moreover, \cite{NTM} introduced a differentiable Neural Turing Machine (NTM) that learns its algorithm by gradient descent.
+    Furthermore, \cite{SCRN} proposes a structurally constrained recurrent network (SCRN) whose recurrent weight matrix is partially close to the identity matrix which helps backpropagation.
+    Then an RNN-based alternative to convolutional networks called the ReNet was proposed by \cite{renet}.
+    RNNs were successfully applied to image generation using a variational auto-encoding framework and a novel spatial attention mechanism in \cite{draw}.
+    The Grid LSTM proposed by \cite{grid_lstm} is a network of LSTM cells arranged in a multidimensional grid which improves the techniques of \cite{multidimensional_rnn}.
+    Highway Networks \cite{highway_networks} eased gradient-based training of deep neural nets by incorporating gating units similar to the LSTM that regulate the flow of information through the network.
+    RNNs with partial-space unitary recurrent weight matrices were introduced in \cite{UnitaryRNNs} that further improve the idea of \cite{SCRN}.
+    This idea got further enhanced to full-space unitary recurrent weight matrices in \cite{EfficientUnitaryRNNs}.
+    This kind of unitary RNNs were augmented with a mechanism to forget in \cite{unitary_rnn_forget}.
+    The Neural Turing Machine architecture got further improved in \cite{DNC} to the Differentiable Neural Computer (DNC) which added a memory use link matrix and safe and efficient memory management.
+    A GRU-based RNN with multidimensional and exponentially decaying state called CT-GRU was proposed in \cite{CTGRU}.
+    The Transformer architecture \cite{Transformer} that handles multiple input data with a multi-head scaled dot-product attention mechanism is the follow-up work to \texttt{word2vec} \cite{word2vec} and \texttt{fastText} \cite{fasttext}.
+    A computationally more efficient Transformer-based architecture that uses locality-sensitive hashing and reversible residual layers \cite{ReversibleLayer} called the Reformer architecture was introduced in \cite{Reformer}.
+    Biologically-inspired continuous-time RNNs were introduced in \cite{LTCNetworks} and are called LTC Networks.
+    A subset of these networks was shown to be exceptionally expressive at the task of autonomous lane-keeping \cite{NCP}.
+    The article \cite{TransformerVariants} compared most state-of-the-art Transformer-based architectures using tasks consisting of sequences of length $1000$ to $16000$.
+    It showed that almost all computationally more efficient Transformer-based architectures (Reformer \cite{Reformer}, Linear Transformer \cite{LinearTransformer}, Linformer \cite{linformer}, Performer \cite{performer} and Sinkhorn Transformer \cite{sinkhorn}) sacrificed some expressivity compared to the vanilla Transformer \cite{Transformer} at least at the benchmarked tasks to speed up computation.
+    The article \cite{ODELSTM} showed that continuous-time models are especially well-suited for irregularly sampled time series and even proposed a continuous-time LSTM-based architecture called the ODE-LSTM.
+
 
 %\todo{Enter your text here.}
 
@@ -740,7 +778,7 @@
     The architecture is a subset of all LTC (Liquid Time-Constant) Networks that were introduced in \cite{LTCFormulas} and further discussed in \cite{LTCNetworks}.
     An LTC Network consists of biologically inspired neurons with leakage interconnected using chemical synapses with non-linear activations.
     LTC Networks model the cell membrane as an integrator and are therefore a continuous-time machine learning model.
-    Neural Circuit Policies were derived from the neuron interconnection structure of the Caenorhabditis elegans nematode \cite[p. 3]{NCP} which trims the space of all possible LTC networks.
+    Neural Circuit Policies were derived from the neuron interconnection structure of the Caenorhabditis elegans nematode \cite[p. 3]{NCP} which trims the space of all possible LTC Networks.
     The state of each neuron $i$ with incoming chemical synapses from neurons $j$ is given as its potential $V_i$ and the ODE that describes the dynamics of a single neuron's potential is given by \cite[p. 1-2]{LTCFormulas}:
     \begin{align}
         \label{ltc_formula}
@@ -1127,7 +1165,7 @@
 
     \section{Memory Cell} \label{memory_cell}
     The Memory Cell is a continuous-time recurrent neural network architecture consisting of two LTC neurons described in \Cref{ncp} without the input and output mapping using dense layers.
-    It is a proof-of-concept implementation and tries to build an LTC network \cite{LTCNetworks} to capture long-term dependencies in time series, namely a single memory bit.
+    It is a proof-of-concept implementation and tries to build an LTC Network \cite{LTCNetworks} to capture long-term dependencies in time series, namely a single memory bit.
     For details on how inputs are provided and which outputs are expected, please consult \Cref{cell}.
     The model has six synapses in total. Each neuron had $3$ incoming synapses.
     This model can only be used with input vectors and expected output vectors of size $2$.
@@ -1542,7 +1580,7 @@
     The two remaining models, the Unitary NCP ($0.573$) and NCP ($1.088$) architecture, performed very poorly on this benchmark and took a significant amount of time to train.
     Due to the NCP architecture's complex model function, both models had a small number of neurons that were very sparsely connected with chemical synapses to train them in a reasonable time.
     This sparseness is a likely reason for the high test loss of both models.
-    Future papers should work on approximations or simplifications of the LTC network architecture, such that more extensive networks are trainable in a reasonable time.
+    Future papers should work on approximations or simplifications of the LTC Network architecture, such that more extensive networks are trainable in a reasonable time.
     \benchmarksummary{activity}{Activity}
 
 
@@ -1694,7 +1732,7 @@
     In tasks where the Transformer architecture struggled, the added RNNs in these architectures helped both to achieve superior results compared to the Transformer in some cases.
     Furthermore, an intriguing subject for future research would be to use the recurrent network attention mechanism introduced in \Cref{rnatt} with various RNN architectures.
     The very sparsely connected few neurons in the NCP and Unitary NCP architecture held both architectures back.
-    A simplification or approximation of the LTC network model function without losing its expressivity should be desired.
+    A simplification or approximation of the LTC Network model function without losing its expressivity should be desired.
     This improvement would also help the Memory Cell architecture.
     Furthermore, some other research topics regarding the Memory Cell were discussed in \Cref{cell_results}.
     In some benchmarks, the Unitary RNN inside the Unitary NCP was responsible for decent test loss results.

@@ -49,7 +49,7 @@
     publisher = {MIT Press},
     address = {Cambridge, MA, USA},
     booktitle = {Parallel Distributed Processing: Explorations in the Microstructure of Cognition, Vol. 1: Foundations},
-    pages = {318–362},
+    pages = {318-362},
     numpages = {45}
 }
 @article{BPTT,
@@ -160,7 +160,7 @@
     archivePrefix = {arXiv},
     primaryClass = {cs.CL}
 }
-@misc{TransformerBenchmark,
+@misc{TransformerVariants,
     title = {Long Range Arena: A Benchmark for Efficient Transformers},
     author = {Yi Tay and Mostafa Dehghani and Samira Abnar and Yikang Shen and Dara Bahri and Philip Pham and Jinfeng Rao and Liu Yang and Sebastian Ruder and Donald Metzler},
     year = {2020},
@@ -200,7 +200,7 @@
     journal = {Nature},
     issn = {0028-0836},
     doi = {10.1038/nature20101},
-    abstract = {{Artificial neural networks are remarkably adept at sensory processing, sequence learning and reinforcement learning, but are limited in their ability to represent variables and data structures and to store data over long timescales, owing to the lack of an external memory. Here we introduce a machine learning model called a differentiable neural computer (DNC), which consists of a neural network that can read from and write to an external memory matrix, analogous to the random-access memory in a conventional computer. Like a conventional computer, it can use its memory to represent and manipulate complex data structures, but, like a neural network, it can learn to do so from data. When trained with supervised learning, we demonstrate that a DNC can successfully answer synthetic questions designed to emulate reasoning and inference supplementary_data in natural language. We show that it can learn tasks such as finding the shortest path between specified points and inferring the missing links in randomly generated graphs, and then generalize these tasks to specific graphs such as transport networks and family trees. When trained with reinforcement learning, a DNC can complete a moving blocks puzzle in which changing goals are specified by sequences of symbols. Taken together, our results demonstrate that DNCs have the capacity to solve complex, structured tasks that are inaccessible to neural networks without external read–write memory. A ‘differentiable neural computer’ is introduced that combines the learning capabilities of a neural network with an external memory analogous to the random-access memory in a conventional computer. Conventional computer algorithms can process extremely large and complex data structures such as the worldwide web or social networks, but they must be programmed manually by humans. Neural networks can learn from examples to recognize complex patterns, but they cannot easily parse and organize complex data structures. Now Alex Graves, Greg Wayne and colleagues have developed a hybrid learning machine, called a differentiable neural computer (DNC), that is composed of a neural network that can read from and write to an external memory structure analogous to the random-access memory in a conventional computer. The DNC can thus learn to plan routes on the London Underground, and to achieve goals in a block puzzle, merely by trial and error—without prior knowledge or ad hoc programming for such tasks.}},
+    abstract = {{Artificial neural networks are remarkably adept at sensory processing, sequence learning and reinforcement learning, but are limited in their ability to represent variables and data structures and to store data over long timescales, owing to the lack of an external memory. Here we introduce a machine learning model called a differentiable neural computer (DNC), which consists of a neural network that can read from and write to an external memory matrix, analogous to the random-access memory in a conventional computer. Like a conventional computer, it can use its memory to represent and manipulate complex data structures, but, like a neural network, it can learn to do so from data. When trained with supervised learning, we demonstrate that a DNC can successfully answer synthetic questions designed to emulate reasoning and inference supplementary_data in natural language. We show that it can learn tasks such as finding the shortest path between specified points and inferring the missing links in randomly generated graphs, and then generalize these tasks to specific graphs such as transport networks and family trees. When trained with reinforcement learning, a DNC can complete a moving blocks puzzle in which changing goals are specified by sequences of symbols. Taken together, our results demonstrate that DNCs have the capacity to solve complex, structured tasks that are inaccessible to neural networks without external read-write memory. A 'differentiable neural computer' is introduced that combines the learning capabilities of a neural network with an external memory analogous to the random-access memory in a conventional computer. Conventional computer algorithms can process extremely large and complex data structures such as the worldwide web or social networks, but they must be programmed manually by humans. Neural networks can learn from examples to recognize complex patterns, but they cannot easily parse and organize complex data structures. Now Alex Graves, Greg Wayne and colleagues have developed a hybrid learning machine, called a differentiable neural computer (DNC), that is composed of a neural network that can read from and write to an external memory structure analogous to the random-access memory in a conventional computer. The DNC can thus learn to plan routes on the London Underground, and to achieve goals in a block puzzle, merely by trial and error—without prior knowledge or ad hoc programming for such tasks.}},
     pages = {471--476},
     number = {7626},
     volume = {538},
@@ -515,4 +515,356 @@
     author = {Marek Rei},
     howpublished = {\url{http://www.marekrei.com/blog/neural-networks-part-3-network/}},
     year = {2014}
+}
+@misc{rnn_overview,
+    title = {Recent Advances in Recurrent Neural Networks},
+    author = {Hojjat Salehinejad and Sharan Sankar and Joseph Barfett and Errol Colak and Shahrokh Valaee},
+    year = {2018},
+    eprint = {1801.01078},
+    archivePrefix = {arXiv},
+    primaryClass = {cs.NE}
+}
+@article{elman_network,
+    author = {Elman, Jeffrey L.},
+    title = {Finding Structure in Time},
+    journal = {Cognitive Science},
+    volume = {14},
+    number = {2},
+    pages = {179-211},
+    doi = {https://doi.org/10.1207/s15516709cog1402\_1},
+    url = {https://onlinelibrary.wiley.com/doi/abs/10.1207/s15516709cog1402_1},
+    eprint = {https://onlinelibrary.wiley.com/doi/pdf/10.1207/s15516709cog1402_1},
+    abstract = {Time underlies many interesting human behaviors. Thus, the question of how to represent time in connectionist models is very important. One approach is to represent time implicitly by its effects on processing rather than explicitly (as in a spatial representation). The current report develops a proposal along these lines first described by Jordan (1986) which involves the use of recurrent links in order to provide networks with a dynamic memory. In this approach, hidden unit patterns are fed back to themselves: the internal representations which develop thus reflect task demands in the context of prior internal states. A set of simulations is reported which range from relatively simple problems (temporal version of XOR) to discovering syntactic/semantic features for words. The networks are able to learn interesting internal representations which incorporate task demands with memory demands: indeed, in this approach the notion of memory is inextricably bound up with task processing. These representations reveal a rich structure, which allows them to be highly context-dependent, while also expressing generalizations across classes of items. These representations suggest a method for representing lexical categories and the type/token distinction.},
+    year = {1990}
+}
+@ARTICLE{teacher_forcing,
+    author = {Kenji Doya},
+    title = {Bifurcations of Recurrent Neural Networks in Gradient Descent Learning},
+    journal = {IEEE Transactions on Neural Networks},
+    year = {1993},
+    volume = {1},
+    pages = {75--80}
+}
+@ARTICLE{bidirectional_rnn,
+    author = {M. {Schuster} and K. K. {Paliwal}},
+    journal = {IEEE Transactions on Signal Processing},
+    title = {Bidirectional recurrent neural networks},
+    year = {1997},
+    volume = {45},
+    number = {11},
+    pages = {2673-2681},
+    doi = {10.1109/78.650093}
+}
+@article{efficient_backprop,
+    author = {Lecun, Yann and Bottou, Leon and Orr, Genevieve and Müller, Klaus-Robert},
+    year = {2000},
+    month = {08},
+    pages = {},
+    title = {Efficient BackProp}
+}
+@article{maximum_entropy_training,
+    added-at = {2020-01-10T00:00:00.000+0100},
+    author = {Goodman, Joshua},
+    biburl = {https://www.bibsonomy.org/bibtex/2683637968a31c19245046e82304776d2/dblp},
+    ee = {https://arxiv.org/abs/cs/0108006},
+    interhash = {3e4b8ac18a2dea86e7f1cfc8dfb1e65b},
+    intrahash = {683637968a31c19245046e82304776d2},
+    journal = {CoRR},
+    keywords = {dblp},
+    timestamp = {2020-01-11T11:40:34.000+0100},
+    title = {Classes for Fast Maximum Entropy Training},
+    url = {http://dblp.uni-trier.de/db/journals/corr/corr0108.html#cs-CL-0108006},
+    volume = {cs.CL/0108006},
+    year = 2001
+}
+@INPROCEEDINGS{hierarchical_softmax,
+    author = {Morin, Frederic and Bengio, Yoshua},
+    editor = {Cowell, Robert G. and Ghahramani, Zoubin},
+    title = {Hierarchical Probabilistic Neural Network Language Model},
+    booktitle = {Proceedings of the Tenth International Workshop on Artificial Intelligence and Statistics},
+    year = {2005},
+    pages = {246--252},
+    publisher = {Society for Artificial Intelligence and Statistics},
+    url = {http://www.iro.umontreal.ca/~lisa/pointeurs/hierarchical-nnlm-aistats05.pdf},
+    abstract = {In recent years, variants of a neural network architecture for statistical language modeling have been proposed and successfully applied, e.g. in the language modeling component of speech recognizers. The main advantage of these architectures is that they learn an embedding for words (or other symbols) in a continuous space that helps to smooth the language model and provide good generalization even when the number of training examples is insufficient. However, these models are extremely slow in comparison to the more commonly used n-gram models, both for training and recognition. As an alternative to an importance sampling method proposed to speed-up training, we introduce a hierarchical decomposition of the conditional probabilities that yields a speed-up of about 200 both during training and recognition. The hierarchical decomposition is a binary hierarchical clustering constrained by the prior knowledge extracted from the WordNet semantic hierarchy.},
+    topics = {Language},cat = {C},
+}
+@INPROCEEDINGS{bidirectional_lstm,
+    author = {Graves, Alex and Fern\'{a}ndez, Santiago and Schmidhuber, J\"{u}rgen},
+    title = {Bidirectional LSTM Networks for Improved Phoneme Classification and Recognition},
+    year = {2005},
+    isbn = {3540287558},
+    publisher = {Springer-Verlag},
+    address = {Berlin, Heidelberg},
+    abstract = {In this paper, we carry out two experiments on the TIMIT speech corpus with bidirectional and unidirectional Long Short Term Memory (LSTM) networks. In the first experiment (framewise phoneme classification) we find that bidirectional LSTMoutperforms both unidirectional LSTMand conventional Recurrent Neural Networks (RNNs). In the second (phoneme recognition) we find that a hybrid BLSTM-HMM system improves on an equivalent traditional HMM system, as well as unidirectional LSTM-HMM.},
+    booktitle = {Proceedings of the 15th International Conference on Artificial Neural Networks: Formal Models and Their Applications - Volume Part II},
+    pages = {804},
+    numpages = {6},
+    location = {Warsaw, Poland},
+    series = {ICANN'05}
+}
+@article{leaky_integrator,
+    title = {Optimization and applications of echo state networks with leaky- integrator neurons},
+    journal = {Neural Networks},
+    volume = {20},
+    number = {3},
+    pages = {335-352},
+    year = {2007},
+    note = {Echo State Networks and Liquid State Machines},
+    issn = {0893-6080},
+    doi = {https://doi.org/10.1016/j.neunet.2007.04.016},
+    url = {https://www.sciencedirect.com/science/article/pii/S089360800700041X},
+    author = {Herbert Jaeger and Mantas Lukoševičius and Dan Popovici and Udo Siewert},
+    keywords = {Recurrent neural networks, Pattern generation, Speaker classification},
+    abstract = {Standard echo state networks (ESNs) are built from simple additive units with a sigmoid activation function. Here we investigate ESNs whose reservoir units are leaky integrator units. Units of this type have individual state dynamics, which can be exploited in various ways to accommodate the network to the temporal characteristics of a learning task. We present stability conditions, introduce and investigate a stochastic gradient descent method for the optimization of the global learning parameters (input and output feedback scalings, leaking rate, spectral radius) and demonstrate the usefulness of leaky-integrator ESNs for (i) learning very slow dynamic systems and replaying the learnt system at different speeds, (ii) classifying relatively slow and noisy time series (the Japanese Vowel dataset — here we obtain a zero test error rate), and (iii) recognizing strongly time-warped dynamic patterns.}
+}
+@misc{multidimensional_rnn,
+    title = {Multi-Dimensional Recurrent Neural Networks},
+    author = {Alex Graves and Santiago Fernandez and Juergen Schmidhuber},
+    year = {2007},
+    eprint = {0705.2011},
+    archivePrefix = {arXiv},
+    primaryClass = {cs.AI}
+}
+@inproceedings{offline_handwriting,
+    author = {Graves, Alex and Schmidhuber, J\"{u}rgen},
+    booktitle = {Advances in Neural Information Processing Systems},
+    editor = {D. Koller and D. Schuurmans and Y. Bengio and L. Bottou},
+    pages = {},
+    publisher = {Curran Associates, Inc.},
+    title = {Offline Handwriting Recognition with Multidimensional Recurrent Neural Networks},
+    url = {https://proceedings.neurips.cc/paper/2008/file/66368270ffd51418ec58bd793f2d9b1b-Paper.pdf},
+    volume = {21},
+    year = {2009}
+}
+@inproceedings{language_model_rnn,
+    author = {Mikolov, Tomas and Karafiát, Martin and Burget, Lukás and Cernocký, Jan and Khudanpur, Sanjeev},
+    biburl = {https://www.bibsonomy.org/bibtex/2aee1e280d06e82474b17c4996aaea076/dblp},
+    booktitle = {INTERSPEECH},
+    editor = {Kobayashi, Takao and Hirose, Keikichi and Nakamura, Satoshi},
+    ee = {http://www.isca-speech.org/archive/interspeech_2010/i10_1045.html},
+    interhash = {9cabdcef2ed097906bff2cb7a327e61e},
+    intrahash = {aee1e280d06e82474b17c4996aaea076},
+    keywords = {dblp},
+    pages = {1045-1048},
+    publisher = {ISCA},
+    timestamp = {2015-06-21T06:10:05.000+0200},
+    title = {Recurrent neural network based language model.},
+    url = {http://dblp.uni-trier.de/db/conf/interspeech/interspeech2010.html#MikolovKBCK10},
+    year = 2010
+}
+@inproceedings{relu,
+    author = {Nair, Vinod and Hinton, Geoffrey},
+    year = {2010},
+    month = {06},
+    pages = {807-814},
+    title = {Rectified Linear Units Improve Restricted Boltzmann Machines Vinod Nair},
+    volume = {27},
+    journal = {Proceedings of ICML}
+}
+@techreport{esn,
+    author = {Jaeger, H.},
+    biburl = {https://www.bibsonomy.org/bibtex/23d434b04cf1479acf45be9af65f8bc78/idsia},
+    institution = {GMD - German National Research Institute for Computer Science},
+    interhash = {c24261c15e88abe24a39d13339cc7697},
+    intrahash = {3d434b04cf1479acf45be9af65f8bc78},
+    keywords = {imported},
+    number = 148,
+    timestamp = {2008-03-11T14:52:36.000+0100},
+    title = {The "echo state" approach to analysing and training recurrent neural networks},
+    type = {GMD Report},
+    url = {http://www.faculty.jacobs-university.de/hjaeger/pubs/EchoStatesTechRep.pdf},
+    year = 2001
+}
+@inproceedings{hessian_free_application,
+    author = {Martens, James and Sutskever, Ilya},
+    year = {2011},
+    month = {01},
+    pages = {1033-1040},
+    title = {Learning Recurrent Neural Networks with Hessian-Free Optimization},
+    journal = {Proceedings of the 28th International Conference on Machine Learning}
+}
+@inproceedings{hessian_free_optimization,
+    author = {Martens, James},
+    title = {Deep Learning via Hessian-Free Optimization},
+    year = {2010},
+    isbn = {9781605589077},
+    publisher = {Omnipress},
+    address = {Madison, WI, USA},
+    abstract = {We develop a 2nd-order optimization method based on the "Hessian-free" approach, and apply it to training deep auto-encoders. Without using pre-training, we obtain results superior to those reported by Hinton &amp; Salakhutdinov (2006) on the same tasks they considered. Our method is practical, easy to use, scales nicely to very large datasets, and isn't limited in applicability to auto-encoders, or any specific model class. We also discuss the issue of "pathological curvature" as a possible explanation for the difficulty of deep-learning and how 2nd-order optimization, and our method in particular, effectively deals with it.},
+    booktitle = {Proceedings of the 27th International Conference on International Conference on Machine Learning},
+    pages = {735-742},
+    numpages = {8},
+    location = {Haifa, Israel},
+    series = {ICML'10}
+}
+@INPROCEEDINGS{bptt_lm,
+    author = {T. {Mikolov} and S. {Kombrink} and L. {Burget} and J. {Černocký} and S. {Khudanpur}},
+    booktitle = {2011 IEEE International Conference on Acoustics, Speech and Signal Processing (ICASSP)},
+    title = {Extensions of recurrent neural network language model},
+    year = {2011},
+    volume = {},
+    number = {},
+    pages = {5528-5531},
+    doi = {10.1109/ICASSP.2011.5947611}
+}
+@article{adagrad,
+    added-at = {2017-12-30T09:55:39.000+0100},
+    author = {Duchi, John and Hazan, Elad and Singer, Yoram},
+    biburl = {https://www.bibsonomy.org/bibtex/2f548fa2a3cb4881b968ec3a06dd8c49c/leerooy},
+    interhash = {d2bb1dcfcc9549a93e0b1f0dd8d23cf9},
+    intrahash = {f548fa2a3cb4881b968ec3a06dd8c49c},
+    journal = {Journal of Machine Learning Research},
+    keywords = {},
+    number = {Jul},
+    pages = {2121--2159},
+    timestamp = {2017-12-30T09:55:39.000+0100},
+    title = {Adaptive subgradient methods for online learning and stochastic optimization},
+    volume = 12,
+    year = 2011
+}
+@article{NCE,
+    author = {Gutmann, Michael U. and Hyv\"{a}rinen, Aapo},
+    title = {Noise-Contrastive Estimation of Unnormalized Statistical Models, with Applications to Natural Image Statistics},
+    year = {2012},
+    issue_date = {3/1/2012},
+    publisher = {JMLR.org},
+    volume = {13},
+    number = {null},
+    issn = {1532-4435},
+    abstract = {We consider the task of estimating, from observed data, a probabilistic model that is parameterized by a finite number of parameters. In particular, we are considering the situation where the model probability density function is unnormalized. That is, the model is only specified up to the partition function. The partition function normalizes a model so that it integrates to one for any choice of the parameters. However, it is often impossible to obtain it in closed form. Gibbs distributions, Markov and multi-layer networks are examples of models where analytical normalization is often impossible. Maximum likelihood estimation can then not be used without resorting to numerical approximations which are often computationally expensive. We propose here a new objective function for the estimation of both normalized and unnormalized models. The basic idea is to perform nonlinear logistic regression to discriminate between the observed data and some artificially generated noise. With this approach, the normalizing partition function can be estimated like any other parameter. We prove that the new estimation method leads to a consistent (convergent) estimator of the parameters. For large noise sample sizes, the new estimator is furthermore shown to behave like the maximum likelihood estimator. In the estimation of unnormalized models, there is a trade-off between statistical and computational performance. We show that the new method strikes a competitive trade-off in comparison to other estimation methods for unnormalized models. As an application to real data, we estimate novel two-layer models of natural image statistics with spline nonlinearities.},
+    journal = {J. Mach. Learn. Res.},
+    month = feb,
+    pages = {307-361},
+    numpages = {55},
+    keywords = {partition function, computation, natural image statistics, unnormalized models, estimation}
+}
+@misc{NCE_Application,
+    title = {A Fast and Simple Algorithm for Training Neural Probabilistic Language Models},
+    author = {Andriy Mnih and Yee Whye Teh},
+    year = {2012},
+    eprint = {1206.6426},
+    archivePrefix = {arXiv},
+    primaryClass = {cs.CL}
+}
+@misc{gradient_clipping,
+    title = {On the difficulty of training Recurrent Neural Networks},
+    author = {Razvan Pascanu and Tomas Mikolov and Yoshua Bengio},
+    year = {2013},
+    eprint = {1211.5063},
+    archivePrefix = {arXiv},
+    primaryClass = {cs.LG}
+}
+@misc{negative_sampling,
+    title = {Distributed Representations of Words and Phrases and their Compositionality},
+    author = {Tomas Mikolov and Ilya Sutskever and Kai Chen and Greg Corrado and Jeffrey Dean},
+    year = {2013},
+    eprint = {1310.4546},
+    archivePrefix = {arXiv},
+    primaryClass = {cs.CL}
+}
+@inproceedings{sgd_momentum,
+    author = {Sutskever, Ilya and Martens, James and Dahl, George and Hinton, Geoffrey},
+    title = {On the Importance of Initialization and Momentum in Deep Learning},
+    year = {2013},
+    publisher = {JMLR.org},
+    abstract = {Deep and recurrent neural networks (DNNs and RNNs respectively) are powerful models that were considered to be almost impossible to train using stochastic gradient descent with momentum. In this paper, we show that when stochastic gradient descent with momentum uses a well-designed random initialization and a particular type of slowly increasing schedule for the momentum parameter, it can train both DNNs and RNNs (on datasets with long-term dependencies) to levels of performance that were previously achievable only with Hessian-Free optimization. We find that both the initialization and the momentum are crucial since poorly initialized networks cannot be trained with momentum and well-initialized networks perform markedly worse when the momentum is absent or poorly tuned.Our success training these models suggests that previous attempts to train deep and recurrent neural networks from random initializations have likely failed due to poor initialization schemes. Furthermore, carefully tuned momentum methods suffice for dealing with the curvature issues in deep and recurrent network training objectives without the need for sophisticated second-order methods.},
+    booktitle = {Proceedings of the 30th International Conference on International Conference on Machine Learning - Volume 28},
+    pages = {III-1139-III-1147},
+    location = {Atlanta, GA, USA},
+    series = {ICML'13}
+}
+@misc{rnn_stack,
+    title = {Speech Recognition with Deep Recurrent Neural Networks},
+    author = {Alex Graves and Abdel-rahman Mohamed and Geoffrey Hinton},
+    year = {2013},
+    eprint = {1303.5778},
+    archivePrefix = {arXiv},
+    primaryClass = {cs.NE}
+}
+@misc{SCRN,
+    title = {Learning Longer Memory in Recurrent Neural Networks},
+    author = {Tomas Mikolov and Armand Joulin and Sumit Chopra and Michael Mathieu and Marc'Aurelio Ranzato},
+    year = {2015},
+    eprint = {1412.7753},
+    archivePrefix = {arXiv},
+    primaryClass = {cs.NE}
+}
+@misc{renet,
+    title = {ReNet: A Recurrent Neural Network Based Alternative to Convolutional Networks},
+    author = {Francesco Visin and Kyle Kastner and Kyunghyun Cho and Matteo Matteucci and Aaron Courville and Yoshua Bengio},
+    year = {2015},
+    eprint = {1505.00393},
+    archivePrefix = {arXiv},
+    primaryClass = {cs.CV}
+}
+@misc{draw,
+    title = {DRAW: A Recurrent Neural Network For Image Generation},
+    author = {Karol Gregor and Ivo Danihelka and Alex Graves and Danilo Jimenez Rezende and Daan Wierstra},
+    year = {2015},
+    eprint = {1502.04623},
+    archivePrefix = {arXiv},
+    primaryClass = {cs.CV}
+}
+@misc{grid_lstm,
+    title = {Grid Long Short-Term Memory},
+    author = {Nal Kalchbrenner and Ivo Danihelka and Alex Graves},
+    year = {2016},
+    eprint = {1507.01526},
+    archivePrefix = {arXiv},
+    primaryClass = {cs.NE}
+}
+@misc{highway_networks,
+    title = {Highway Networks},
+    author = {Rupesh Kumar Srivastava and Klaus Greff and Jürgen Schmidhuber},
+    year = {2015},
+    eprint = {1505.00387},
+    archivePrefix = {arXiv},
+    primaryClass = {cs.LG}
+}
+@misc{unitary_rnn_forget,
+    title = {Gated Orthogonal Recurrent Units: On Learning to Forget},
+    author = {Li Jing and Caglar Gulcehre and John Peurifoy and Yichen Shen and Max Tegmark and Marin Soljačić and Yoshua Bengio},
+    year = {2017},
+    eprint = {1706.02761},
+    archivePrefix = {arXiv},
+    primaryClass = {cs.LG}
+}
+@misc{word2vec,
+    title = {Efficient Estimation of Word Representations in Vector Space},
+    author = {Tomas Mikolov and Kai Chen and Greg Corrado and Jeffrey Dean},
+    year = {2013},
+    eprint = {1301.3781},
+    archivePrefix = {arXiv},
+    primaryClass = {cs.CL}
+}
+@article{fasttext,
+    title = {FastText.zip: Compressing text classification models},
+    author = {Joulin, Armand and Grave, Edouard and Bojanowski, Piotr and Douze, Matthijs and J{\'e}gou, H{\'e}rve and Mikolov, Tomas},
+    journal = {arXiv preprint arXiv:1612.03651},
+    year = {2016}
+}
+@misc{linformer,
+    title = {Linformer: Self-Attention with Linear Complexity},
+    author = {Sinong Wang and Belinda Z. Li and Madian Khabsa and Han Fang and Hao Ma},
+    year = {2020},
+    eprint = {2006.04768},
+    archivePrefix = {arXiv},
+    primaryClass = {cs.LG}
+}
+@misc{performer,
+    title = {Rethinking Attention with Performers},
+    author = {Krzysztof Choromanski and Valerii Likhosherstov and David Dohan and Xingyou Song and Andreea Gane and Tamas Sarlos and Peter Hawkins and Jared Davis and Afroz Mohiuddin and Lukasz Kaiser and David Belanger and Lucy Colwell and Adrian Weller},
+    year = {2021},
+    eprint = {2009.14794},
+    archivePrefix = {arXiv},
+    primaryClass = {cs.LG}
+}
+@misc{sinkhorn,
+    title = {Sparse Sinkhorn Attention},
+    author = {Yi Tay and Dara Bahri and Liu Yang and Donald Metzler and Da-Cheng Juan},
+    year = {2020},
+    eprint = {2002.11296},
+    archivePrefix = {arXiv},
+    primaryClass = {cs.LG}
 }
