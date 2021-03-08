@@ -136,7 +136,7 @@
 
 \newcommand{\benchmarkplots}[2]{
     \subsection{#2 Benchmark}
-    The training plots for the #2 Benchmark and each individual model will be shown on the following pages.
+    The training plots for the #2 Benchmark and each model will be shown on the following pages.
     \clearpage{}
     \begin{sidewaysfigure}[h]
         \centerline{
@@ -270,7 +270,7 @@
         Therefore, all models presented in this thesis are either derivatives of the recurrent neural network or the Transformer \cite{Transformer} architecture.
         Furthermore, new machine learning models have been introduced to improve the given Transformer \cite{Transformer} and unitary recurrent neural network \cite{EfficientUnitaryRNNs} architecture.
         After the introduction of all models, they are all benchmarked against five benchmarks and compared thoroughly.
-        These benchmarks try to determine the model's capabilities to capture long-term dependencies and their abilities to model physical systems.
+        These benchmarks determine the model's capabilities to capture long-term dependencies and their abilities to model physical systems.
         Moreover, the time-continuous Memory Cell architecture is introduced that is capable of storing a data bit over a large number of time steps without losing the stored information.
         This architecture is built using the LTC Network \cite{LTCNetworks} architecture.
         All code used for this thesis is available under \url{https://github.com/Oidlichtnwoada/NeuralNetworkArena}.
@@ -454,7 +454,7 @@
 
 
     \section{Methodological Approach}
-    The first part of this thesis was to determine the most influential models for processing time series data.
+    The first part of this thesis was to determine the most influential models for processing time-series data.
     Some models that were benchmarked against each other in this thesis were taken from \cite{ODELSTM}, even though this paper focuses primarily on irregularly sampled time series.
     The other models were implemented according to the following architectures: Long Short-Term Memory \cite{LSTM}, Differentiable Neural Computer \cite{DNC}, Unitary Recurrent Neural Network \cite{EfficientUnitaryRNNs}, Transformer \cite{Transformer} and Neural Circuit Policies \cite{NCP}.
     These nine models are then complemented by five models that were newly introduced.
@@ -478,44 +478,44 @@
     This procedure is further elaborated in \cite{BPTT}.
     The first discrete-time RNN was the Elman network proposed in \cite{elman_network} with a structure similar to the vanilla RNN architecture described in \Cref{long_term_difficult}.
     After that, the first continuous-time RNN, the CT-RNN, was proposed in \cite{CTRNN}.
-    Moreover, \cite{teacher_forcing} introduced teacher forcing which is a procedure that provides the RNN model with the expected output at time step $t$ as input for time step $t+1$ during training.
-    This procedure is especially used in encoder-decoder RNN architectures used for example in machine translation.
+    Moreover, \cite{teacher_forcing} introduced teacher forcing, which is a procedure that provides the RNN model with the expected output at time step $t$ as input for time step $t+1$ during training.
+    This procedure is primarily used in encoder-decoder RNN architectures used, for example, in machine translation.
     Then \cite{LongTermDependenciesGradientDescent} showed why learning long-term dependencies in RNNs with gradient descent is difficult.
     The gating mechanism for RNNs to capture long-term dependencies was first introduced in the LSTM architecture \cite{LSTM}.
-    Furthermore, bidirectional RNNs \cite{bidirectional_rnn} were introduced that are trained in positive and negative time direction simultaneously to partially mitigate the issue of learning long-term dependencies in RNNs.
+    Furthermore, bidirectional RNNs \cite{bidirectional_rnn} were introduced that are trained in positive and negative time direction simultaneously to mitigate the issue of learning long-term dependencies in RNNs partially.
     After that, \cite{efficient_backprop} proposed second-order optimization methods that are advantageous for backpropagation.
     The LSTM architecture was improved in \cite{LSTM_forget} by adding a forget gate.
-    Then \cite{maximum_entropy_training} sped up the training of maximum entropy models by changing the form of the models to use classes.
+    Then \cite{maximum_entropy_training} sped up the training of maximum entropy models by changing the models' form to use classes.
     Echo State Networks (ESNs) were introduced in \cite{esn} which are RNNs with trainable weights only to the output units.
     Furthermore, \cite{hierarchical_softmax} introduced a hierarchical softmax function for language modeling.
     Bidirectional LSTM networks were used in \cite{bidirectional_lstm} to improve the state of the art in phoneme classification and recognition.
-    Echo State Networks whose reservoir units are leaky integrator units were introduced in \cite{leaky_integrator}.
-    Moreover, \cite{multidimensional_rnn} introduced multidimensional RNNs that are able to handle input data with more than one spatio-temporal dimension.
-    This model was successfully used in \cite{offline_handwriting} for the transcription of images of handwritten text.
+    Echo State Networks, whose reservoir units are leaky integrator units, were introduced in \cite{leaky_integrator}.
+    Moreover, \cite{multidimensional_rnn} introduced multidimensional RNNs that can handle input data with more than one spatio-temporal dimension.
+    This model was successfully used in \cite{offline_handwriting} for the transcription of handwritten text images.
     An Elman network-based language model was successfully applied to speech recognition in \cite{language_model_rnn}.
-    The rectified linear unit activation function was introduced in \cite{relu} which helps dealing with the vanishing gradient problem in RNNs.
+    The rectified linear unit activation function was introduced in \cite{relu} which helps to deal with the vanishing gradient problem in RNNs.
     A Hessian-free optimization approach \cite{hessian_free_optimization} was successfully applied to RNNs when learning to capture long-term dependencies in \cite{hessian_free_application} by using a novel damping scheme.
     The language model introduced in \cite{language_model_rnn} was further improved in \cite{bptt_lm} by using the backpropagation through time at training.
     A novel adaptive subgradient method for optimization was described in \cite{adagrad} which introduces adaptive learning rates for each weight.
-    Noise-contrastive estimation \cite{NCE} proposes a new objective function as alternative to the hierarchical softmax for probabilistic models which performs nonlinear logistic regression to discriminate between the observed data and artificially generated noise.
+    Noise-contrastive estimation \cite{NCE} proposes a new objective function as an alternative to the hierarchical softmax for probabilistic models, which performs nonlinear logistic regression to discriminate between the observed data and artificially generated noise.
     This objective function was successfully applied to neural probabilistic language models in \cite{NCE_Application}.
     Gradient clipping \cite{gradient_clipping} was proposed to deal with exploding gradients which clips the gradients using a gradient norm clipping strategy.
     An alternative to the hierarchical softmax objective function was introduced in \cite{negative_sampling} with negative sampling.
-    RNNs were successfully trained using stochastic gradient descent with momentum by incorporating a well-designed random initialization and a particular type of slowly increasing schedule for the momentum parameter \cite{sgd_momentum}.
+    RNNs were successfully trained using stochastic gradient descent with momentum by incorporating a well-designed random initialization, and a particular type of slowly increasing schedule for the momentum parameter \cite{sgd_momentum}.
     Stacking RNNs was first proposed by \cite{rnn_stack} which used stacked LSTM cells for speech recognition.
     A simplified LSTM architecture called the Gated Recurrent Unit (GRU) with comparable expressivity was introduced in \cite{GRU}.
     Furthermore, dropout was proposed as a technique to reduce overfitting \cite{dropout}.
     Moreover, \cite{NTM} introduced a differentiable Neural Turing Machine (NTM) that learns its algorithm by gradient descent.
-    Furthermore, \cite{SCRN} proposes a structurally constrained recurrent network (SCRN) whose recurrent weight matrix is partially close to the identity matrix which helps backpropagation.
+    Furthermore, \cite{SCRN} proposes a structurally constrained recurrent network (SCRN) whose recurrent weight matrix is partially close to the identity matrix, which helps with the vanishing gradient problem.
     Then an RNN-based alternative to convolutional networks called the ReNet was proposed by \cite{renet}.
     RNNs were successfully applied to image generation using a variational auto-encoding framework and a novel spatial attention mechanism in \cite{draw}.
     The Grid LSTM proposed by \cite{grid_lstm} is a network of LSTM cells arranged in a multidimensional grid which improves the techniques of \cite{multidimensional_rnn}.
     Highway Networks \cite{highway_networks} eased gradient-based training of deep neural nets by incorporating gating units similar to the LSTM that regulate the flow of information through the network.
     RNNs with partial-space unitary recurrent weight matrices were introduced in \cite{UnitaryRNNs} that further improve the idea of \cite{SCRN}.
     This idea got further enhanced to full-space unitary recurrent weight matrices in \cite{EfficientUnitaryRNNs}.
-    This kind of unitary RNNs were augmented with a mechanism to forget in \cite{unitary_rnn_forget}.
-    The Neural Turing Machine architecture got further improved in \cite{DNC} to the Differentiable Neural Computer (DNC) which added a memory use link matrix and safe and efficient memory management.
-    A GRU-based RNN with multidimensional and exponentially decaying state called CT-GRU was proposed in \cite{CTGRU}.
+    This kind of unitary RNNs was augmented with a mechanism to forget in \cite{unitary_rnn_forget}.
+    The Neural Turing Machine architecture was further improved in \cite{DNC} to the Differentiable Neural Computer (DNC), which added a memory use link matrix and safe and efficient memory management.
+    A GRU-based RNN with a multidimensional and exponentially decaying state called CT-GRU was proposed in \cite{CTGRU}.
     The Transformer architecture \cite{Transformer} that handles multiple input data with a multi-head scaled dot-product attention mechanism is the follow-up work to \texttt{word2vec} \cite{word2vec} and \texttt{fastText} \cite{fasttext}.
     A computationally more efficient Transformer-based architecture that uses locality-sensitive hashing and reversible residual layers \cite{ReversibleLayer} called the Reformer architecture was introduced in \cite{Reformer}.
     Biologically-inspired continuous-time RNNs were introduced in \cite{LTCNetworks} and are called LTC Networks.
@@ -529,15 +529,15 @@
 
 
     \chapter{Models}
-    In this chapter all benchmarked models are introduced and theoretically discussed.
+    In this chapter, all benchmarked models are introduced and theoretically discussed.
     At first, \Cref{model_factory} describes how the models with the correct output vector size used in the benchmark framework introduced in \Cref{benchmark_framework} are constructed.
     Then machine learning models that use a gating mechanism to capture long-term dependencies are introduced.
     These are the LSTM introduced in \Cref{lstm}, the ODE-LSTM introduced in \Cref{odelstm}, the GRU introduced in \Cref{gru} and the CT-GRU introduced in \Cref{ctgru}.
-    Furthermore, three continuous-time models (the Neural Circuit Policies, the CT-RNN and the Memory Cell) are introduced in \Cref{ncp}, \Cref{ctrnn} and \Cref{memory_cell}.
-    Moreover, two discrete-time architectures with bounded loss gradients are introduced which are given as the Unitary RNN introduced in \Cref{urnn} and the Matrix Exponential Unitary RNN introduced in \Cref{meurnn}.
-    In \Cref{transformer} the Transformer architecture is introduced which has an encoder-decoder structure and uses an attention mechanism to capture long-term dependencies.
+    Furthermore, three continuous-time models (the Neural Circuit Policies, the CT-RNN, and the Memory Cell) are introduced in \Cref{ncp}, \Cref{ctrnn} and \Cref{memory_cell}.
+    Moreover, two discrete-time architectures with bounded loss gradients are introduced, given as the Unitary RNN introduced in \Cref{urnn} and the Matrix Exponential Unitary RNN introduced in \Cref{meurnn}.
+    In \Cref{transformer} the Transformer architecture is introduced, which employs an encoder-decoder structure and uses an attention mechanism to capture long-term dependencies.
     The two MANN (memory-augmented neural network) architectures given as the Memory Augmented Transformer and the Differentiable Neural Computer are introduced in \Cref{mat} and \Cref{dnc}.
-    Three architectures (the Unitary NCP, the Recurrent Network Augmented Transformer and the Recurrent Network Attention Transformer) mix approaches from other models and try to combine their advantages.
+    Three architectures (the Unitary NCP, the Recurrent Network Augmented Transformer, and the Recurrent Network Attention Transformer) mix approaches from other models and eventually combine their advantages.
     These models are elaborated in \Cref{uncp}, \Cref{rnaut} and \Cref{rnatt}.
 
 
@@ -671,7 +671,7 @@
     The output of the CT-RNN after consuming the whole input function $i(t)$ from time $0$ to time $T$ is then given by the hidden state vector $h(T)$ at time $T$.
     There is also the possibility to evaluate the hidden state at intermediate time points, for example, at $T-1$, which equals $h(T-1)$.
     With this mechanism, any continuous-time model can also map an input vector sequence to an output vector sequence.
-    If additional timing information is available about the input vectors, it can continuously hold this specific input in the input function.
+    If additional timing information is available about the input vectors, it can be used to hold this specific input in the input function continuously for the specified time interval.
     This variable time input leads to an irregularly sampled time series where time-continuous models are exceptionally well suited as machine learning models, as discrete-time models as given in \Cref{sampled_physical_systems} implicitly model a regularly sampled continuous-time system.
     This statement was also shown to be valid by \cite{ODELSTM}.
     The initial state of the CT-RNN is given by $h(0)$, which is picked to the all-zero vector.
@@ -752,7 +752,7 @@
     The ODE-LSTM recurrent neural network architecture is a continuous-time machine learning model firstly introduced in \cite{ODELSTM}.
     The implementation of the ODE-LSTM architecture used in this thesis was taken from the repository of its original paper \cite{ODELSTM}.
     This model's idea is to combine the LSTM architecture's ability to capture long-term dependencies and the ability of CT-RNNs to accurately model dynamical physical systems, even if an irregularly sampled time series is provided to the model as input.
-    As in this thesis, only regularly sampled time series is used. The continuous-time model is continually fed with the time input $1$ as mentioned in \Cref{ctrnn}.
+    As this thesis only uses regularly sampled time series, the continuous-time model is continually fed with the time input $1$ as mentioned in \Cref{ctrnn}.
     This constant time input should be no problem as the ability to model dynamical physical systems generalizes to any time input very well.
     Like the LSTM architecture, the ODE-LSTM has two state vectors: one hidden state vector $h_i$ and one cell state vector $c_i$. Both vectors are initialized to the all-zero vector.
     The function the ODE-LSTM model is applying to its input vectors to produce the output vectors or hidden state vectors is given as follows with inputs denoted as $x_i$ and outputs denoted as $h_i$ \cite[p. 5]{ODELSTM}:
@@ -801,7 +801,7 @@
     These neurons are called motor neurons, and their vectorized potentials then build the output vector.
     The input vector entries are fed to neurons as currents using \Cref{synaptic_current} and setting the presynaptic potential equal to the input vector entry.
     Furthermore, before the input vector is provided to the NCP model and before the output vector is returned from the NCP model, an affine transformation is applied to the input and output vector by mapping both vectors with a dense layer as described in \Cref{lstm}.
-    Additionally to motor neurons, NCP models also have inter and command neurons.
+    Additionally, to motor neurons, NCP models also have inter and command neurons.
     Interneurons receive input vector entries as chemical synaptic currents, and command neurons are the only neuron type where recurrent connections are allowed.
     Command neurons also are the only neuron type that has synaptic connections to motor neurons.
     Therefore, the input vector entries are processed using the interneurons, which feed the processed information to the command neurons that control the motor neurons and, therefore, the output vector entries.
@@ -901,7 +901,7 @@
     Moreover, the DFT matrix used to convert a time-domain vector to the frequency domain is also a unitary matrix, which preserves the input vector's energy and is, therefore, a good fit for this architecture.
     Both described features are disabled during benchmarking this model, as they showed no substantial decrease in the final test loss.
     Another difference to the Unitary RNN architecture introduced in \Cref{urnn} is the output vector's construction with the required size.
-    As the imaginary part of the hidden state, vector may also convey useful information, the approach from \cite[p. 4]{UnitaryRNNs} was used in the implementation to construct the output vector.
+    As the imaginary part of the hidden state vector may also convey useful information, the approach from \cite[p. 4]{UnitaryRNNs} was used in the implementation to construct the output vector.
     With this method, the final output vector is constructed by passing a concatenated vector consisting of the real and imaginary part of the hidden state vector, which is now solely real through a dense layer to get the correct output vector dimension.
     The last difference is the unitary matrix $W$'s parametrization used in \Cref{urnn_state}.
     As presented in \Cref{urnn}, the parametrization is quite involved, and therefore the new way of parameterizing the unitary matrix is using an approximated matrix exponential.
@@ -1212,12 +1212,12 @@
 
 
     \chapter{Benchmarks}
-    In this chapter the implemented benchmark framework is first described in \Cref{benchmark_framework}.
-    This framework is responsible for initiating the creation of the model, the start of the training and evalution process and the saving and visualization of the data produced during these processes.
-    Then each benchmark is discussed in detail including its expected input to output data mapping, its individual command-line arguments and its specific loss function used to quantify the error a model makes.
-    Four benchmarks (the Add Benchmark, the Memory Benchmark, the MNIST Benchmark and the Cell Benchmark) were used to evaluate the models' capability to capture long-term dependencies.
+    In this chapter, the implemented benchmark framework is first described in \Cref{benchmark_framework}.
+    This framework is responsible for initiating the model creation, the start of the training and evaluation process, and the saving and visualization of the data produced during these processes.
+    Then each benchmark is discussed in detail, including its expected input to output data mapping, its command-line arguments, and its specific loss function used to quantify the error a model makes.
+    Four benchmarks (the Add Benchmark, the Memory Benchmark, the MNIST Benchmark, and the Cell Benchmark) were used to evaluate the models' capability to capture long-term dependencies.
     These benchmarks are elaborated in \Cref{add}, \Cref{memory}, \Cref{mnist} and \Cref{cell}.
-    The other two benchmarks, the Activity Benchmark and the Walker Benchmark, should test the models' capability to model dynamic physical systems.
+    The Activity Benchmark and the Walker Benchmark should test the models' capability to model dynamic physical systems.
     These two benchmarks are described in \Cref{activity} and \Cref{walker}.
 
 
@@ -1281,7 +1281,7 @@
     The benchmark suite works currently only for benchmarks that provide time-series input data and only expect a model output after the last input data in the time series.
     For people familiar with the Tensorflow framework \cite{Tensorflow} this is equivalent to setting \texttt{return\_sequences=False} in an RNN model.
     All input arrays in the input tuple should have the shape \texttt{(SAMPLE\_AMOUNT, SEQUENCE\_LENGTH, INPUT\_DIMENSION)}.
-    Of course, the input dimension can vary between different inputs. Time data should have an input dimension of one.
+    Of course, the input dimension can vary between various inputs. Time data should have an input dimension of one.
     The single output array present in the output tuple should have the shape \texttt{(SAMPLE\_AMOUNT, OUTPUT\_DIMENSION)}.
     The sample amount should match between input and output data to be valid input to the benchmark framework.
     The framework will check all the constraints on the shapes, and then all individual samples are shuffled such that corresponding input and output data are at the same indices in their arrays.
@@ -1526,10 +1526,10 @@
 
 
     \chapter{Results} \label{chapter_results}
-    In this chapter the used benchmark hardware is first specified in \Cref{benchmark_hardware} which also includes the overall structure of the experiments.
-    After that the results of all models for each benchmark are discussed in detail.
-    This discussion per benchmark includes an elaboration on the relative performances of all models, a result summary presented in a table and a plot showing the validation loss evolution of all models for this benchmark and a single run.
-    The results of the Activity Benchmark are presented in \Cref{activity_results}, the results of the Add Benchmark are presented in \Cref{add_results}, the results of the Walker Benchmark are presented in \Cref{walker_results}, the results of the Memory Benchmark are presented in \Cref{memory_results}, the results of the MNIST Benchmark are presented in \Cref{mnist_results} and the results of the Cell Benchmark are presented in \Cref{cell_results}.
+    In this chapter, the used benchmark hardware is first specified in \Cref{benchmark_hardware}, which also includes the experiments' overall structure.
+    After that, the results of all models for each benchmark are discussed in detail.
+    This discussion per benchmark includes an elaboration on all models' relative performances, a result summary presented in a table, and a plot showing the validation loss evolution of all models for this benchmark and a single run.
+    The results of the Activity Benchmark are presented in \Cref{activity_results}, the results of the Add Benchmark are presented in \Cref{add_results}, the results of the Walker Benchmark are presented in \Cref{walker_results}, the results of the Memory Benchmark are presented in \Cref{memory_results}, the results of the MNIST Benchmark are presented in \Cref{mnist_results}, and the results of the Cell Benchmark are presented in \Cref{cell_results}.
 
 
     \section{Benchmark Hardware and Experiment Clarifications} \label{benchmark_hardware}
@@ -1663,7 +1663,7 @@
     The Recurrent Network Augmented Transformer even outperformed the LSTM architecture, though its core uses an LSTM to accumulate the attention mechanism's weighted value vectors.
     The Unitary NCP does an excellent job of delegating this memory-related task to the Unitary RNN.
     The next best model was the CT-GRU ($0.321$), followed by the Transformer ($0.362$), the GRU ($0.768$), and the DNC architecture ($1.534$).
-    These models were able to solve the Memory Benchmark in some benchmark runs and failed in other runs, leading to a high test loss standard deviation of all these models.
+    These models solved the Memory Benchmark in some benchmark runs and failed in other runs, leading to a high test loss standard deviation of all these models.
     Maybe an improved initialization strategy for these models helps with this problem.
     Surprisingly, the Transformer architecture could not solve the Memory Benchmark in every run, though it needs to attend to the first input vector containing the required category.
     This lousy result means that the Transformer's positional encoding might not work as reliable as expected in \cite[p. 5-6]{Transformer}.
