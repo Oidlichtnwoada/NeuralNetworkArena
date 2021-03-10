@@ -1107,6 +1107,13 @@
     Furthermore, using the memory enable signals for each memory row, the architecture may also freely determine how many memory rows it wants to write to in a single time step.
     This architecture tries to separate computation and memory just like personal computers do.
     The CPU equivalent in this architecture is the encoder layer, including all the dense layers, and the external memory is responsible for persisting information.
+    This architecture can be visualized as follows:
+    \begin{figure}[H]
+        \centering{}
+        \includegraphics[width=0.8\linewidth,trim={30 320 245 30},clip]{graphics/mat.pdf}
+        \caption{visualized Memory Augmented Transformer architecture}
+        \label{fig:mat_vis}
+    \end{figure}
     The benchmarked implementation had $r$ and $c$ set to $16$, the embedding size set to $32$, and the number of heads in the encoder layer set to $2$. Furthermore, it had the encoder layer's feed-forward size $d_{ff}$ set to $128$, and the dropout rate $dr$, as well as the encoder layer's dropout rate in the encoder layer, set to $0$.
     The Memory Augmented Transformer model implementation used in this thesis is exposed under the \texttt{get\_memory\_augmented\_transformer\_output} function defined in the file \url{https://github.com/Oidlichtnwoada/NeuralNetworkArena/blob/master/experiments/models/model_factory.py}.
     The in-detail implementation is provided in the file \url{https://github.com/Oidlichtnwoada/NeuralNetworkArena/blob/master/experiments/models/memory_augmented_transformer.py}.
