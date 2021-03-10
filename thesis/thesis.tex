@@ -1713,6 +1713,13 @@
     This ability was present as the Memory Cell achieved a perfect test loss of $0.000$ in each of the three benchmark runs with a test loss standard deviation of $0.000$.
     The total amount of epochs to train was relatively low with $6$ as the Memory Cell's initialization values were picked close to a local minimum. Otherwise, the loss gradient kept diverging.
     This test loss result validates that the architecture described in \Cref{memory_cell} is indeed able to capture long-term dependencies in time series similar to the input time series of the Cell Benchmark introduced in \Cref{cell}.
+    The Memory Cell was also able to generalize to arbitrary time intervals between memory switches and to multiple consecutive activations of the same neuron as shown in the following plot using the trained model from the second benchmark run:
+    \begin{figure}[H]
+        \centering{}
+        \includegraphics[width=\linewidth]{graphics/memory_cell_operation.pdf}
+        \caption{visualized Memory Cell operation}
+        \label{fig:memory_cell_operation_vis}
+    \end{figure}
     A downside of the architecture is the training duration of nearly two minutes per epoch for an architecture that only has $9$ trainable parameters.
     The Cell Benchmark featured an input sequence length of $384$ and $40000$ samples in total.
     Therefore, there is lots of future work to do to speed up this model's training using simplifications or approximations in the model function.
