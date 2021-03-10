@@ -1096,7 +1096,7 @@
     This masking was done by feeding the enable signal through a $sigmoid$ function in the positive and negated form (both results add up to $1$), which are then used to weigh the new and old memory state.
     At each time step, the following model function is executed with the input denoted as $i_t$ and the output denoted as $y_t$:
     \begin{align}
-        z_t &= Dropout(concat(ME(M_{k-1}), IE(i_k)) + PE) \\
+        z_t &= Dropout(concat(IE(i_k), ME(M_{k-1})) + PE) \\
         e_t &= EncoderLayer(z_t) \\
         o_t &= DOL(e_t[0]) \\
         MCS_t &= MCDL(e_t[1..r]) \\
