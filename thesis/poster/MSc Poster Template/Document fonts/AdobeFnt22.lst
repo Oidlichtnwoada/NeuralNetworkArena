@@ -1,0 +1,69 @@
+%!Adobe-FontList 1.22
+%Locale:0x409
+
+%BeginFont
+Handler:DirectoryHandler
+FontType:TrueType
+FontName:Roboto-Light
+FamilyName:Roboto Light
+StyleName:Regular
+FullName:Roboto Light
+MenuName:Roboto Light
+StyleBits:0
+WritingScript:Roman
+OutlineFileName:C:\Users\hanne\Documents\NeuralNetworkArena\thesis\poster\MSc Poster Template\Document fonts\Roboto-Light.ttf
+DataFormat:sfntData
+hasSVG:no
+VariableFontType:NonVariableFont
+FileLength:169680
+FileModTime:1615881240
+WeightClass:300
+WidthClass:5
+AngleClass:0
+NameArray:0,Win,1,Roboto Light
+%EndFont
+
+%BeginFont
+Handler:DirectoryHandler
+FontType:TrueType
+FontName:Roboto-LightItalic
+FamilyName:Roboto Light
+StyleName:Italic
+FullName:Roboto Light Italic
+MenuName:Roboto Light
+StyleBits:1
+WritingScript:Roman
+OutlineFileName:C:\Users\hanne\Documents\NeuralNetworkArena\thesis\poster\MSc Poster Template\Document fonts\Roboto-LightItalic.ttf
+DataFormat:sfntData
+hasSVG:no
+VariableFontType:NonVariableFont
+FileLength:175836
+FileModTime:1615881245
+WeightClass:300
+WidthClass:5
+AngleClass:1
+NameArray:0,Win,1,Roboto Light
+%EndFont
+
+%BeginFont
+Handler:DirectoryHandler
+FontType:TrueType
+FontName:Roboto-Medium
+FamilyName:Roboto Medium
+StyleName:Regular
+FullName:Roboto Medium
+MenuName:Roboto Medium
+StyleBits:0
+WritingScript:Roman
+OutlineFileName:C:\Users\hanne\Documents\NeuralNetworkArena\thesis\poster\MSc Poster Template\Document fonts\Roboto-Medium.ttf
+DataFormat:sfntData
+hasSVG:no
+VariableFontType:NonVariableFont
+FileLength:171320
+FileModTime:1615881237
+WeightClass:500
+WidthClass:5
+AngleClass:0
+NameArray:0,Win,1,Roboto Medium
+%EndFont
+
