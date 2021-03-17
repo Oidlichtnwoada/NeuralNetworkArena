@@ -424,7 +424,7 @@
     The notation is kept similar to the examples before. A subscript $2$ after a vector norm denotes the Euclidean norm, and a subscript $2,ind$ after a matrix norm denotes the spectral norm:
     \begin{align}
         \label{gradient_formula}
-        \left\Vert \pdv{L}{h_t} \right\Vert_2 \leq \left\Vert \pdv{L}{h_T} \right\Vert_2 * \left\Vert W \right\Vert_{2,ind}^T * \prod^{T-1}_{k=t} \left\Vert diag(\sigma'(W*h_k + V*x_{k+1})) \right\Vert_{2,ind}
+        \left\Vert \pdv{L}{h_t} \right\Vert_2 \leq \left\Vert \pdv{L}{h_T} \right\Vert_2 * \left\Vert W \right\Vert_{2,ind}^{T-t} * \prod^{T-1}_{k=t} \left\Vert diag(\sigma'(W*h_k + V*x_{k+1})) \right\Vert_{2,ind}
     \end{align}
     This inequality contains all essential parts to understand why capturing long-term dependencies with vanilla recurrent neural networks is difficult.
     Some problems that machine learning tries to solve require incorporating input data from the distant past to make good predictions in the present.
