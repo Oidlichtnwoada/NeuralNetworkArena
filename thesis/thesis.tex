@@ -847,7 +847,7 @@
     The method to parametrize unitary matrices as used in \cite[p. 3]{EfficientUnitaryRNNs} was proposed by \cite{UnitaryMatrixParametrization} and is called the square decomposition method.
     The core statement is that any unitary matrix of dimension $N \times N$ can be represented by matrix multiplications involving a diagonal matrix $D$ and rotational matrices $R_{ij}$ as follows:
     \begin{align}
-        W &= D \prod_{i=2}^N \prod_{j=1}^{i-1} R_{ij}.
+        W &= D \prod_{i=2}^N \prod_{j=1}^{i-1} R_{ij}
     \end{align}
     The diagonal matrix $D$ has only the entries $e^{iw_j}$ on its diagonal which results in $N$ parameters $w_j$.
     The matrices $R_{ij}$ which are parameterized by two real parameters $\theta_{ij}$ and $\phi_{ij}$ are defined as $N$-dimensional identity matrices whose four entries at positions given as $(row,column)$ are replaced with given entries as follows:
